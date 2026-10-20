@@ -27,7 +27,7 @@ No se leen el SSID ni el BSSID, porque exigen permiso de ubicación. La huella n
 
 | Id | Mecanismo | Qué capta | Duda que mide la prueba técnica |
 | --- | --- | --- | --- |
-| A | `registerNetworkCallback(request, PendingIntent)` para Wi-Fi y para internet (`PendingIntent` mutable, re-registrado al arrancar) | Que vuelve el Wi-Fi (fin del corte). Quizás el cambio a datos al caerse el Wi-Fi | La variante con `PendingIntent` está documentada para "una red quedó disponible": no está garantizado que despierte al **perder** el Wi-Fi |
+| A | `registerNetworkCallback(request, PendingIntent)` para Wi-Fi, armado **solo cuando no hay Wi-Fi** (`PendingIntent` mutable con acción propia) | Que vuelve el Wi-Fi: el fin del corte | **Medido:** dispara una sola vez, cuando la red queda disponible, y el sistema libera el pedido unos 5 s después. Nunca avisa al perder el Wi-Fi |
 | B | Latido con WorkManager cada 15 minutos | Todo, con hasta 15 minutos de retraso (más en Doze) | Frecuencia real en Xiaomi y con la app en el bucket `rare` |
 | C | Trabajo de JobScheduler con `setRequiresCharging(true)`: al desenchufar, el sistema lo detiene con `STOP_REASON_CONSTRAINT_CHARGING` (API 31+) | La desconexión del cargador en segundos, sin servicio en primer plano | Si el sistema lo reprograma sin huecos y si los fabricantes lo respetan |
 | D | Servicio en primer plano `specialUse` con un receiver dinámico de `ACTION_POWER_CONNECTED/DISCONNECTED` | La desconexión exacta, al segundo | Costo de batería en 24 h, notificación permanente, aprobación de Play para `specialUse` |
@@ -73,6 +73,19 @@ Con el cable USB conectado el teléfono está cargando y la prueba no sirve: usa
 | Modo UPS | Necesita ver el desenchufe con la pantalla apagada: C si funciona, si no D |
 
 La decisión se registra en `docs/decisions.md` con la tabla de datos, y los mecanismos descartados se borran del código en la misma PR.
+
+## Hallazgos de la prueba técnica
+
+Redmi A5 (Xiaomi 25028RN03L, Android 15, SDK 35), 20 de octubre de 2026:
+
+| Hallazgo | Consecuencia |
+| --- | --- |
+| El `PendingIntent` de `registerNetworkCallback` dispara una vez, al quedar disponible una red que cumple el pedido, y se libera unos 5 s después. Si se arma con la red ya conectada, dispara al instante | A solo detecta la **vuelta** del Wi-Fi y se arma desde cada snapshot sin Wi-Fi. El inicio del corte depende de B, C y D |
+| ConnectivityService compara los `PendingIntent` con `Intent.filterEquals`, que ignora el `requestCode` | Dos pedidos con el mismo Intent se pisan: cada uno necesita su propia acción |
+| El latido de WorkManager corrió exactamente cada 15 min con la app en el bucket `active` | B es puntual en primer plano; falta medirlo en `rare` y con pantalla apagada |
+| Tras reiniciar, `BOOT_COMPLETED` y los datos de la app solo están disponibles **después del primer desbloqueo** | Un teléfono que se apaga en un corte y vuelve a encender solo no registra nada hasta que alguien lo desbloquee. Evaluar *direct boot* (`LOCKED_BOOT_COMPLETED` y almacenamiento protegido del dispositivo) |
+| MIUI apaga el "Inicio automático" **cada vez que se reinstala la app por adb**. Sin él no llega `BOOT_COMPLETED` y WorkManager no reagenda el latido hasta abrir la app | Después de cada `installDebug` hay que volver a activarlo. En Play no debería pasar al actualizar, pero hay que verificarlo en la prueba interna |
+| El puerto USB de la Mac no carga el Xiaomi (`USB powered: false`) | Las pruebas por cable no se contaminan con "cargando"; `plugged: true` se simula con `adb shell dumpsys battery set ac 1` |
 
 ## Clasificador
 

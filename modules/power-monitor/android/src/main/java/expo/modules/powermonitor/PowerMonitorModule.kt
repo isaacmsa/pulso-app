@@ -17,6 +17,10 @@ class PowerMonitorModule : Module() {
       EventJson.snapshot(SnapshotRecorder.record(context, source))
     }
 
+    AsyncFunction("arm") {
+      Arming.ensureArmed(context)
+    }
+
     AsyncFunction("getEvents") { sinceMs: Double ->
       "[" + EventStore.get(context).since(sinceMs.toLong()).joinToString(",") + "]"
     }

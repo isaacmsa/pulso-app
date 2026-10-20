@@ -24,7 +24,9 @@ Los que dependen de algo que todavía no existe se confirman al crearlo. Si camb
 | Simular desenchufe / restaurar | `adb shell dumpsys battery unplug` / `adb shell dumpsys battery reset` |
 | Forzar Doze / salir | `adb shell dumpsys deviceidle force-idle` / `adb shell dumpsys deviceidle unforce` |
 | Ver o forzar el bucket de standby | `adb shell am get-standby-bucket com.isaacmendoza.pulso` / `adb shell am set-standby-bucket com.isaacmendoza.pulso rare` |
-| Logs del módulo nativo | `adb logcat -s PowerMonitor` |
+| Logs del módulo nativo | `adb logcat -s PowerMonitor` (MIUI rota el buffer rápido: mejor leer la base) |
+| Copiar la base de eventos del teléfono | `adb exec-out run-as com.isaacmendoza.pulso cat databases/power_monitor.db > pm.db` (y el `-wal`) |
+| Ver los pedidos de red de Pulso | `adb shell dumpsys connectivity \| grep isaacmendoza` |
 | Abrir la pantalla de registro | `adb shell am start -a android.intent.action.VIEW -d "pulso://debug"` |
 
 ## Convenciones de este proyecto
@@ -54,7 +56,9 @@ Los que dependen de algo que todavía no existe se confirman al crearlo. Si camb
 - **pnpm 12**: la configuración va en `pnpm-workspace.yaml`, no en `.npmrc` (`nodeLinker: hoisted` está ahí). Un paquete nuevo con script de instalación corta `pnpm install` hasta decidir en `allowBuilds` (`pnpm approve-builds`).
 - **React Native Testing Library 14**: `render` es asíncrono (`await render(...)`).
 
-- **La variante con `PendingIntent` de `registerNetworkCallback`** está documentada para "una red quedó disponible": puede no despertar la app al perderse el Wi-Fi. Por eso existen los mecanismos B, C y D. Ver `docs/detection.md`.
+- **El `PendingIntent` de `registerNetworkCallback` dispara una sola vez** (cuando una red queda disponible) y el sistema lo libera: nunca avisa al perder el Wi-Fi. Por eso A se arma solo sin Wi-Fi y detecta el fin del corte. Cada pedido necesita su propia acción en el Intent: ConnectivityService compara con `filterEquals` e ignora el `requestCode`. Ver "Hallazgos" en `docs/detection.md`.
+- **MIUI apaga el "Inicio automático" en cada reinstalación por adb**: volver a activarlo después de cada `installDebug`, o el arranque y el latido no se reagendan.
+- **Después de reiniciar, nada corre hasta el primer desbloqueo** (almacenamiento cifrado).
 - **Android 8+ no entrega `ACTION_POWER_DISCONNECTED` a receivers del manifiesto.** Solo los ven un trabajo con `setRequiresCharging` (C) o un receiver dinámico dentro de un servicio (D).
 - **Con el cable USB conectado el teléfono está cargando** y ninguna prueba de corte vale. Usar depuración inalámbrica.
 - **Xiaomi**: `adb install` exige "Instalar vía USB" (cuenta Mi y SIM), y la app muere sin "Inicio automático" y la batería en "Sin restricciones". **Samsung**: sacarla de "Apps en suspensión profunda".

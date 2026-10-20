@@ -50,3 +50,8 @@ export async function recordAppOpen(): Promise<NativeSnapshot> {
   }
   return parsed.data;
 }
+
+/** Arma los mecanismos de detección en el nativo. Es idempotente. */
+export function arm(): Promise<void> {
+  return PowerMonitor.arm();
+}
