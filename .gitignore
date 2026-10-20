@@ -49,3 +49,7 @@ coverage/
 
 # planes en ejecución (superpowers)
 .superpowers/
+
+# salida de Gradle del módulo local
+modules/*/android/build/
+modules/*/android/.gradle/

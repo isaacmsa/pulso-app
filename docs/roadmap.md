@@ -53,7 +53,7 @@ Opcional: un dominio propio (~USD 12 al año) si quieres una URL más presentabl
 Objetivo: tener datos reales de cortes desde la primera semana y un clasificador testeado antes de escribir pantallas.
 
 - [x] [app] Repo, Expo SDK 58 en el Xiaomi, Biome, Jest y CI (2 h)
-- [ ] [app] Módulo `power-monitor`: lector de snapshot, almacén SQLite y envoltorio JS validado (3 h)
+- [x] [app] Módulo `power-monitor`: lector de snapshot, almacén SQLite y envoltorio JS validado (3 h)
 - [ ] [app] Mecanismos A, B, arranque y seguimiento de transición (3 h)
 - [ ] [app] Mecanismos C y D, con interruptor en la pantalla de registro (2,5 h)
 - [ ] [app] Huella de la red de casa, diagnóstico, botones de verdad y exportar (2 h)
