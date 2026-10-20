@@ -60,6 +60,11 @@ export function arm(): Promise<void> {
   return PowerMonitor.arm();
 }
 
+/** Si el usuario dejó encendido el servicio en primer plano. */
+export function isForegroundServiceEnabled(): Promise<boolean> {
+  return PowerMonitor.isForegroundServiceEnabled();
+}
+
 /** Activa o apaga el servicio en primer plano (mecanismo D, experimental). */
 export function setForegroundServiceEnabled(enabled: boolean): Promise<void> {
   return PowerMonitor.setForegroundServiceEnabled(enabled);

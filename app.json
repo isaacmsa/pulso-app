@@ -14,7 +14,8 @@
         "monochromeImage": "./assets/android-icon-monochrome.png"
       },
       "predictiveBackGestureEnabled": true,
-      "package": "com.isaacmendoza.pulso"
+      "package": "com.isaacmendoza.pulso",
+      "allowBackup": false
     },
     "plugins": [
       "expo-router",

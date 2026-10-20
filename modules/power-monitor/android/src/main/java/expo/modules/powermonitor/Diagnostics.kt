@@ -6,7 +6,10 @@ import android.os.Build
 import android.os.PowerManager
 import org.json.JSONObject
 
-/** Diagnóstico con la forma de `nativeDiagnosticsSchema` (pulso-api/src/domain/spike/schema.ts). */
+/**
+ * Diagnóstico con la forma de `nativeDiagnosticsSchema` (pulso-api/src/domain/spike/schema.ts).
+ * `armed` es el estado real de cada mecanismo en este momento, no lo que se pidió al armar.
+ */
 object Diagnostics {
   fun json(context: Context): JSONObject {
     val store = EventStore.get(context)
@@ -36,9 +39,9 @@ object Diagnostics {
         "armed",
         JSONObject()
           .put("networkCallback", prefs.getBoolean("armed.networkCallback", false))
-          .put("heartbeat", prefs.getBoolean("armed.heartbeat", false))
-          .put("chargingJob", prefs.getBoolean("armed.chargingJob", false))
-          .put("foregroundService", prefs.getBoolean("armed.foregroundService", false)),
+          .put("heartbeat", Arming.isHeartbeatArmed(context))
+          .put("chargingJob", ChargingJob.isArmed(context))
+          .put("foregroundService", PowerWatchService.running),
       )
   }
 }

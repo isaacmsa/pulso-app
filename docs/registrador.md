@@ -22,7 +22,8 @@ Esta versión todavía no avisa a nadie ni muestra el historial: solo **anota** 
    - **Xiaomi / Redmi / Poco:** Ajustes → Apps → Administrar apps → Pulso → activa **"Inicio automático"** y en **Ahorro de batería** elige **"Sin restricciones"**.
    - **Samsung:** Ajustes → Batería → Límites de uso en segundo plano → saca a Pulso de **"Apps en suspensión profunda"** y de **"Apps en suspensión"**. Luego Ajustes → Apps → Pulso → Batería → **"Sin restricciones"**.
    - **Tecno / Infinix / otros:** Ajustes → Apps → Pulso → Batería → **"Sin restricciones"** o **"Permitir en segundo plano"**, y activa el **inicio automático** si aparece.
-4. Deja el teléfono **enchufado en casa**, donde normalmente lo cargas. No hace falta tener la app abierta.
+4. En el registrador, activa **"Servicio en primer plano (D)"**. Si el teléfono pregunta si Pulso puede enviarte notificaciones, toca **Permitir**. Debe quedar una notificación fija que dice "Pulso está vigilando la luz"; no la quites.
+5. Deja el teléfono **enchufado en casa**, donde normalmente lo cargas. No hace falta tener la app abierta.
 
 ## 3. Cuando se vaya o vuelva la luz
 

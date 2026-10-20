@@ -50,14 +50,14 @@ class PowerWatchService : Service() {
     } else {
       registerReceiver(powerReceiver, filter)
     }
-    setRunning(this, true)
+    running = true
   }
 
   override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int = START_STICKY
 
   override fun onDestroy() {
     unregisterReceiver(powerReceiver)
-    setRunning(this, false)
+    running = false
     super.onDestroy()
   }
 
@@ -77,8 +77,8 @@ class PowerWatchService : Service() {
       context.stopService(Intent(context, PowerWatchService::class.java))
     }
 
-    private fun setRunning(context: Context, running: Boolean) =
-      context.getSharedPreferences(Arming.PREFS, Context.MODE_PRIVATE).edit()
-        .putBoolean("armed.foregroundService", running).apply()
+    /** En memoria del proceso: si MIUI mata el proceso sin onDestroy, vuelve a false con él. */
+    @Volatile var running = false
+      private set
   }
 }

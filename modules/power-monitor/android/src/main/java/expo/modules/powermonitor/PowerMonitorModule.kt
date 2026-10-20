@@ -48,6 +48,10 @@ class PowerMonitorModule : Module() {
       Exporter.export(context)
     }
 
+    AsyncFunction("isForegroundServiceEnabled") {
+      Arming.isForegroundServiceEnabled(context)
+    }
+
     AsyncFunction("getEvents") { sinceMs: Double ->
       "[" + EventStore.get(context).since(sinceMs.toLong()).joinToString(",") + "]"
     }

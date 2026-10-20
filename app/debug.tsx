@@ -3,6 +3,7 @@ import { useCallback, useState } from 'react';
 import {
   FlatList,
   PermissionsAndroid,
+  Platform,
   Pressable,
   RefreshControl,
   StyleSheet,
@@ -17,6 +18,7 @@ import type {
 } from '../src/modules/power-detection/native-schema';
 import {
   exportAndShare,
+  isForegroundServiceEnabled,
   learnHomeNetwork,
   readDiagnostics,
   readEvents,
@@ -81,6 +83,7 @@ export default function DebugScreen() {
   const [error, setError] = useState<string | null>(null);
   const [notice, setNotice] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+  const [fgsEnabled, setFgsEnabled] = useState(false);
 
   const showError = (e: unknown) => setError(e instanceof Error ? e.message : String(e));
 
@@ -95,6 +98,7 @@ export default function DebugScreen() {
       setError(e instanceof Error ? e.message : String(e));
     }
     try {
+      setFgsEnabled(await isForegroundServiceEnabled());
       setDiagnostics(await readDiagnostics());
     } catch {
       setDiagnostics(null);
@@ -121,7 +125,8 @@ export default function DebugScreen() {
 
   const toggleForegroundService = async (enabled: boolean) => {
     try {
-      if (enabled) {
+      // POST_NOTIFICATIONS existe desde Android 13 (API 33); antes no hay que pedirlo.
+      if (enabled && Number(Platform.Version) >= 33) {
         const result = await PermissionsAndroid.request('android.permission.POST_NOTIFICATIONS');
         if (result !== PermissionsAndroid.RESULTS.GRANTED) {
           setError('Sin permiso de notificaciones el servicio no puede mostrarse');
@@ -129,6 +134,7 @@ export default function DebugScreen() {
         }
       }
       await setForegroundServiceEnabled(enabled);
+      setFgsEnabled(enabled);
       await refresh();
     } catch (e) {
       showError(e);
@@ -183,10 +189,7 @@ export default function DebugScreen() {
 
       <View style={styles.switchRow}>
         <Text style={styles.switchLabel}>Servicio en primer plano (D)</Text>
-        <Switch
-          value={diagnostics?.armed.foregroundService ?? false}
-          onValueChange={toggleForegroundService}
-        />
+        <Switch value={fgsEnabled} onValueChange={toggleForegroundService} />
       </View>
 
       <FlatList

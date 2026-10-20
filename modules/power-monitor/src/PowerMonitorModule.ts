@@ -15,6 +15,8 @@ declare class PowerMonitorModule extends NativeModule<Record<string, never>> {
   getDiagnostics(): Promise<string>;
   /** Escribe el exporte del registrador en el caché y devuelve su URI file://. */
   exportEvents(): Promise<string>;
+  /** Si el usuario dejó encendido el servicio en primer plano (la intención, no si corre ahora). */
+  isForegroundServiceEnabled(): Promise<boolean>;
   /** Eventos guardados desde `sinceMs`, del más nuevo al más viejo, como un arreglo JSON. */
   getEvents(sinceMs: number): Promise<string>;
 }

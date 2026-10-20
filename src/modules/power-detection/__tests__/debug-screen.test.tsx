@@ -1,4 +1,5 @@
 import { fireEvent, render, screen } from '@testing-library/react-native';
+import { PermissionsAndroid, Platform } from 'react-native';
 import DebugScreen from '../../../../app/debug';
 import PowerMonitor from '../../../../modules/power-monitor';
 
@@ -13,7 +14,8 @@ jest.mock('../../../../modules/power-monitor', () => ({
     getDiagnostics: jest.fn().mockResolvedValue('{}'),
     recordReport: jest.fn().mockResolvedValue('{}'),
     recordSnapshot: jest.fn(),
-    setForegroundServiceEnabled: jest.fn(),
+    setForegroundServiceEnabled: jest.fn().mockResolvedValue(undefined),
+    isForegroundServiceEnabled: jest.fn().mockResolvedValue(false),
     learnHomeNetwork: jest.fn(),
     exportEvents: jest.fn(),
   },
@@ -28,4 +30,19 @@ it.each([
   await render(<DebugScreen />);
   await fireEvent.press(screen.getByText(label));
   expect(native.recordReport).toHaveBeenCalledWith(value);
+});
+
+it('en Android 12 o menos activa D sin pedir el permiso de notificaciones', async () => {
+  const original = Platform.Version;
+  Object.defineProperty(Platform, 'Version', { value: 31, configurable: true });
+  const request = jest.spyOn(PermissionsAndroid, 'request');
+  try {
+    await render(<DebugScreen />);
+    await fireEvent(screen.getByRole('switch'), 'valueChange', true);
+    expect(request).not.toHaveBeenCalled();
+    expect(native.setForegroundServiceEnabled).toHaveBeenCalledWith(true);
+  } finally {
+    Object.defineProperty(Platform, 'Version', { value: original, configurable: true });
+    request.mockRestore();
+  }
 });
