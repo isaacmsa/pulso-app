@@ -1,0 +1,35 @@
+{
+  "expo": {
+    "name": "Pulso",
+    "slug": "pulso",
+    "version": "0.1.0",
+    "orientation": "portrait",
+    "icon": "./assets/icon.png",
+    "userInterfaceStyle": "dark",
+    "android": {
+      "adaptiveIcon": {
+        "backgroundColor": "#0B0F14",
+        "foregroundImage": "./assets/android-icon-foreground.png",
+        "backgroundImage": "./assets/android-icon-background.png",
+        "monochromeImage": "./assets/android-icon-monochrome.png"
+      },
+      "predictiveBackGestureEnabled": true,
+      "package": "com.isaacmendoza.pulso"
+    },
+    "plugins": [
+      "expo-router",
+      "expo-status-bar",
+      [
+        "expo-build-properties",
+        {
+          "android": {
+            "compileSdkVersion": 37,
+            "targetSdkVersion": 36
+          }
+        }
+      ]
+    ],
+    "scheme": "pulso",
+    "platforms": ["android"]
+  }
+}
