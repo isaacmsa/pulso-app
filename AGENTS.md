@@ -25,7 +25,8 @@ Los que dependen de algo que todavía no existe se confirman al crearlo. Si camb
 | Forzar Doze / salir | `adb shell dumpsys deviceidle force-idle` / `adb shell dumpsys deviceidle unforce` |
 | Ver o forzar el bucket de standby | `adb shell am get-standby-bucket com.isaacmendoza.pulso` / `adb shell am set-standby-bucket com.isaacmendoza.pulso rare` |
 | Logs del módulo nativo | `adb logcat -s PowerMonitor` (MIUI rota el buffer rápido: mejor leer la base) |
-| Copiar la base de eventos del teléfono | `adb exec-out run-as com.isaacmendoza.pulso cat databases/power_monitor.db > pm.db` (y el `-wal`) |
+| Copiar la base de eventos del teléfono (solo build de debug) | `adb exec-out run-as com.isaacmendoza.pulso cat databases/power_monitor.db > pm.db` (y el `-wal`); en release, usar "Exportar" |
+| Construir el APK para teléfonos de prueba | `cd android && ./gradlew app:assembleRelease -PreactNativeArchitectures=arm64-v8a,armeabi-v7a` (firmado con la clave de debug: sirve para instalar a mano, no para Play) |
 | Ver los pedidos de red de Pulso | `adb shell dumpsys connectivity \| grep isaacmendoza` |
 | Abrir la pantalla de registro | `adb shell am start -a android.intent.action.VIEW -d "pulso://debug"` |
 
