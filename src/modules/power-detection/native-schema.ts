@@ -49,3 +49,25 @@ export const nativeEventSchema = z.discriminatedUnion('kind', [
 
 export type NativeSnapshot = z.infer<typeof nativeSnapshotSchema>;
 export type NativeEvent = z.infer<typeof nativeEventSchema>;
+
+// Mismos campos que `nativeDiagnosticsSchema` de pulso-api/src/domain/spike/schema.ts.
+export const nativeDiagnosticsSchema = z.object({
+  appVersion: z.string(),
+  manufacturer: z.string(),
+  model: z.string(),
+  sdkInt: z.number().int(),
+  standbyBucket: z.number().int().nullable(),
+  ignoringBatteryOptimizations: z.boolean(),
+  pendingEvents: z.number().int().min(0),
+  storedEvents: z.number().int().min(0),
+  homeNetworkLearned: z.boolean(),
+  armed: z.object({
+    networkCallback: z.boolean(),
+    heartbeat: z.boolean(),
+    chargingJob: z.boolean(),
+    foregroundService: z.boolean(),
+  }),
+});
+
+export type NativeDiagnostics = z.infer<typeof nativeDiagnosticsSchema>;
+export type ReportValue = z.infer<typeof nativeReportSchema>['value'];

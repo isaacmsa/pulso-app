@@ -1,9 +1,13 @@
+import * as Sharing from 'expo-sharing';
 import PowerMonitor from '../../../modules/power-monitor';
 import {
+  type NativeDiagnostics,
   type NativeEvent,
   type NativeSnapshot,
+  nativeDiagnosticsSchema,
   nativeEventSchema,
   nativeSnapshotSchema,
+  type ReportValue,
 } from './native-schema';
 
 export class PowerMonitorError extends Error {
@@ -59,4 +63,28 @@ export function arm(): Promise<void> {
 /** Activa o apaga el servicio en primer plano (mecanismo D, experimental). */
 export function setForegroundServiceEnabled(enabled: boolean): Promise<void> {
   return PowerMonitor.setForegroundServiceEnabled(enabled);
+}
+
+/** Guarda un reporte manual: los botones "Se fue la luz ahora", "Volvió" y "Fluctuando". */
+export async function recordReport(value: ReportValue): Promise<void> {
+  await PowerMonitor.recordReport(value);
+}
+
+/** Toma la red Wi-Fi actual como la de casa. */
+export function learnHomeNetwork(): Promise<boolean> {
+  return PowerMonitor.learnHomeNetwork();
+}
+
+export async function readDiagnostics(): Promise<NativeDiagnostics> {
+  const parsed = nativeDiagnosticsSchema.safeParse(parseJson(await PowerMonitor.getDiagnostics()));
+  if (!parsed.success) {
+    throw new PowerMonitorError('invalid_event', 'El diagnóstico nativo no cumple el contrato');
+  }
+  return parsed.data;
+}
+
+/** Escribe el exporte y abre el menú de compartir (para mandarlo por WhatsApp). */
+export async function exportAndShare(): Promise<void> {
+  const uri = await PowerMonitor.exportEvents();
+  await Sharing.shareAsync(uri, { mimeType: 'application/json', dialogTitle: 'Exporte de Pulso' });
 }

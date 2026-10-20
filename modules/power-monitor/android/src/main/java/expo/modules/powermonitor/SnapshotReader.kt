@@ -39,7 +39,7 @@ object SnapshotReader {
       source = source,
       plugged = plugged,
       onWifi = onWifi,
-      homeWifi = null,
+      homeWifi = HomeNetwork(context).matches(if (onWifi) HomeNetwork.currentFingerprint(context) else null),
       internet = internet,
       interactive = interactive,
       batteryPct = batteryPct,

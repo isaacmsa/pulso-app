@@ -42,6 +42,8 @@ class EventStore private constructor(context: Context) :
 
   fun count(): Int = DatabaseUtils.queryNumEntries(readableDatabase, "events").toInt()
 
+  fun pendingCount(): Int = DatabaseUtils.queryNumEntries(readableDatabase, "events", "uploaded = 0").toInt()
+
   fun lastSnapshotJson(): String? =
     readableDatabase.rawQuery(
       "SELECT json FROM events WHERE kind = 'snapshot' ORDER BY at DESC, id DESC LIMIT 1",

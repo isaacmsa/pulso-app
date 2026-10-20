@@ -5,6 +5,8 @@ import expo.modules.kotlin.exception.Exceptions
 import expo.modules.kotlin.modules.Module
 import expo.modules.kotlin.modules.ModuleDefinition
 
+private val REPORT_VALUES = setOf("hay_luz", "fluctuando", "sin_luz")
+
 class PowerMonitorModule : Module() {
   private val context: Context
     get() = appContext.reactContext ?: throw Exceptions.ReactContextLost()
@@ -23,6 +25,27 @@ class PowerMonitorModule : Module() {
 
     AsyncFunction("setForegroundServiceEnabled") { enabled: Boolean ->
       Arming.setForegroundServiceEnabled(context, enabled)
+    }
+
+    AsyncFunction("recordReport") { value: String ->
+      if (value !in REPORT_VALUES) throw IllegalArgumentException("reporte desconocido: $value")
+      val now = System.currentTimeMillis()
+      val report = Report(UuidV7.generate(now), now, value)
+      val json = EventJson.report(report)
+      EventStore.get(context).insert(report.id, report.at, "report", json)
+      json
+    }
+
+    AsyncFunction("learnHomeNetwork") {
+      HomeNetwork(context).learnCurrent()
+    }
+
+    AsyncFunction("getDiagnostics") {
+      Diagnostics.json(context).toString()
+    }
+
+    AsyncFunction("exportEvents") {
+      Exporter.export(context)
     }
 
     AsyncFunction("getEvents") { sinceMs: Double ->

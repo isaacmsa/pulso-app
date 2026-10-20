@@ -27,7 +27,8 @@
             "targetSdkVersion": 36
           }
         }
-      ]
+      ],
+      "expo-sharing"
     ],
     "scheme": "pulso",
     "platforms": ["android"]

@@ -89,6 +89,8 @@ Redmi A5 (Xiaomi 25028RN03L, Android 15, SDK 35), 20 de octubre de 2026:
 | En ambas lecturas `interactive` vino en `true` | No se sabe si fue por tener el teléfono en la mano o porque MIUI enciende la pantalla al desenchufar. Si es lo segundo, rompe la regla del modo UPS: medirlo con el teléfono boca abajo y sin tocarlo |
 | `adb shell dumpsys battery set …` no le llega al planificador de trabajos: después de simular, JobScheduler siguió creyendo que cargaba durante minutos | C solo se prueba con un cargador real. No simular la batería antes de una medición de C |
 | El permiso de notificaciones quedó denegado hasta aceptarlo en el diálogo del sistema; sin él, D no arranca | El onboarding tiene que pedirlo y comprobar el resultado antes de activar D |
+| Con la batería de Pulso en "Sin restricciones" de MIUI, Android sigue diciendo `isIgnoringBatteryOptimizations: false` | El ajuste de MIUI no es la exención de Doze de Android. El diagnóstico no puede usar ese campo para saber si el usuario siguió la guía; en Xiaomi hay que medir los efectos (latido, bucket) |
+| El exporte del teléfono pasó por `pnpm spike:analyze` de `pulso-api` con 63 eventos válidos y 0 inválidos | El contrato Kotlin → API funciona de punta a punta |
 | El puerto USB de la Mac no carga el Xiaomi (`USB powered: false`) | Las pruebas por cable no se contaminan con "cargando"; `plugged: true` se simula con `adb shell dumpsys battery set ac 1` |
 
 ## Clasificador
