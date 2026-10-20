@@ -21,6 +21,10 @@ class PowerMonitorModule : Module() {
       Arming.ensureArmed(context)
     }
 
+    AsyncFunction("setForegroundServiceEnabled") { enabled: Boolean ->
+      Arming.setForegroundServiceEnabled(context, enabled)
+    }
+
     AsyncFunction("getEvents") { sinceMs: Double ->
       "[" + EventStore.get(context).since(sinceMs.toLong()).joinToString(",") + "]"
     }

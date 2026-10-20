@@ -1,6 +1,10 @@
 <manifest xmlns:android="http://schemas.android.com/apk/res/android">
   <uses-permission android:name="android.permission.ACCESS_NETWORK_STATE" />
   <uses-permission android:name="android.permission.RECEIVE_BOOT_COMPLETED" />
+  <uses-permission android:name="android.permission.POST_NOTIFICATIONS" />
+  <!-- Mecanismo D: solo en el registrador; D-012 decide si queda en producción. -->
+  <uses-permission android:name="android.permission.FOREGROUND_SERVICE" />
+  <uses-permission android:name="android.permission.FOREGROUND_SERVICE_SPECIAL_USE" />
 
   <application>
     <receiver android:name="expo.modules.powermonitor.NetworkEventReceiver" android:exported="false" />
@@ -10,5 +14,17 @@
         <action android:name="android.intent.action.MY_PACKAGE_REPLACED" />
       </intent-filter>
     </receiver>
+    <service
+      android:name="expo.modules.powermonitor.ChargingJobService"
+      android:exported="false"
+      android:permission="android.permission.BIND_JOB_SERVICE" />
+    <service
+      android:name="expo.modules.powermonitor.PowerWatchService"
+      android:exported="false"
+      android:foregroundServiceType="specialUse">
+      <property
+        android:name="android.app.PROPERTY_SPECIAL_USE_FGS_SUBTYPE"
+        android:value="Detecta cuándo se va y vuelve la luz en casa escuchando la conexión del cargador" />
+    </service>
   </application>
 </manifest>

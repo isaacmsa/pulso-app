@@ -5,6 +5,8 @@ declare class PowerMonitorModule extends NativeModule<Record<string, never>> {
   recordSnapshot(source: string): Promise<string>;
   /** Arma los mecanismos de detección (idempotente). */
   arm(): Promise<void>;
+  /** Activa o apaga el servicio en primer plano (mecanismo D, experimental). */
+  setForegroundServiceEnabled(enabled: boolean): Promise<void>;
   /** Eventos guardados desde `sinceMs`, del más nuevo al más viejo, como un arreglo JSON. */
   getEvents(sinceMs: number): Promise<string>;
 }

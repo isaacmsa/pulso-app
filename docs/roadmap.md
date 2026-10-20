@@ -55,7 +55,7 @@ Objetivo: tener datos reales de cortes desde la primera semana y un clasificador
 - [x] [app] Repo, Expo SDK 58 en el Xiaomi, Biome, Jest y CI (2 h)
 - [x] [app] Módulo `power-monitor`: lector de snapshot, almacén SQLite y envoltorio JS validado (3 h)
 - [x] [app] Mecanismos A, B, arranque y seguimiento de transición (3 h)
-- [ ] [app] Mecanismos C y D, con interruptor en la pantalla de registro (2,5 h)
+- [x] [app] Mecanismos C y D, con interruptor en la pantalla de registro (2,5 h)
 - [ ] [app] Huella de la red de casa, diagnóstico, botones de verdad y exportar (2 h)
 - [ ] [app] APK release en el Xiaomi, el Samsung y 1 o 2 teléfonos de la familia (1 h)
 - [ ] [api] Repo, contrato de eventos, clasificador (base, UPS, reportes, confirmaciones), resumen por día y `pnpm spike:analyze` (8,5 h)

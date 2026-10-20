@@ -1,8 +1,21 @@
 import { useFocusEffect } from 'expo-router';
 import { useCallback, useState } from 'react';
-import { FlatList, Pressable, RefreshControl, StyleSheet, Text, View } from 'react-native';
+import {
+  FlatList,
+  PermissionsAndroid,
+  Pressable,
+  RefreshControl,
+  StyleSheet,
+  Switch,
+  Text,
+  View,
+} from 'react-native';
 import type { NativeEvent } from '../src/modules/power-detection/native-schema';
-import { readEvents, recordAppOpen } from '../src/modules/power-detection/power-monitor';
+import {
+  readEvents,
+  recordAppOpen,
+  setForegroundServiceEnabled,
+} from '../src/modules/power-detection/power-monitor';
 import { colors } from '../src/shared/theme/colors';
 import { formatCaracas } from '../src/shared/time/caracas';
 
@@ -23,6 +36,7 @@ export default function DebugScreen() {
   const [invalid, setInvalid] = useState(0);
   const [error, setError] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
+  const [fgsEnabled, setFgsEnabled] = useState(false);
 
   const refresh = useCallback(async () => {
     setLoading(true);
@@ -53,6 +67,22 @@ export default function DebugScreen() {
     }
   };
 
+  const toggleForegroundService = async (enabled: boolean) => {
+    try {
+      if (enabled) {
+        const result = await PermissionsAndroid.request('android.permission.POST_NOTIFICATIONS');
+        if (result !== PermissionsAndroid.RESULTS.GRANTED) {
+          setError('Sin permiso de notificaciones el servicio no puede mostrarse');
+          return;
+        }
+      }
+      await setForegroundServiceEnabled(enabled);
+      setFgsEnabled(enabled);
+    } catch (e) {
+      setError(e instanceof Error ? e.message : String(e));
+    }
+  };
+
   return (
     <View style={styles.container}>
       <Text style={styles.title}>Registrador</Text>
@@ -63,6 +93,10 @@ export default function DebugScreen() {
       <Pressable style={styles.button} onPress={recordNow} accessibilityRole="button">
         <Text style={styles.buttonText}>Registrar ahora</Text>
       </Pressable>
+      <View style={styles.switchRow}>
+        <Text style={styles.switchLabel}>Servicio en primer plano (D)</Text>
+        <Switch value={fgsEnabled} onValueChange={toggleForegroundService} />
+      </View>
       <FlatList
         data={events.slice(0, 50)}
         keyExtractor={(item) => item.id}
@@ -92,6 +126,13 @@ const styles = StyleSheet.create({
     marginVertical: 16,
   },
   buttonText: { color: colors.background, fontSize: 16, fontWeight: '700' },
+  switchRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    marginBottom: 8,
+  },
+  switchLabel: { color: colors.text, fontSize: 15 },
   row: {
     paddingVertical: 10,
     borderBottomWidth: StyleSheet.hairlineWidth,

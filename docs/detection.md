@@ -85,6 +85,10 @@ Redmi A5 (Xiaomi 25028RN03L, Android 15, SDK 35), 20 de octubre de 2026:
 | El latido de WorkManager corrió exactamente cada 15 min con la app en el bucket `active` | B es puntual en primer plano; falta medirlo en `rare` y con pantalla apagada |
 | Tras reiniciar, `BOOT_COMPLETED` y los datos de la app solo están disponibles **después del primer desbloqueo** | Un teléfono que se apaga en un corte y vuelve a encender solo no registra nada hasta que alguien lo desbloquee. Evaluar *direct boot* (`LOCKED_BOOT_COMPLETED` y almacenamiento protegido del dispositivo) |
 | MIUI apaga el "Inicio automático" **cada vez que se reinstala la app por adb**. Sin él no llega `BOOT_COMPLETED` y WorkManager no reagenda el latido hasta abrir la app | Después de cada `installDebug` hay que volver a activarlo. En Play no debería pasar al actualizar, pero hay que verificarlo en la prueba interna |
+| Con cargador de pared, **C vio el desenchufe y el enchufe 15 a 17 ms después de D** (14:32:13.156 frente a .171; 14:34:08.753 frente a .770), con la app en `active` e Inicio automático | C rinde como D sin servicio ni notificación. Falta repetirlo con pantalla apagada, en Doze, en el bucket `rare` y en el Samsung antes de D-012 |
+| En ambas lecturas `interactive` vino en `true` | No se sabe si fue por tener el teléfono en la mano o porque MIUI enciende la pantalla al desenchufar. Si es lo segundo, rompe la regla del modo UPS: medirlo con el teléfono boca abajo y sin tocarlo |
+| `adb shell dumpsys battery set …` no le llega al planificador de trabajos: después de simular, JobScheduler siguió creyendo que cargaba durante minutos | C solo se prueba con un cargador real. No simular la batería antes de una medición de C |
+| El permiso de notificaciones quedó denegado hasta aceptarlo en el diálogo del sistema; sin él, D no arranca | El onboarding tiene que pedirlo y comprobar el resultado antes de activar D |
 | El puerto USB de la Mac no carga el Xiaomi (`USB powered: false`) | Las pruebas por cable no se contaminan con "cargando"; `plugged: true` se simula con `adb shell dumpsys battery set ac 1` |
 
 ## Clasificador

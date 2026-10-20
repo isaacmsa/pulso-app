@@ -59,6 +59,7 @@ Los que dependen de algo que todavía no existe se confirman al crearlo. Si camb
 - **El `PendingIntent` de `registerNetworkCallback` dispara una sola vez** (cuando una red queda disponible) y el sistema lo libera: nunca avisa al perder el Wi-Fi. Por eso A se arma solo sin Wi-Fi y detecta el fin del corte. Cada pedido necesita su propia acción en el Intent: ConnectivityService compara con `filterEquals` e ignora el `requestCode`. Ver "Hallazgos" en `docs/detection.md`.
 - **MIUI apaga el "Inicio automático" en cada reinstalación por adb**: volver a activarlo después de cada `installDebug`, o el arranque y el latido no se reagendan.
 - **Después de reiniciar, nada corre hasta el primer desbloqueo** (almacenamiento cifrado).
+- **`dumpsys battery set/unplug` no le llega a JobScheduler**: no sirve para probar el mecanismo C y deja su estado contaminado unos minutos. Para C, cargador real y adb por Wi-Fi (`adb mdns services` encuentra el teléfono ya vinculado).
 - **Android 8+ no entrega `ACTION_POWER_DISCONNECTED` a receivers del manifiesto.** Solo los ven un trabajo con `setRequiresCharging` (C) o un receiver dinámico dentro de un servicio (D).
 - **Con el cable USB conectado el teléfono está cargando** y ninguna prueba de corte vale. Usar depuración inalámbrica.
 - **Xiaomi**: `adb install` exige "Instalar vía USB" (cuenta Mi y SIM), y la app muere sin "Inicio automático" y la batería en "Sin restricciones". **Samsung**: sacarla de "Apps en suspensión profunda".

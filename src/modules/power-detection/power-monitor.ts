@@ -55,3 +55,8 @@ export async function recordAppOpen(): Promise<NativeSnapshot> {
 export function arm(): Promise<void> {
   return PowerMonitor.arm();
 }
+
+/** Activa o apaga el servicio en primer plano (mecanismo D, experimental). */
+export function setForegroundServiceEnabled(enabled: boolean): Promise<void> {
+  return PowerMonitor.setForegroundServiceEnabled(enabled);
+}

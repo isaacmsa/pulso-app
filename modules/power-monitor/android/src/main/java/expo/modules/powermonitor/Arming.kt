@@ -11,15 +11,27 @@ object Arming {
   const val PREFS = "power_monitor"
 
   fun ensureArmed(context: Context) {
-    val prefs = context.getSharedPreferences(PREFS, Context.MODE_PRIVATE).edit()
+    val prefs = context.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
+    val editor = prefs.edit()
 
     // El mecanismo A se arma desde SnapshotRecorder cada vez que un snapshot ve el teléfono sin Wi-Fi.
 
     val heartbeat = PeriodicWorkRequestBuilder<HeartbeatWorker>(15, TimeUnit.MINUTES).build()
     WorkManager.getInstance(context)
       .enqueueUniquePeriodicWork("heartbeat", ExistingPeriodicWorkPolicy.KEEP, heartbeat)
-    prefs.putBoolean("armed.heartbeat", true)
+    editor.putBoolean("armed.heartbeat", true)
 
-    prefs.apply()
+    ChargingJob.schedule(context)
+    editor.putBoolean("armed.chargingJob", true)
+
+    editor.apply()
+
+    if (prefs.getBoolean(PowerWatchService.PREF_ENABLED, false)) PowerWatchService.start(context)
+  }
+
+  fun setForegroundServiceEnabled(context: Context, enabled: Boolean) {
+    context.getSharedPreferences(PREFS, Context.MODE_PRIVATE).edit()
+      .putBoolean(PowerWatchService.PREF_ENABLED, enabled).apply()
+    if (enabled) PowerWatchService.start(context) else PowerWatchService.stop(context)
   }
 }
