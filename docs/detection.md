@@ -47,8 +47,7 @@ Durante las semanas 1 a 4, el build "registrador" corre los cuatro mecanismos a 
 | Teléfono | Rol | Configuración |
 | --- | --- | --- |
 | Xiaomi de respaldo | Principal, siempre enchufado en casa | Con inicio automático y batería "Sin restricciones" (lo que hará un usuario guiado) |
-| Samsung | Segundo hogar o la misma casa | De fábrica, sin tocar ajustes (lo que hará un usuario que no lee) |
-| 2 o 3 teléfonos de la familia | Más cortes y más marcas | Como quieran |
+| 2 o 3 teléfonos de la familia, idealmente uno que no sea Xiaomi (Samsung, Tecno, Infinix) | Otros hogares | Uno de fábrica, sin tocar ajustes (lo que hará un usuario que no lee) |
 
 **Verdad de referencia:** los botones "Se fue la luz ahora" y "Volvió" de la pantalla de registro, que guardan eventos `report`. Si D está activo, su hora sirve para afinar.
 

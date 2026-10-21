@@ -57,7 +57,7 @@ Objetivo: tener datos reales de cortes desde la primera semana y un clasificador
 - [x] [app] Mecanismos A, B, arranque y seguimiento de transición (3 h)
 - [x] [app] Mecanismos C y D, con interruptor en la pantalla de registro (2,5 h)
 - [x] [app] Huella de la red de casa, diagnóstico, botones de verdad y exportar (2 h)
-- [ ] [app] APK release en el Xiaomi, el Samsung y 1 o 2 teléfonos de la familia (1 h)
+- [ ] [app] APK release en el Xiaomi (hecho) y en 2 o 3 teléfonos de la familia, idealmente uno que no sea Xiaomi (1 h)
 - [ ] [api] Repo, contrato de eventos, clasificador (base, UPS, reportes, confirmaciones), resumen por día y `pnpm spike:analyze` (8,5 h)
 - [ ] Cuenta de Play Console pagada y en verificación
 - [ ] Google Group creado y primer mensaje de reclutamiento
@@ -91,7 +91,7 @@ Objetivo: tener datos reales de cortes desde la primera semana y un clasificador
 - [ ] [app] Play: app creada, prueba interna, ficha, capturas y formularios (1,5 h)
 - [ ] **Prueba cerrada enviada a revisión** (18 o 19 nov)
 
-**Lista cuando:** la prueba cerrada está en revisión y la prueba interna corre en el Xiaomi y el Samsung contra producción.
+**Lista cuando:** la prueba cerrada está en revisión y la prueba interna corre en el Xiaomi y en un segundo Android contra producción.
 
 ## Fase 3 · Familia, push y UPS (S5, segunda mitad, y S6, ~13 h)
 
@@ -102,7 +102,7 @@ Objetivo: tener datos reales de cortes desde la primera semana y un clasificador
 - [ ] [app] Familia: compartir el enlace por WhatsApp, seguir con código, casas que sigo, dejar de seguir, regenerar código (2,5 h)
 - [ ] [app] Actualización 1 publicada en la pista cerrada y anunciada a los testers (1 h)
 
-**Lista cuando:** un corte simulado en el Xiaomi llega como push al Samsung que sigue la casa, y `/c/:code` muestra "Se fue la luz a las…".
+**Lista cuando:** un corte simulado en el Xiaomi llega como push a un segundo Android que sigue la casa (de la familia, o el emulador de Android Studio con Google Play), y `/c/:code` muestra "Se fue la luz a las…".
 
 ## Fase 4 · Robustez (S6 y S7, ~11,25 h)
 
@@ -113,7 +113,7 @@ Objetivo: tener datos reales de cortes desde la primera semana y un clasificador
 - [ ] [app] Estados vacíos, de error y sin red; textos y accesibilidad básica (1,5 h)
 - [ ] [app] Actualización 2 publicada (1 h)
 
-**Lista cuando:** apagar el Wi-Fi y los datos del Xiaomi durante 45 minutos deja la casa en "sin noticias" en el Samsung, y volver a conectarlos la regresa al estado correcto.
+**Lista cuando:** apagar el Wi-Fi y los datos del Xiaomi durante 45 minutos deja la casa en "sin noticias" en el segundo Android, y volver a conectarlos la regresa al estado correcto.
 
 ## Fase 5 · Producción (S7 a S9)
 
