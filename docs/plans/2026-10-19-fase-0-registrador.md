@@ -279,7 +279,7 @@ it('falla con bad_json si el nativo devuelve algo que no es JSON', async () => {
 - Modificar: `docs/roadmap.md` (marcar la fase 0)
 
 - [ ] **Paso 1:** `pnpm android:release` con el Xiaomi conectado. Esperado: un APK en `android/app/build/outputs/apk/release/app-release.apk`, firmado con la clave de debug (sirve para instalar a mano, no para Play).
-- [ ] **Paso 2:** Mandar el APK a 2 o 3 familiares con `docs/registrador.md`, idealmente al menos uno que no sea Xiaomi. (Isaac no tiene Samsung: 2026-10-20.)
+- [ ] **Paso 2:** Mandar el APK a 2 o 3 familiares con `docs/registrador.md`, incluido el Samsung de la familia, que se deja con los ajustes de batería de fábrica.
 - [ ] **Paso 3: Verificar.** En cada teléfono, después de 1 hora, la pantalla de registro muestra al menos 4 `heartbeat`, todos los mecanismos armados y 0 inválidos.
 - [ ] **Paso 4:** Con el primer exporte real del Xiaomi, `pnpm spike:analyze <archivo>` en `pulso-api`. Copiarlo a `pulso-api/test/fixtures/2026-xx-xx-xiaomi.json` solo si contiene un corte real.
 - [ ] **Paso 5:** Commit `chore: registrador en teléfonos de prueba y fase 0 cerrada`

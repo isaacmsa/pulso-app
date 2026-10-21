@@ -57,7 +57,7 @@ Objetivo: tener datos reales de cortes desde la primera semana y un clasificador
 - [x] [app] Mecanismos A, B, arranque y seguimiento de transición (3 h)
 - [x] [app] Mecanismos C y D, con interruptor en la pantalla de registro (2,5 h)
 - [x] [app] Huella de la red de casa, diagnóstico, botones de verdad y exportar (2 h)
-- [ ] [app] APK release en el Xiaomi (hecho) y en 2 o 3 teléfonos de la familia, idealmente uno que no sea Xiaomi (1 h)
+- [ ] [app] APK release en el Xiaomi (hecho), el Samsung de la familia y 1 o 2 teléfonos más (1 h)
 - [ ] [api] Repo, contrato de eventos, clasificador (base, UPS, reportes, confirmaciones), resumen por día y `pnpm spike:analyze` (8,5 h)
 - [ ] Cuenta de Play Console pagada y en verificación
 - [ ] Google Group creado y primer mensaje de reclutamiento
