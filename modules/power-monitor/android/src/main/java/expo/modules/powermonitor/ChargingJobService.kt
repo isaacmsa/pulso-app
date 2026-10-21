@@ -36,7 +36,9 @@ class ChargingJobService : JobService() {
     val reason = if (Build.VERSION.SDK_INT >= 31) params.stopReason else -1
     Log.i(SnapshotRecorder.TAG, "charging_job ${params.jobId} detenido, motivo=$reason")
     thread { SnapshotRecorder.record(applicationContext, "charging_job") }
-    return true
+    // Un trabajo nuevo con el otro id nace sin fallos acumulados: arranca en cuanto vuelve la carga.
+    ChargingJob.schedule(applicationContext, ChargingJob.nextId(params.jobId))
+    return ChargingJob.RETRY_ON_STOP
   }
 
   private companion object {
@@ -48,6 +50,9 @@ object ChargingJob {
   // Ids altos para no chocar con los que WorkManager reparte desde 0 en el mismo JobScheduler.
   const val PRIMARY_ID = 0x50554C01
   const val SECONDARY_ID = 0x50554C02
+
+  /** Nunca usar el reintento del sistema: su backoff exponencial crece con cada corte. */
+  const val RETRY_ON_STOP = false
 
   fun nextId(current: Int): Int = if (current == PRIMARY_ID) SECONDARY_ID else PRIMARY_ID
 

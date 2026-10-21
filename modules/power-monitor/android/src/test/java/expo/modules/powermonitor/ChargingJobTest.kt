@@ -20,4 +20,11 @@ class ChargingJobTest {
     assertTrue(ChargingJob.PRIMARY_ID > 1_000_000_000)
     assertTrue(ChargingJob.SECONDARY_ID > 1_000_000_000)
   }
+
+  // Devolver true en onStopJob usa el backoff exponencial del sistema (30 s que se duplican con
+  // cada parada): tras unos cuantos cortes, C tardaba 16 min o más en volver a arrancar.
+  @Test
+  fun `al detenerse no pide reintento con backoff`() {
+    assertEquals(false, ChargingJob.RETRY_ON_STOP)
+  }
 }
