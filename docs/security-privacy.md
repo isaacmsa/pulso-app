@@ -28,7 +28,7 @@ No se guardan nombre, teléfono, correo, ubicación, SSID, BSSID ni contactos. L
 | Robo del token del teléfono | El token vive en la bóveda del módulo nativo (Android Keystore). El servidor guarda solo el SHA-256. El token se devuelve una sola vez. Nunca aparece en logs ni en Sentry | Un teléfono con root puede extraerlo |
 | Enumerar códigos de casas para ver quién está sin luz | 8 caracteres de un alfabeto de 31 (≈ 8,5 × 10¹¹ combinaciones), límite por IP, regeneración desde ajustes | Quien ya tiene el código ve el estado hasta que se regenere |
 | Lotes falsos para inventar cortes | Token por dispositivo y límite por dispositivo | Afecta el historial propio y las alertas de quien sigue esa casa |
-| Registros masivos de dispositivos | 30 por hora por IP; se borran a los 7 días los que nunca mandaron nada | Con CGNAT el límite tiene que ser holgado; Play Integrity queda para v1.1 si hace falta |
+| Registros masivos de dispositivos | 5 por minuto por IP (pulso-api A-014); se borran a los 7 días los que nunca mandaron nada | Con CGNAT el límite tiene que ser holgado; Play Integrity queda para v1.1 si hace falta |
 | Secretos en el bundle | Nada secreto en `EXPO_PUBLIC_*` ni en git; los secretos del Worker con `wrangler secret put` y la cadena de conexión solo en Hyperdrive | |
 | Lectura de la base por la API REST de Supabase | Tablas en el esquema `app` (no expuesto), RLS activado sin políticas, rol propio `pulso_api`; las claves `anon` y `service_role` no se usan | Si alguien obtuviera la contraseña de la base, leería todo: vive solo en Hyperdrive y en los secretos de GitHub, y se rota si hay sospecha |
 | Datos personales en Sentry | `sendDefaultPii: false` y se filtran `Authorization` y `token` en `beforeSend` y en los breadcrumbs | |
