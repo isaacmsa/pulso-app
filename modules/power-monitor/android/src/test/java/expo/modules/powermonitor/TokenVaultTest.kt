@@ -9,9 +9,16 @@ import org.junit.Test
 
 private class MemoryStore : KeyValueStore {
   val values = mutableMapOf<String, String>()
+  /** Cuántas escrituras atómicas (ediciones) recibió el almacén. */
+  var writes = 0
   override fun get(key: String): String? = values[key]
-  override fun put(key: String, value: String) { values[key] = value }
-  override fun remove(key: String) { values.remove(key) }
+  override fun put(key: String, value: String) = write(mapOf(key to value), emptySet())
+  override fun remove(key: String) = write(emptyMap(), setOf(key))
+  override fun write(puts: Map<String, String>, removes: Set<String>) {
+    writes += 1
+    values.putAll(puts)
+    removes.forEach { values.remove(it) }
+  }
 }
 
 // Cifrador de mentira: reversible, con un prefijo para detectar datos que no son suyos.
@@ -72,16 +79,36 @@ class TokenVaultTest {
   fun `markInvalid marca el token y guardar uno nuevo lo limpia`() {
     assertFalse(vault.isInvalid())
     vault.store("tok_viejo")
-    vault.markInvalid()
+    vault.markInvalid("tok_viejo")
     assertTrue(vault.isInvalid())
     vault.store("tok_nuevo")
     assertFalse(vault.isInvalid())
   }
 
   @Test
+  fun `markInvalid con un token viejo no marca el token nuevo`() {
+    vault.store("tok_viejo")
+    vault.store("tok_nuevo")
+    vault.markInvalid("tok_viejo")
+    assertFalse(vault.isInvalid())
+    assertEquals("tok_nuevo", vault.read())
+  }
+
+  @Test
+  fun `store deja token y marca consistentes en una sola escritura`() {
+    vault.store("tok_viejo")
+    vault.markInvalid("tok_viejo")
+    val before = store.writes
+    vault.store("tok_nuevo")
+    assertEquals(1, store.writes - before)
+    assertEquals("tok_nuevo", vault.read())
+    assertFalse(vault.isInvalid())
+  }
+
+  @Test
   fun `clear tambien limpia la marca de invalido`() {
     vault.store("tok_abc123")
-    vault.markInvalid()
+    vault.markInvalid("tok_abc123")
     vault.clear()
     assertFalse(vault.isInvalid())
   }

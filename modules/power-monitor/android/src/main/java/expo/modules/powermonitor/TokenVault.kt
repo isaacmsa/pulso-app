@@ -15,12 +15,20 @@ interface KeyValueStore {
   fun get(key: String): String?
   fun put(key: String, value: String)
   fun remove(key: String)
+  /** Aplica varias escrituras en una sola edición atómica: quien lea ve todo o nada. */
+  fun write(puts: Map<String, String>, removes: Set<String> = emptySet())
 }
 
 class PrefsStore(private val prefs: SharedPreferences) : KeyValueStore {
   override fun get(key: String): String? = prefs.getString(key, null)
-  override fun put(key: String, value: String) = prefs.edit().putString(key, value).apply()
-  override fun remove(key: String) = prefs.edit().remove(key).apply()
+  override fun put(key: String, value: String) = write(mapOf(key to value))
+  override fun remove(key: String) = write(emptyMap(), setOf(key))
+  override fun write(puts: Map<String, String>, removes: Set<String>) {
+    val editor = prefs.edit()
+    removes.forEach { editor.remove(it) }
+    puts.forEach { (key, value) -> editor.putString(key, value) }
+    editor.apply()
+  }
 }
 
 /** Cifra y descifra bytes. `decrypt` lanza si los datos están corruptos o la clave no se puede usar. */
@@ -29,15 +37,23 @@ interface TokenCipher {
   fun decrypt(data: ByteArray): ByteArray
 }
 
+/**
+ * Un solo candado para toda la bóveda: JS (HandlerThread de Expo) y el UploadWorker (hilo de WorkManager)
+ * la usan a la vez, y cada llamada crea su propio `TokenVaultCore`.
+ */
+internal object VaultLock
+
 /** AES-256-GCM con una clave del Android Keystore que nunca sale del hardware. Formato: IV (12 bytes) + texto cifrado. */
 class KeystoreCipher(private val alias: String = TokenVault.KEY_ALIAS) : TokenCipher {
   override fun encrypt(plain: ByteArray): ByteArray {
-    val key = try {
-      getOrCreateKey()
-    } catch (_: Exception) {
-      // Clave ilegible o inservible (por ejemplo, restaurada en otro teléfono): se descarta y se crea una nueva.
-      keyStore().deleteEntry(alias)
-      getOrCreateKey()
+    val key = synchronized(VaultLock) {
+      try {
+        getOrCreateKey()
+      } catch (_: Exception) {
+        // Clave ilegible o inservible (por ejemplo, restaurada en otro teléfono): se descarta y se crea una nueva.
+        keyStore().deleteEntry(alias)
+        getOrCreateKey()
+      }
     }
     val cipher = Cipher.getInstance(TRANSFORMATION).apply { init(Cipher.ENCRYPT_MODE, key) }
     return cipher.iv + cipher.doFinal(plain)
@@ -76,13 +92,16 @@ class KeystoreCipher(private val alias: String = TokenVault.KEY_ALIAS) : TokenCi
 
 /** Lógica de la bóveda, sin Android: el cifrador y el almacén se inyectan. */
 class TokenVaultCore(private val cipher: TokenCipher, private val store: KeyValueStore) {
-  fun store(token: String) {
-    store.put(KEY_TOKEN, cipher.encrypt(token.toByteArray(Charsets.UTF_8)).toHex())
-    store.remove(KEY_INVALID)
+  fun store(token: String) = synchronized(VaultLock) {
+    // Token nuevo y marca fuera en una sola edición: nadie ve el token nuevo con la marca vieja.
+    val encrypted = cipher.encrypt(token.toByteArray(Charsets.UTF_8)).toHex()
+    store.write(mapOf(KEY_TOKEN to encrypted), setOf(KEY_INVALID))
   }
 
   /** null si no hay token o si no se puede descifrar: el onboarding vuelve a registrar. Nunca lanza ni registra el token. */
-  fun read(): String? {
+  fun read(): String? = synchronized(VaultLock) { readLocked() }
+
+  private fun readLocked(): String? {
     val stored = store.get(KEY_TOKEN) ?: return null
     return try {
       String(cipher.decrypt(stored.fromHex()), Charsets.UTF_8)
@@ -91,15 +110,19 @@ class TokenVaultCore(private val cipher: TokenCipher, private val store: KeyValu
     }
   }
 
-  fun clear() {
-    store.remove(KEY_TOKEN)
-    store.remove(KEY_INVALID)
+  fun clear() = synchronized(VaultLock) {
+    store.write(emptyMap(), setOf(KEY_TOKEN, KEY_INVALID))
   }
 
-  /** El servidor rechazó el token (401): la app debe volver a registrar al teléfono. */
-  fun markInvalid() = store.put(KEY_INVALID, "1")
+  /**
+   * El servidor rechazó `failedToken` (401). Solo se marca si ese sigue siendo el token guardado: si JS ya
+   * registró uno nuevo, el rechazo del viejo no debe invalidarlo.
+   */
+  fun markInvalid(failedToken: String) = synchronized(VaultLock) {
+    if (readLocked() == failedToken) store.put(KEY_INVALID, "1")
+  }
 
-  fun isInvalid(): Boolean = store.get(KEY_INVALID) == "1"
+  fun isInvalid(): Boolean = synchronized(VaultLock) { store.get(KEY_INVALID) == "1" }
 
   companion object {
     const val KEY_TOKEN = "device_token"
@@ -127,6 +150,6 @@ object TokenVault {
   fun store(context: Context, token: String) = core(context).store(token)
   fun read(context: Context): String? = core(context).read()
   fun clear(context: Context) = core(context).clear()
-  fun markInvalid(context: Context) = core(context).markInvalid()
+  fun markInvalid(context: Context, failedToken: String) = core(context).markInvalid(failedToken)
   fun isInvalid(context: Context): Boolean = core(context).isInvalid()
 }
