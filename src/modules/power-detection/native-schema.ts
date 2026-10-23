@@ -1,65 +1,26 @@
 import { z } from 'zod';
+import {
+  zConfirmationEvent,
+  zDeviceEvent,
+  zDiagnostics,
+  zReportEvent,
+  zSnapshotEvent,
+} from '../../shared/api/generated/zod.gen';
 
-// Contrato puente Kotlin → JS. Mismos campos que `deviceEventSchema` de pulso-api/docs/api.md.
-// En la fase 2a se reemplaza por el esquema generado desde openapi.json.
-
-const epochMs = z.number().int().positive();
-
-export const nativeSnapshotSchema = z.object({
-  kind: z.literal('snapshot'),
-  id: z.uuid(),
-  at: epochMs,
-  source: z.enum([
-    'network_callback',
-    'heartbeat',
-    'charging_job',
-    'power_receiver',
-    'transition_check',
-    'app_open',
-    'boot',
-  ]),
-  plugged: z.boolean(),
-  onWifi: z.boolean(),
-  homeWifi: z.boolean().nullable(),
-  internet: z.boolean().nullable(),
-  interactive: z.boolean().nullable(),
-  batteryPct: z.number().int().min(0).max(100).nullable(),
-});
-
-export const nativeReportSchema = z.object({
-  kind: z.literal('report'),
-  id: z.uuid(),
-  at: epochMs,
-  value: z.enum(['hay_luz', 'fluctuando', 'sin_luz']),
-});
-
-export const nativeConfirmationSchema = z.object({
-  kind: z.literal('confirmation'),
-  id: z.uuid(),
-  at: epochMs,
-  outageStart: epochMs,
-  answer: z.boolean(),
-});
-
-export const nativeEventSchema = z.discriminatedUnion('kind', [
-  nativeSnapshotSchema,
-  nativeReportSchema,
-  nativeConfirmationSchema,
-]);
+// Contrato puente Kotlin → JS. Los eventos son los mismos que viajan a la API, así que se validan con el
+// esquema generado desde openapi.json (D-023); estos nombres quedan para no tocar a quien los usa.
+export const nativeSnapshotSchema = zSnapshotEvent;
+export const nativeReportSchema = zReportEvent;
+export const nativeConfirmationSchema = zConfirmationEvent;
+export const nativeEventSchema = zDeviceEvent;
 
 export type NativeSnapshot = z.infer<typeof nativeSnapshotSchema>;
 export type NativeEvent = z.infer<typeof nativeEventSchema>;
 
-// Mismos campos que `nativeDiagnosticsSchema` de pulso-api/src/domain/spike/schema.ts.
-export const nativeDiagnosticsSchema = z.object({
-  appVersion: z.string(),
-  manufacturer: z.string(),
-  model: z.string(),
-  sdkInt: z.number().int(),
-  standbyBucket: z.number().int().nullable(),
-  ignoringBatteryOptimizations: z.boolean(),
-  pendingEvents: z.number().int().min(0),
-  storedEvents: z.number().int().min(0),
+// El diagnóstico del lote más el estado del registrador, que solo ve la pantalla de registro y el exporte
+// (`nativeDiagnosticsSchema` de pulso-api/src/domain/spike/schema.ts).
+export const nativeDiagnosticsSchema = zDiagnostics.extend({
+  storedEvents: z.int().gte(0),
   homeNetworkLearned: z.boolean(),
   armed: z.object({
     networkCallback: z.boolean(),

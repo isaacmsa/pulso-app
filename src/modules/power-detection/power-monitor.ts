@@ -1,5 +1,7 @@
 import * as Sharing from 'expo-sharing';
 import PowerMonitor from '../../../modules/power-monitor';
+import type { HomeStatus } from '../../shared/api/generated/types.gen';
+import { zHomeStatus } from '../../shared/api/generated/zod.gen';
 import {
   type NativeDiagnostics,
   type NativeEvent,
@@ -112,4 +114,21 @@ export function isTokenInvalid(): Promise<boolean> {
 /** Le dice al nativo dónde está la API, para la subida en segundo plano. */
 export function configureApi(apiUrl: string): Promise<void> {
   return PowerMonitor.configureApi(apiUrl);
+}
+
+/**
+ * El último estado de la casa que dio el servidor a la subida en segundo plano (D-016, D-027).
+ * null si no hay, o si lo guardado no cumple `zHomeStatus`.
+ */
+export async function getLastServerStatus(): Promise<HomeStatus | null> {
+  const raw = await PowerMonitor.getLastServerStatus();
+  if (raw == null) return null;
+  let value: unknown;
+  try {
+    value = JSON.parse(raw);
+  } catch {
+    return null;
+  }
+  const parsed = zHomeStatus.safeParse(value);
+  return parsed.success ? parsed.data : null;
 }

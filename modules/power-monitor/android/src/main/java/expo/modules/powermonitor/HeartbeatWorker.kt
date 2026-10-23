@@ -4,10 +4,11 @@ import android.content.Context
 import androidx.work.Worker
 import androidx.work.WorkerParameters
 
-/** Mecanismo B: latido cada 15 minutos (el mínimo de WorkManager). */
+/** Mecanismo B: latido cada 15 minutos (el mínimo de WorkManager). Siempre encola la subida: el latido viaja aunque el lote esté vacío. */
 class HeartbeatWorker(context: Context, params: WorkerParameters) : Worker(context, params) {
   override fun doWork(): Result {
     SnapshotRecorder.record(applicationContext, "heartbeat")
+    UploadWorker.enqueue(applicationContext)
     return Result.success()
   }
 }

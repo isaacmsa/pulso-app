@@ -6,9 +6,12 @@ import android.database.DatabaseUtils
 import android.database.sqlite.SQLiteDatabase
 import android.database.sqlite.SQLiteOpenHelper
 
-/** Eventos guardados en el teléfono (14 días). Es la fuente del estado crudo y de la subida. */
+/**
+ * Eventos guardados en el teléfono (14 días). Es la fuente del estado crudo y de la subida.
+ * La columna `uploaded` existe desde la versión 1 del esquema (fase 0), así que no hace falta migrar.
+ */
 class EventStore private constructor(context: Context) :
-  SQLiteOpenHelper(context.applicationContext, "power_monitor.db", null, 1) {
+  SQLiteOpenHelper(context.applicationContext, "power_monitor.db", null, 1), UploadStore {
 
   override fun onCreate(db: SQLiteDatabase) {
     db.execSQL(
@@ -42,7 +45,39 @@ class EventStore private constructor(context: Context) :
 
   fun count(): Int = DatabaseUtils.queryNumEntries(readableDatabase, "events").toInt()
 
-  fun pendingCount(): Int = DatabaseUtils.queryNumEntries(readableDatabase, "events", "uploaded = 0").toInt()
+  override fun pendingCount(): Int = DatabaseUtils.queryNumEntries(readableDatabase, "events", "uploaded = 0").toInt()
+
+  override fun pending(limit: Int): List<Event> =
+    readableDatabase.rawQuery(
+      "SELECT id, at, kind, json FROM events WHERE uploaded = 0 ORDER BY at ASC, id ASC LIMIT ?",
+      arrayOf(limit.toString()),
+    ).use { c -> buildList { while (c.moveToNext()) add(Event(c.getString(0), c.getLong(1), c.getString(2), c.getString(3))) } }
+
+  override fun lastUploadedSnapshotJson(): String? =
+    readableDatabase.rawQuery(
+      "SELECT json FROM events WHERE kind = 'snapshot' AND uploaded = 1 ORDER BY at DESC, id DESC LIMIT 1",
+      null,
+    ).use { c -> if (c.moveToFirst()) c.getString(0) else null }
+
+  /** Marca los ids en una sola transacción: o quedan todos subidos o ninguno. */
+  @Synchronized
+  override fun markUploaded(ids: Collection<String>) {
+    if (ids.isEmpty()) return
+    val db = writableDatabase
+    db.beginTransaction()
+    try {
+      db.compileStatement("UPDATE events SET uploaded = 1 WHERE id = ?").use { statement ->
+        for (id in ids) {
+          statement.bindString(1, id)
+          statement.executeUpdateDelete()
+          statement.clearBindings()
+        }
+      }
+      db.setTransactionSuccessful()
+    } finally {
+      db.endTransaction()
+    }
+  }
 
   fun lastSnapshotJson(): String? =
     readableDatabase.rawQuery(

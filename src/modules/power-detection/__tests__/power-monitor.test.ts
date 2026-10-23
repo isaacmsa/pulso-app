@@ -2,6 +2,7 @@ import PowerMonitor from '../../../../modules/power-monitor';
 import { nativeDiagnosticsSchema } from '../native-schema';
 import {
   configureApi,
+  getLastServerStatus,
   getToken,
   isTokenInvalid,
   PowerMonitorError,
@@ -18,6 +19,7 @@ jest.mock('../../../../modules/power-monitor', () => ({
     getToken: jest.fn(),
     isTokenInvalid: jest.fn(),
     configureApi: jest.fn(),
+    getLastServerStatus: jest.fn(),
   },
 }));
 const native = PowerMonitor as jest.Mocked<typeof PowerMonitor>;
@@ -85,4 +87,30 @@ it('storeToken, isTokenInvalid y configureApi pasan al nativo', async () => {
   await configureApi('https://api.example.test');
   expect(native.storeToken).toHaveBeenCalledWith('tok_abc');
   expect(native.configureApi).toHaveBeenCalledWith('https://api.example.test');
+});
+
+describe('getLastServerStatus', () => {
+  const status = {
+    state: 'sin_luz',
+    since: 1_793_570_400_000,
+    alias: 'Casa',
+    openOutageStart: 1_793_570_400_000,
+  };
+
+  it('devuelve null si el nativo no tiene estado guardado', async () => {
+    native.getLastServerStatus.mockResolvedValue(null);
+    await expect(getLastServerStatus()).resolves.toBeNull();
+  });
+
+  it('devuelve el estado validado con zHomeStatus', async () => {
+    native.getLastServerStatus.mockResolvedValue(JSON.stringify({ ...status, nuevo: 1 }));
+    await expect(getLastServerStatus()).resolves.toEqual(status);
+  });
+
+  it('devuelve null si el estado no cumple el esquema o no es JSON', async () => {
+    native.getLastServerStatus.mockResolvedValue(JSON.stringify({ ...status, state: 'nuevo' }));
+    await expect(getLastServerStatus()).resolves.toBeNull();
+    native.getLastServerStatus.mockResolvedValue('no-json');
+    await expect(getLastServerStatus()).resolves.toBeNull();
+  });
 });

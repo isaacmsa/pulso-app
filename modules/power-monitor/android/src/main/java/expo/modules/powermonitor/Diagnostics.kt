@@ -11,9 +11,12 @@ import org.json.JSONObject
  * `armed` es el estado real de cada mecanismo en este momento, no lo que se pidió al armar.
  */
 object Diagnostics {
-  fun json(context: Context): JSONObject {
+  /**
+   * Solo los campos de `diagnosticsSchema` (pulso-api/docs/api.md), los que viajan en cada lote.
+   * `pendingEvents` son los eventos que todavía no se subieron.
+   */
+  fun contract(context: Context): JSONObject {
     val store = EventStore.get(context)
-    val prefs = context.getSharedPreferences(Arming.PREFS, Context.MODE_PRIVATE)
     val standbyBucket = if (Build.VERSION.SDK_INT >= 28) {
       context.getSystemService(UsageStatsManager::class.java).appStandbyBucket
     } else {
@@ -33,6 +36,13 @@ object Diagnostics {
         context.getSystemService(PowerManager::class.java).isIgnoringBatteryOptimizations(context.packageName),
       )
       .put("pendingEvents", store.pendingCount())
+  }
+
+  /** El diagnóstico completo de la pantalla de registro y del exporte: el del lote más el estado del registrador. */
+  fun json(context: Context): JSONObject {
+    val store = EventStore.get(context)
+    val prefs = context.getSharedPreferences(Arming.PREFS, Context.MODE_PRIVATE)
+    return contract(context)
       .put("storedEvents", store.count())
       .put("homeNetworkLearned", HomeNetwork(context).isLearned())
       .put(

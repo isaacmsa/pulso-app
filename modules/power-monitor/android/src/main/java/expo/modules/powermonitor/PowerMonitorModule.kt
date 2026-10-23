@@ -33,6 +33,7 @@ class PowerMonitorModule : Module() {
       val report = Report(UuidV7.generate(now), now, value)
       val json = EventJson.report(report)
       EventStore.get(context).insert(report.id, report.at, "report", json)
+      UploadWorker.enqueue(context)
       json
     }
 
@@ -67,6 +68,11 @@ class PowerMonitorModule : Module() {
 
     AsyncFunction("isTokenInvalid") {
       TokenVault.isInvalid(context)
+    }
+
+    // El último HomeStatus que devolvió la subida, como JSON (o null). JS lo valida con zHomeStatus.
+    AsyncFunction("getLastServerStatus") {
+      LastServerStatus.read(context)
     }
 
     // La versión de la app sale del paquete instalado, la misma que reporta el diagnóstico.

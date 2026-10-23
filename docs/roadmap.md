@@ -74,7 +74,7 @@ Objetivo: tener datos reales de cortes desde la primera semana y un clasificador
 ## Fase 2a · Subida, decisión y onboarding (S4, ~10 h)
 
 - [ ] [app] Registro del dispositivo al primer arranque y token a la bóveda nativa (Keystore) (1,5 h)
-- [ ] [app] `UploadWorker` en Kotlin: red requerida, backoff, jitter, solo cambios de estado, latido vacío; el esquema nativo se reemplaza por el generado (1,5 h)
+- [x] [app] `UploadWorker` en Kotlin: red requerida, backoff, jitter, solo cambios de estado, latido vacío; el esquema nativo se reemplaza por el generado (1,5 h)
 - [ ] [app] **D-012** con 5 o más cortes reales en 2 o más teléfonos; borrar los mecanismos descartados del código y del manifiesto (1,5 h)
 - [ ] [app] Onboarding: vigilar o solo seguir, permiso de notificaciones, guía de batería por fabricante, aprender la red de casa (3 h)
 - [ ] [api] `GET /v1/homes/me/outages`, `/privacidad`, `/borrar-datos`, producción y respaldo nocturno (2,5 h)
