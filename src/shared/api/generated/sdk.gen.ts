@@ -4,8 +4,8 @@ import * as z from 'zod';
 
 import type { Client, ClientMeta, Options as Options2, RequestResult, TDataShape } from './client';
 import { client } from './client.gen';
-import type { CreateHomeData, CreateHomeErrors, CreateHomeResponses, DeleteDeviceData, DeleteDeviceErrors, DeleteDeviceResponses, GetHealthData, GetHealthErrors, GetHealthResponses, GetHomeStatusData, GetHomeStatusErrors, GetHomeStatusResponses, IngestEventsData, IngestEventsErrors, IngestEventsResponses, RegisterDeviceData, RegisterDeviceErrors, RegisterDeviceResponses, UpdateDeviceData, UpdateDeviceErrors, UpdateDeviceResponses, UpdateHomeData, UpdateHomeErrors, UpdateHomeResponses } from './types.gen';
-import { zCreateHomeBody, zCreateHomeResponse2, zDeleteDeviceResponse, zGetHealthResponse, zGetHomeStatusResponse, zIngestEventsBody, zIngestEventsResponse2, zRegisterDeviceBody, zRegisterDeviceResponse2, zUpdateDeviceBody, zUpdateDeviceResponse, zUpdateHomeBody, zUpdateHomeResponse } from './zod.gen';
+import type { CreateHomeData, CreateHomeErrors, CreateHomeResponses, DeleteDeviceData, DeleteDeviceErrors, DeleteDeviceResponses, FollowHomeData, FollowHomeErrors, FollowHomeResponses, GetHealthData, GetHealthErrors, GetHealthResponses, GetHomeStatusData, GetHomeStatusErrors, GetHomeStatusResponses, GetOutagesData, GetOutagesErrors, GetOutagesResponses, IngestEventsData, IngestEventsErrors, IngestEventsResponses, ListFollowsData, ListFollowsErrors, ListFollowsResponses, RegenerateShareCodeData, RegenerateShareCodeErrors, RegenerateShareCodeResponses, RegisterDeviceData, RegisterDeviceErrors, RegisterDeviceResponses, UnfollowHomeData, UnfollowHomeErrors, UnfollowHomeResponses, UpdateDeviceData, UpdateDeviceErrors, UpdateDeviceResponses, UpdateHomeData, UpdateHomeErrors, UpdateHomeResponses } from './types.gen';
+import { zCreateHomeBody, zCreateHomeResponse2, zDeleteDeviceResponse, zFollowHomeBody, zFollowHomeResponse, zGetHealthResponse, zGetHomeStatusResponse, zGetOutagesQuery, zGetOutagesResponse, zIngestEventsBody, zIngestEventsResponse2, zListFollowsResponse, zRegenerateShareCodeResponse, zRegisterDeviceBody, zRegisterDeviceResponse2, zUnfollowHomePath, zUnfollowHomeResponse, zUpdateDeviceBody, zUpdateDeviceResponse, zUpdateHomeBody, zUpdateHomeResponse } from './zod.gen';
 
 export type Options<TData extends TDataShape = TDataShape, ThrowOnError extends boolean = boolean, TResponse = unknown> = Options2<TData, ThrowOnError, TResponse> & {
     /**
@@ -139,6 +139,91 @@ export const getHomeStatus = <ThrowOnError extends boolean = false>(options?: Op
     responseValidator: async (data) => await zGetHomeStatusResponse.parseAsync(data),
     security: [{ scheme: 'bearer', type: 'http' }],
     url: '/v1/homes/me/status',
+    ...options
+});
+
+/**
+ * Regenerar el código de mi casa: el viejo deja de servir y se quita a los seguidores
+ *
+ * El código viejo deja de servir y se borran todos los seguidores de la casa (A-041): tienen que volver a seguirla con el código nuevo. No hay aviso a quien se quita.
+ */
+export const regenerateShareCode = <ThrowOnError extends boolean = false>(options?: Options<RegenerateShareCodeData, ThrowOnError>): RequestResult<RegenerateShareCodeResponses, RegenerateShareCodeErrors, ThrowOnError> => (options?.client ?? client).post<RegenerateShareCodeResponses, RegenerateShareCodeErrors, ThrowOnError>({
+    requestValidator: async (data) => await z.object({
+        body: z.never().optional(),
+        path: z.never().optional(),
+        query: z.never().optional()
+    }).parseAsync(data),
+    responseValidator: async (data) => await zRegenerateShareCodeResponse.parseAsync(data),
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/v1/homes/me/share-code',
+    ...options
+});
+
+/**
+ * Las casas que sigo, con su estado
+ */
+export const listFollows = <ThrowOnError extends boolean = false>(options?: Options<ListFollowsData, ThrowOnError>): RequestResult<ListFollowsResponses, ListFollowsErrors, ThrowOnError> => (options?.client ?? client).get<ListFollowsResponses, ListFollowsErrors, ThrowOnError>({
+    requestValidator: async (data) => await z.object({
+        body: z.never().optional(),
+        path: z.never().optional(),
+        query: z.never().optional()
+    }).parseAsync(data),
+    responseValidator: async (data) => await zListFollowsResponse.parseAsync(data),
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/v1/follows',
+    ...options
+});
+
+/**
+ * Seguir una casa con su código
+ *
+ * Es idempotente (A-036): seguir otra vez la misma casa actualiza el alias y también responde 201. Se puede seguir la propia casa. Tope de 20 casas por dispositivo.
+ */
+export const followHome = <ThrowOnError extends boolean = false>(options: Options<FollowHomeData, ThrowOnError>): RequestResult<FollowHomeResponses, FollowHomeErrors, ThrowOnError> => (options.client ?? client).post<FollowHomeResponses, FollowHomeErrors, ThrowOnError>({
+    requestValidator: async (data) => await z.object({
+        body: zFollowHomeBody,
+        path: z.never().optional(),
+        query: z.never().optional()
+    }).parseAsync(data),
+    responseValidator: async (data) => await zFollowHomeResponse.parseAsync(data),
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/v1/follows',
+    ...options,
+    headers: {
+        'Content-Type': 'application/json',
+        ...options.headers
+    }
+});
+
+/**
+ * Dejar de seguir una casa
+ *
+ * Responde 204 también si el dispositivo no la seguía.
+ */
+export const unfollowHome = <ThrowOnError extends boolean = false>(options: Options<UnfollowHomeData, ThrowOnError>): RequestResult<UnfollowHomeResponses, UnfollowHomeErrors, ThrowOnError> => (options.client ?? client).delete<UnfollowHomeResponses, UnfollowHomeErrors, ThrowOnError>({
+    requestValidator: async (data) => await z.object({
+        body: z.never().optional(),
+        path: zUnfollowHomePath,
+        query: z.never().optional()
+    }).parseAsync(data),
+    responseValidator: async (data) => await zUnfollowHomeResponse.parseAsync(data),
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/v1/follows/{homeId}',
+    ...options
+});
+
+/**
+ * Historial de cortes de mi casa en un rango, con el resumen por día
+ */
+export const getOutages = <ThrowOnError extends boolean = false>(options: Options<GetOutagesData, ThrowOnError>): RequestResult<GetOutagesResponses, GetOutagesErrors, ThrowOnError> => (options.client ?? client).get<GetOutagesResponses, GetOutagesErrors, ThrowOnError>({
+    requestValidator: async (data) => await z.object({
+        body: z.never().optional(),
+        path: z.never().optional(),
+        query: zGetOutagesQuery
+    }).parseAsync(data),
+    responseValidator: async (data) => await zGetOutagesResponse.parseAsync(data),
+    security: [{ scheme: 'bearer', type: 'http' }],
+    url: '/v1/homes/me/outages',
     ...options
 });
 

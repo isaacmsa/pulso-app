@@ -60,6 +60,64 @@ export const zHomeStatus = z.object({
     openOutageStart: z.int().gt(0).nullable()
 });
 
+export const zShareCode = z.object({
+    shareCode: z.string().regex(/^[2-9A-HJKMNP-Z]{8}$/)
+});
+
+export const zFollowItem = z.object({
+    homeId: z.uuid(),
+    alias: z.string().min(1).max(40),
+    status: zHomeStatus
+});
+
+export const zFollowRequest = z.object({
+    code: z.string().regex(/^[2-9A-HJKMNP-Z]{8}$/),
+    alias: z.string().min(1).max(40)
+});
+
+export const zFollowList = z.object({
+    items: z.array(zFollowItem)
+});
+
+export const zOutageItem = z.object({
+    id: z.uuid(),
+    start: z.int().gt(0),
+    end: z.int().gt(0).nullable(),
+    status: z.enum([
+        'abierto',
+        'cerrado',
+        'descartado',
+        'sin_datos'
+    ]),
+    confidence: z.enum([
+        'alta',
+        'media',
+        'manual'
+    ]),
+    confirmed: z.boolean().nullable()
+});
+
+export const zReportItem = z.object({
+    at: z.int().gt(0),
+    value: z.enum([
+        'hay_luz',
+        'fluctuando',
+        'sin_luz'
+    ])
+});
+
+export const zDaySummary = z.object({
+    date: z.string().regex(/^\d{4}-\d{2}-\d{2}$/),
+    ms: z.int().gte(0)
+});
+
+export const zOutageHistory = z.object({
+    items: z.array(zOutageItem),
+    reports: z.array(zReportItem),
+    totalMs: z.int().gte(0),
+    days: z.array(zDaySummary)
+});
+
 export const zIngestEventsResponse = z.object({
     accepted: z.int().gte(0),
     duplicated: z.int().gte(0),
@@ -170,6 +228,42 @@ export const zUpdateHomeResponse = z.void();
  * Estado de la casa
  */
 export const zGetHomeStatusResponse = zHomeStatus;
+
+/**
+ * El código nuevo
+ */
+export const zRegenerateShareCodeResponse = zShareCode;
+
+/**
+ * Casas que sigo, ordenadas por alias
+ */
+export const zListFollowsResponse = zFollowList;
+
+export const zFollowHomeBody = zFollowRequest;
+
+/**
+ * Siguiendo la casa, con su estado
+ */
+export const zFollowHomeResponse = zFollowItem;
+
+export const zUnfollowHomePath = z.object({
+    homeId: z.uuid()
+});
+
+/**
+ * Ya no la sigo
+ */
+export const zUnfollowHomeResponse = z.void();
+
+export const zGetOutagesQuery = z.object({
+    from: z.int().gt(0).lte(4102444800000),
+    to: z.int().gt(0).lte(4102444800000)
+});
+
+/**
+ * Cortes, reportes y resumen por día
+ */
+export const zGetOutagesResponse = zOutageHistory;
 
 export const zIngestEventsBody = zEventBatch;
 
