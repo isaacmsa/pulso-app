@@ -27,6 +27,14 @@ declare class PowerMonitorModule extends NativeModule<Record<string, never>> {
   isTokenInvalid(): Promise<boolean>;
   /** `{ status: HomeStatus, receivedAt }` de la última subida aceptada, como JSON sin validar, o null. */
   getLastServerStatus(): Promise<string | null>;
+  /** Guarda lo que eligió la persona: "watch" (vigila su casa) o "follow" (solo sigue una). "follow" nunca arma ni sube. */
+  setRole(role: string): Promise<void>;
+  /** El rol guardado, o null si todavía no eligió. */
+  getRole(): Promise<string | null>;
+  /** Encola ya la subida de lo pendiente. No hace nada en un teléfono "follow". */
+  requestUpload(): Promise<void>;
+  /** Abre la pantalla del fabricante para "autostart" (Inicio automático) o "battery". Devuelve si se abrió alguna. */
+  openBatterySettings(kind: string): Promise<boolean>;
   /** Guarda la URL base de la API para la subida en segundo plano (la versión de la app la pone el nativo). */
   configureApi(apiUrl: string): Promise<void>;
 }

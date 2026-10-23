@@ -211,7 +211,11 @@ class UploadWorker(context: Context, params: WorkerParameters) : Worker(context,
     const val UNIQUE_NAME = "upload"
 
     /** Encola una subida detrás de la que esté en curso, con red requerida y 0 a 60 s de espera al azar. */
-    fun enqueue(context: Context) = schedule(context, ExistingWorkPolicy.APPEND_OR_REPLACE, 0L)
+    fun enqueue(context: Context) {
+      // Un teléfono que solo sigue una casa no sube nada.
+      if (Role.isFollowOnly(context)) return
+      schedule(context, ExistingWorkPolicy.APPEND_OR_REPLACE, 0L)
+    }
 
     private fun schedule(context: Context, policy: ExistingWorkPolicy, delayMs: Long) {
       val request = OneTimeWorkRequestBuilder<UploadWorker>()

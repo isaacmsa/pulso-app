@@ -141,3 +141,28 @@ export async function getLastServerStatus(): Promise<LastServerStatus | null> {
   const parsed = lastServerStatusSchema.safeParse(value);
   return parsed.success ? parsed.data : null;
 }
+
+export type Role = 'watch' | 'follow';
+
+/** Guarda en el nativo lo que eligió la persona. Un teléfono `follow` nunca arma ni sube (Kotlin lo respeta solo). */
+export function setRole(role: Role): Promise<void> {
+  return PowerMonitor.setRole(role);
+}
+
+/** El rol guardado, o null si todavía no eligió (o si lo guardado no es uno de los dos). */
+export async function getRole(): Promise<Role | null> {
+  const role = await PowerMonitor.getRole();
+  return role === 'watch' || role === 'follow' ? role : null;
+}
+
+/** Sube ya lo pendiente, sin esperar al próximo latido. No hace nada en un teléfono `follow`. */
+export function requestUpload(): Promise<void> {
+  return PowerMonitor.requestUpload();
+}
+
+export type BatterySettingsKind = 'autostart' | 'battery';
+
+/** Abre la pantalla del fabricante para ese ajuste (o los detalles de la app). Devuelve si se abrió alguna. */
+export function openBatterySettings(kind: BatterySettingsKind): Promise<boolean> {
+  return PowerMonitor.openBatterySettings(kind);
+}

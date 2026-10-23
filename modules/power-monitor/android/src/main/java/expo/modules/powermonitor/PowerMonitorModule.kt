@@ -75,6 +75,26 @@ class PowerMonitorModule : Module() {
       LastServerStatus.read(context)
     }
 
+    // El rol que eligió la persona ("watch" o "follow"); "follow" nunca arma ni sube (ver Role).
+    AsyncFunction("setRole") { role: String ->
+      Role.save(context, role)
+    }
+
+    AsyncFunction("getRole") {
+      Role.read(context)
+    }
+
+    // Sube ya lo que haya pendiente, sin esperar al próximo latido. No hace nada en un teléfono "follow".
+    AsyncFunction("requestUpload") {
+      UploadWorker.enqueue(context)
+    }
+
+    // Abre la pantalla del fabricante para "Inicio automático" ("autostart") o la batería ("battery").
+    // Devuelve si se abrió alguna; nunca lanza por un fabricante desconocido.
+    AsyncFunction("openBatterySettings") { kind: String ->
+      BatterySettings.open(context, android.os.Build.MANUFACTURER.orEmpty(), BatterySettings.Kind.parse(kind))
+    }
+
     // La versión de la app sale del paquete instalado, la misma que reporta el diagnóstico.
     AsyncFunction("configureApi") { apiUrl: String ->
       val version = runCatching {

@@ -1,0 +1,135 @@
+import { ApiError } from '../../../shared/api/client';
+import { createHome, registerDevice } from '../../../shared/api/generated';
+import * as native from '../../power-detection/power-monitor';
+import { register } from '../register';
+
+jest.mock('expo-constants', () => ({
+  __esModule: true,
+  default: { expoConfig: { version: '0.1.0' } },
+}));
+jest.mock('../../power-detection/power-monitor', () => ({
+  storeToken: jest.fn(),
+  getToken: jest.fn(),
+  isTokenInvalid: jest.fn(),
+  configureApi: jest.fn(),
+  arm: jest.fn(),
+  setRole: jest.fn(),
+  requestUpload: jest.fn(),
+}));
+jest.mock('../../../shared/api/generated', () => ({
+  registerDevice: jest.fn(),
+  createHome: jest.fn(),
+}));
+
+const mocked = native as jest.Mocked<typeof native>;
+const registerDeviceMock = registerDevice as unknown as jest.Mock;
+const createHomeMock = createHome as unknown as jest.Mock;
+
+const TOKEN = 'a'.repeat(87);
+const ok = (data: unknown) => ({ data, response: new Response(null, { status: 200 }) });
+const failed = (code: string, status: number) => ({
+  error: { error: { code, message: 'x' } },
+  response: new Response(null, { status }),
+});
+
+let vaultToken: string | null;
+let invalid: boolean;
+
+beforeEach(() => {
+  jest.resetAllMocks();
+  vaultToken = null;
+  invalid = false;
+  mocked.getToken.mockImplementation(async () => vaultToken);
+  mocked.isTokenInvalid.mockImplementation(async () => invalid);
+  mocked.storeToken.mockImplementation(async (token) => {
+    vaultToken = token;
+    invalid = false;
+  });
+  mocked.configureApi.mockResolvedValue(undefined);
+  mocked.arm.mockResolvedValue(undefined);
+  mocked.setRole.mockResolvedValue(undefined);
+  mocked.requestUpload.mockResolvedValue(undefined);
+  registerDeviceMock.mockResolvedValue(ok({ deviceId: 'd', token: TOKEN }));
+  createHomeMock.mockResolvedValue(ok({ homeId: 'h', shareCode: 'ABCDEFGH' }));
+});
+
+it('registra una sola vez aunque se llame dos veces', async () => {
+  await register('watch');
+  await register('watch');
+  expect(registerDeviceMock).toHaveBeenCalledTimes(1);
+  expect(registerDeviceMock).toHaveBeenCalledWith({ body: { appVersion: '0.1.0' } });
+  expect(mocked.storeToken).toHaveBeenCalledTimes(1);
+  expect(mocked.storeToken).toHaveBeenCalledWith(TOKEN);
+});
+
+it('dos llamadas a la vez comparten un solo registro', async () => {
+  await Promise.all([register('watch'), register('watch')]);
+  expect(registerDeviceMock).toHaveBeenCalledTimes(1);
+});
+
+it('vigilar: guarda el token, avisa a la subida, arma, crea la casa y pide subir ya', async () => {
+  await register('watch');
+  expect(mocked.storeToken).toHaveBeenCalledWith(TOKEN);
+  expect(mocked.configureApi).toHaveBeenCalledTimes(1);
+  expect(mocked.arm).toHaveBeenCalledTimes(1);
+  expect(createHomeMock).toHaveBeenCalledTimes(1);
+  expect(mocked.requestUpload).toHaveBeenCalledTimes(1);
+  expect(mocked.setRole).toHaveBeenCalledWith('watch');
+});
+
+it('home_exists cuenta como éxito', async () => {
+  createHomeMock.mockResolvedValue(failed('home_exists', 409));
+  await expect(register('watch')).resolves.toBeUndefined();
+  expect(mocked.requestUpload).toHaveBeenCalledTimes(1);
+  expect(mocked.setRole).toHaveBeenCalledWith('watch');
+});
+
+it('otro error al crear la casa se propaga y el rol no queda guardado', async () => {
+  createHomeMock.mockResolvedValue(failed('internal_error', 500));
+  await expect(register('watch')).rejects.toMatchObject({ code: 'internal_error' });
+  expect(mocked.setRole).not.toHaveBeenCalled();
+  expect(mocked.requestUpload).not.toHaveBeenCalled();
+});
+
+it('si falló al crear la casa, el reintento no registra otro dispositivo y la completa', async () => {
+  createHomeMock.mockResolvedValueOnce(failed('internal_error', 500));
+  await expect(register('watch')).rejects.toBeInstanceOf(ApiError);
+  await expect(register('watch')).resolves.toBeUndefined();
+  expect(registerDeviceMock).toHaveBeenCalledTimes(1);
+  expect(createHomeMock).toHaveBeenCalledTimes(2);
+  expect(mocked.setRole).toHaveBeenCalledWith('watch');
+});
+
+it('Solo seguir no arma la detección, no crea casa y no pide subir', async () => {
+  await register('follow');
+  expect(mocked.setRole).toHaveBeenCalledWith('follow');
+  expect(mocked.storeToken).toHaveBeenCalledWith(TOKEN);
+  expect(mocked.arm).not.toHaveBeenCalled();
+  expect(createHomeMock).not.toHaveBeenCalled();
+  expect(mocked.requestUpload).not.toHaveBeenCalled();
+});
+
+it('Solo seguir guarda el rol antes de tocar la red', async () => {
+  registerDeviceMock.mockRejectedValue(new TypeError('Network request failed'));
+  await expect(register('follow')).rejects.toMatchObject({ code: 'network' });
+  expect(mocked.setRole).toHaveBeenCalledWith('follow');
+  expect(mocked.arm).not.toHaveBeenCalled();
+});
+
+it('con el token inválido registra de nuevo', async () => {
+  vaultToken = 'viejo';
+  invalid = true;
+  await register('watch');
+  expect(registerDeviceMock).toHaveBeenCalledTimes(1);
+  expect(mocked.storeToken).toHaveBeenCalledWith(TOKEN);
+});
+
+it('sin red el registro falla con ApiError network, sin guardar nada ni armar', async () => {
+  registerDeviceMock.mockRejectedValue(new TypeError('Network request failed'));
+  await expect(register('watch')).rejects.toMatchObject({ code: 'network' });
+  expect(mocked.storeToken).not.toHaveBeenCalled();
+  expect(mocked.arm).not.toHaveBeenCalled();
+  // el fallo no deja trabado el siguiente intento
+  registerDeviceMock.mockResolvedValue(ok({ deviceId: 'd', token: TOKEN }));
+  await expect(register('watch')).resolves.toBeUndefined();
+});

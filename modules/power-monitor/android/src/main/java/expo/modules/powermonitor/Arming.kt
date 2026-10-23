@@ -15,6 +15,8 @@ object Arming {
   private const val LEGACY_CHARGING_JOB_ID = 7001 // id de C hasta el 2026-10-20
 
   fun ensureArmed(context: Context) {
+    // Un teléfono que solo sigue una casa no detecta nada: ni latido, ni mecanismos, ni servicio.
+    if (Role.isFollowOnly(context)) return
     val prefs = context.getSharedPreferences(PREFS, Context.MODE_PRIVATE)
     // D primero: arrancar un servicio en primer plano solo se permite durante una ventana corta
     // después de BOOT_COMPLETED o MY_PACKAGE_REPLACED.

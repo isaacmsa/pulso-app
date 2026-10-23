@@ -13,6 +13,7 @@ class BootReceiver : BroadcastReceiver() {
     thread {
       try {
         val app = context.applicationContext
+        if (Role.isFollowOnly(app)) return@thread
         // Los pedidos de red con PendingIntent no sobreviven al reinicio.
         if (intent.action == Intent.ACTION_BOOT_COMPLETED) NetworkWatch.onFired(app)
         Arming.ensureArmed(app)

@@ -1,6 +1,8 @@
 import { Stack } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { useEffect } from 'react';
+import { View } from 'react-native';
+import { useStartup } from '../src/modules/onboarding/startup';
 import {
   arm,
   configureApi,
@@ -14,14 +16,24 @@ import { colors } from '../src/shared/theme/colors';
 setTokenProvider(getToken);
 
 export default function RootLayout() {
+  const startup = useStartup();
+
   useEffect(() => {
+    if (startup !== 'watch' && startup !== 'follow') return;
     configureApi(resolveApiUrl(process.env.EXPO_PUBLIC_API_URL)).catch((error: unknown) =>
       console.warn('No se pudo guardar la URL de la API', error),
     );
-    arm()
-      .then(recordAppOpen)
-      .catch((error: unknown) => console.warn('No se pudo armar la detección', error));
-  }, []);
+    // Solo un teléfono que vigila una casa arma la detección: "Solo seguir" no detecta nada.
+    if (startup === 'watch') {
+      arm()
+        .then(recordAppOpen)
+        .catch((error: unknown) => console.warn('No se pudo armar la detección', error));
+    }
+  }, [startup]);
+
+  if (startup === null) {
+    return <View style={{ flex: 1, backgroundColor: colors.background }} />;
+  }
 
   return (
     <>
@@ -31,7 +43,18 @@ export default function RootLayout() {
           headerShown: false,
           contentStyle: { backgroundColor: colors.background },
         }}
-      />
+      >
+        <Stack.Protected guard={startup === 'onboarding'}>
+          <Stack.Screen name="onboarding/index" />
+          <Stack.Screen name="onboarding/notifications" />
+          <Stack.Screen name="onboarding/battery" />
+          <Stack.Screen name="onboarding/home" />
+        </Stack.Protected>
+        <Stack.Protected guard={startup !== 'onboarding'}>
+          <Stack.Screen name="index" />
+          <Stack.Screen name="debug" />
+        </Stack.Protected>
+      </Stack>
     </>
   );
 }
