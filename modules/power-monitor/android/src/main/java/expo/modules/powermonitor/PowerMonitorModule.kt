@@ -55,5 +55,26 @@ class PowerMonitorModule : Module() {
     AsyncFunction("getEvents") { sinceMs: Double ->
       "[" + EventStore.get(context).since(sinceMs.toLong()).joinToString(",") + "]"
     }
+
+    // Bóveda del token (regla 3): JS lo entrega al registrarse y lo pide en cada llamada; nunca lo guarda.
+    AsyncFunction("storeToken") { token: String ->
+      TokenVault.store(context, token)
+    }
+
+    AsyncFunction("getToken") {
+      TokenVault.read(context)
+    }
+
+    AsyncFunction("isTokenInvalid") {
+      TokenVault.isInvalid(context)
+    }
+
+    // La versión de la app sale del paquete instalado, la misma que reporta el diagnóstico.
+    AsyncFunction("configureApi") { apiUrl: String ->
+      val version = runCatching {
+        context.packageManager.getPackageInfo(context.packageName, 0).versionName
+      }.getOrNull().orEmpty()
+      ApiConfig.save(context, apiUrl, version)
+    }
   }
 }

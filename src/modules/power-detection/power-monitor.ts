@@ -93,3 +93,23 @@ export async function exportAndShare(): Promise<void> {
   const uri = await PowerMonitor.exportEvents();
   await Sharing.shareAsync(uri, { mimeType: 'application/json', dialogTitle: 'Exporte de Pulso' });
 }
+
+/** Entrega el token a la bóveda nativa en el momento del registro. JS nunca lo guarda (regla 3). */
+export function storeToken(token: string): Promise<void> {
+  return PowerMonitor.storeToken(token);
+}
+
+/** Token del dispositivo, o null si no hay (o si el Keystore no pudo leerlo). */
+export function getToken(): Promise<string | null> {
+  return PowerMonitor.getToken();
+}
+
+/** Si el servidor rechazó el token y hay que registrar de nuevo. */
+export function isTokenInvalid(): Promise<boolean> {
+  return PowerMonitor.isTokenInvalid();
+}
+
+/** Le dice al nativo dónde está la API, para la subida en segundo plano. */
+export function configureApi(apiUrl: string): Promise<void> {
+  return PowerMonitor.configureApi(apiUrl);
+}

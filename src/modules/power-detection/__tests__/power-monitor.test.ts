@@ -1,10 +1,24 @@
 import PowerMonitor from '../../../../modules/power-monitor';
 import { nativeDiagnosticsSchema } from '../native-schema';
-import { PowerMonitorError, readEvents } from '../power-monitor';
+import {
+  configureApi,
+  getToken,
+  isTokenInvalid,
+  PowerMonitorError,
+  readEvents,
+  storeToken,
+} from '../power-monitor';
 
 jest.mock('../../../../modules/power-monitor', () => ({
   __esModule: true,
-  default: { getEvents: jest.fn(), recordSnapshot: jest.fn() },
+  default: {
+    getEvents: jest.fn(),
+    recordSnapshot: jest.fn(),
+    storeToken: jest.fn(),
+    getToken: jest.fn(),
+    isTokenInvalid: jest.fn(),
+    configureApi: jest.fn(),
+  },
 }));
 const native = PowerMonitor as jest.Mocked<typeof PowerMonitor>;
 
@@ -50,4 +64,25 @@ it('valida el diagnóstico del nativo', () => {
   expect(nativeDiagnosticsSchema.safeParse(diagnostics).success).toBe(true);
   const { armed: _armed, ...withoutArmed } = diagnostics;
   expect(nativeDiagnosticsSchema.safeParse(withoutArmed).success).toBe(false);
+});
+
+it('getToken devuelve null cuando el nativo no tiene token', async () => {
+  native.getToken.mockResolvedValue(null);
+  await expect(getToken()).resolves.toBeNull();
+});
+
+it('getToken devuelve el token que da el nativo', async () => {
+  native.getToken.mockResolvedValue('tok_abc');
+  await expect(getToken()).resolves.toBe('tok_abc');
+});
+
+it('storeToken, isTokenInvalid y configureApi pasan al nativo', async () => {
+  native.storeToken.mockResolvedValue(undefined);
+  native.isTokenInvalid.mockResolvedValue(true);
+  native.configureApi.mockResolvedValue(undefined);
+  await storeToken('tok_abc');
+  await expect(isTokenInvalid()).resolves.toBe(true);
+  await configureApi('https://api.example.test');
+  expect(native.storeToken).toHaveBeenCalledWith('tok_abc');
+  expect(native.configureApi).toHaveBeenCalledWith('https://api.example.test');
 });

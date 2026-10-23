@@ -19,6 +19,14 @@ declare class PowerMonitorModule extends NativeModule<Record<string, never>> {
   isForegroundServiceEnabled(): Promise<boolean>;
   /** Eventos guardados desde `sinceMs`, del más nuevo al más viejo, como un arreglo JSON. */
   getEvents(sinceMs: number): Promise<string>;
+  /** Guarda el token del dispositivo en la bóveda nativa (Android Keystore). Reemplaza el anterior y limpia la marca de inválido. */
+  storeToken(token: string): Promise<void>;
+  /** Token del dispositivo, o null si no hay o el Keystore no puede leerlo. */
+  getToken(): Promise<string | null>;
+  /** Si el servidor rechazó el token y hay que registrar de nuevo. */
+  isTokenInvalid(): Promise<boolean>;
+  /** Guarda la URL base de la API para la subida en segundo plano (la versión de la app la pone el nativo). */
+  configureApi(apiUrl: string): Promise<void>;
 }
 
 export default requireNativeModule<PowerMonitorModule>('PowerMonitor');
