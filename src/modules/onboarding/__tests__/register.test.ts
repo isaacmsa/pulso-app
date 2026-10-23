@@ -15,6 +15,7 @@ jest.mock('../../power-detection/power-monitor', () => ({
   arm: jest.fn(),
   setRole: jest.fn(),
   requestUpload: jest.fn(),
+  setOnboardingStep: jest.fn(),
 }));
 jest.mock('../../../shared/api/generated', () => ({
   registerDevice: jest.fn(),
@@ -49,6 +50,7 @@ beforeEach(() => {
   mocked.arm.mockResolvedValue(undefined);
   mocked.setRole.mockResolvedValue(undefined);
   mocked.requestUpload.mockResolvedValue(undefined);
+  mocked.setOnboardingStep.mockResolvedValue(undefined);
   registerDeviceMock.mockResolvedValue(ok({ deviceId: 'd', token: TOKEN }));
   createHomeMock.mockResolvedValue(ok({ homeId: 'h', shareCode: 'ABCDEFGH' }));
 });
@@ -132,4 +134,26 @@ it('sin red el registro falla con ApiError network, sin guardar nada ni armar', 
   // el fallo no deja trabado el siguiente intento
   registerDeviceMock.mockResolvedValue(ok({ deviceId: 'd', token: TOKEN }));
   await expect(register('watch')).resolves.toBeUndefined();
+});
+
+it('marca el onboarding como pendiente antes de registrar y deja el siguiente paso al terminar', async () => {
+  const order: string[] = [];
+  mocked.setOnboardingStep.mockImplementation(async (step) => {
+    order.push(`step:${step}`);
+  });
+  registerDeviceMock.mockImplementation(async () => {
+    order.push('registerDevice');
+    return ok({ deviceId: 'd', token: TOKEN });
+  });
+  await register('watch');
+  expect(order[0]).toBe('step:role');
+  expect(order.indexOf('registerDevice')).toBeGreaterThan(0);
+  expect(order[order.length - 1]).toBe('step:notifications');
+});
+
+it('si el registro falla, el onboarding queda en el paso del rol', async () => {
+  registerDeviceMock.mockRejectedValue(new TypeError('Network request failed'));
+  await expect(register('watch')).rejects.toMatchObject({ code: 'network' });
+  expect(mocked.setOnboardingStep).toHaveBeenCalledWith('role');
+  expect(mocked.setOnboardingStep).not.toHaveBeenCalledWith('notifications');
 });

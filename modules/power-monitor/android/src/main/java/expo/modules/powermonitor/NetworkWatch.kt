@@ -27,6 +27,12 @@ object NetworkWatch {
     setArmed(context, true)
   }
 
+  /** Suelta el pedido de red pendiente (si lo hay) y lo marca desarmado. */
+  fun disarm(context: Context) {
+    runCatching { context.getSystemService(ConnectivityManager::class.java).unregisterNetworkCallback(pendingIntent(context)) }
+    setArmed(context, false)
+  }
+
   /** El sistema ya liberó el pedido al disparar: queda desarmado hasta el próximo snapshot sin Wi-Fi. */
   fun onFired(context: Context) = setArmed(context, false)
 

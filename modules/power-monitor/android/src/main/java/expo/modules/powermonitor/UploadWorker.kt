@@ -174,6 +174,8 @@ object UploadPolicy {
 class UploadWorker(context: Context, params: WorkerParameters) : Worker(context, params) {
   override fun doWork(): Result {
     val context = applicationContext
+    // Un teléfono que pasó a "follow" con una subida ya encolada: termina sin subir ni encadenar otra.
+    if (Role.isFollowOnly(context)) return Result.success()
     val outcome = try {
       val config = ApiConfig.read(context) ?: return Result.success()
       val token = if (TokenVault.isInvalid(context)) null else TokenVault.read(context)
@@ -211,13 +213,11 @@ class UploadWorker(context: Context, params: WorkerParameters) : Worker(context,
     const val UNIQUE_NAME = "upload"
 
     /** Encola una subida detrás de la que esté en curso, con red requerida y 0 a 60 s de espera al azar. */
-    fun enqueue(context: Context) {
-      // Un teléfono que solo sigue una casa no sube nada.
-      if (Role.isFollowOnly(context)) return
-      schedule(context, ExistingWorkPolicy.APPEND_OR_REPLACE, 0L)
-    }
+    fun enqueue(context: Context) = schedule(context, ExistingWorkPolicy.APPEND_OR_REPLACE, 0L)
 
     private fun schedule(context: Context, policy: ExistingWorkPolicy, delayMs: Long) {
+      // Un teléfono que solo sigue una casa no sube nada, ni siquiera la continuación de una cadena vieja.
+      if (Role.isFollowOnly(context)) return
       val request = OneTimeWorkRequestBuilder<UploadWorker>()
         .setConstraints(Constraints.Builder().setRequiredNetworkType(NetworkType.CONNECTED).build())
         .setBackoffCriteria(BackoffPolicy.EXPONENTIAL, UploadPolicy.BACKOFF_S, TimeUnit.SECONDS)

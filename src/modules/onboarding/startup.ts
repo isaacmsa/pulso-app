@@ -1,18 +1,30 @@
 import { useEffect, useState } from 'react';
-import { getRole, getToken, isTokenInvalid } from '../power-detection/power-monitor';
+import {
+  getOnboardingStep,
+  getRole,
+  getToken,
+  isTokenInvalid,
+} from '../power-detection/power-monitor';
 
 /** A dónde va la app al arrancar: al onboarding, o a la app con el rol que eligió la persona. */
 export type Startup = 'onboarding' | 'watch' | 'follow';
 
 /**
  * Pide onboarding si no hay token (también el registrador de la fase 0, que nunca se registró), si el servidor
- * lo rechazó, o si hay token pero no rol: el registro se cortó a medias. Si el nativo falla, también: es más
+ * lo rechazó, si hay token pero no rol (el registro se cortó a medias) o si queda un paso pendiente (la app murió
+ * en medio del onboarding, por ejemplo en los ajustes de batería). Un teléfono registrado antes de la marca de pasos
+ * no tiene paso pendiente: cuenta como terminado. Si el nativo falla, también: es más
  * seguro volver a preguntar que seguir a ciegas.
  */
 export async function resolveStartup(): Promise<Startup> {
   try {
-    const [token, invalid, role] = await Promise.all([getToken(), isTokenInvalid(), getRole()]);
-    if (!token || invalid || role === null) return 'onboarding';
+    const [token, invalid, role, step] = await Promise.all([
+      getToken(),
+      isTokenInvalid(),
+      getRole(),
+      getOnboardingStep(),
+    ]);
+    if (!token || invalid || role === null || step !== null) return 'onboarding';
     return role;
   } catch (error) {
     console.warn('No se pudo leer el estado del registro', error);

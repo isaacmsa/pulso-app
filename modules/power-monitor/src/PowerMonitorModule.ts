@@ -27,10 +27,14 @@ declare class PowerMonitorModule extends NativeModule<Record<string, never>> {
   isTokenInvalid(): Promise<boolean>;
   /** `{ status: HomeStatus, receivedAt }` de la última subida aceptada, como JSON sin validar, o null. */
   getLastServerStatus(): Promise<string | null>;
-  /** Guarda lo que eligió la persona: "watch" (vigila su casa) o "follow" (solo sigue una). "follow" nunca arma ni sube. */
+  /** Guarda lo que eligió la persona: "watch" (vigila su casa) o "follow" (solo sigue una). "follow" nunca arma ni sube, y al guardarlo desarma lo que hubiera armado. */
   setRole(role: string): Promise<void>;
   /** El rol guardado, o null si todavía no eligió. */
   getRole(): Promise<string | null>;
+  /** Guarda qué paso del onboarding falta ("role" | "notifications" | "battery" | "home"); null lo da por terminado. */
+  setOnboardingStep(step: string | null): Promise<void>;
+  /** El paso pendiente del onboarding, o null si no hay (terminado, o un teléfono registrado antes de esta marca). */
+  getOnboardingStep(): Promise<string | null>;
   /** Encola ya la subida de lo pendiente. No hace nada en un teléfono "follow". */
   requestUpload(): Promise<void>;
   /** Abre la pantalla del fabricante para "autostart" (Inicio automático) o "battery". Devuelve si se abrió alguna. */

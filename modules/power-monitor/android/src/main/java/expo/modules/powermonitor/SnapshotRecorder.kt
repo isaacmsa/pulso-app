@@ -18,9 +18,11 @@ object SnapshotRecorder {
     val snapshot = SnapshotReader.read(context, source)
     store.insert(snapshot.id, snapshot.at, "snapshot", EventJson.snapshot(snapshot))
     Log.i(TAG, "snapshot $source plugged=${snapshot.plugged} wifi=${snapshot.onWifi} internet=${snapshot.internet}")
-    if (shouldScheduleTransitionCheck(prev?.plugged, snapshot.plugged)) scheduleTransitionCheck(context)
+    // Un snapshot que ya estaba en curso al pasar a "follow" no vuelve a armar nada.
+    val follow = Role.isFollowOnly(context)
+    if (!follow && shouldScheduleTransitionCheck(prev?.plugged, snapshot.plugged)) scheduleTransitionCheck(context)
     if (shouldEnqueueUpload(source, prev, SnapshotState.of(snapshot))) UploadWorker.enqueue(context)
-    if (NetworkWatch.shouldArmForWifiReturn(snapshot.onWifi)) NetworkWatch.armForWifiReturn(context)
+    if (!follow && NetworkWatch.shouldArmForWifiReturn(snapshot.onWifi)) NetworkWatch.armForWifiReturn(context)
     return snapshot
   }
 
@@ -39,6 +41,6 @@ object SnapshotRecorder {
     val request = OneTimeWorkRequestBuilder<TransitionCheckWorker>()
       .setInitialDelay(TRANSITION_CHECK_DELAY_MS, TimeUnit.MILLISECONDS)
       .build()
-    WorkManager.getInstance(context).enqueueUniqueWork("transition_check", ExistingWorkPolicy.REPLACE, request)
+    WorkManager.getInstance(context).enqueueUniqueWork(TransitionCheckWorker.UNIQUE_NAME, ExistingWorkPolicy.REPLACE, request)
   }
 }

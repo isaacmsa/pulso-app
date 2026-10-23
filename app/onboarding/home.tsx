@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { notifyStartupChanged } from '../../src/modules/onboarding/startup';
+import { finishOnboarding } from '../../src/modules/onboarding/progress';
 import {
   Message,
   OnboardingScreen,
@@ -18,7 +18,7 @@ export default function HomeNetwork() {
     setError(null);
     try {
       if (await learnHomeNetwork()) {
-        notifyStartupChanged();
+        await finishOnboarding();
       } else {
         setError('No veo el Wi-Fi. Conéctate al Wi-Fi de tu casa y toca de nuevo.');
       }
@@ -35,7 +35,11 @@ export default function HomeNetwork() {
       intro="Pulso recuerda la red de tu casa para saber cuándo el teléfono está en ella. No lee el nombre de tu Wi-Fi ni usa tu ubicación."
     >
       <PrimaryButton label="Ya estoy conectado" onPress={learn} disabled={busy} />
-      <SecondaryButton label="Lo hago después" onPress={notifyStartupChanged} disabled={busy} />
+      <SecondaryButton
+        label="Lo hago después"
+        onPress={() => void finishOnboarding()}
+        disabled={busy}
+      />
       {error ? <Message tone="error">{error}</Message> : null}
     </OnboardingScreen>
   );

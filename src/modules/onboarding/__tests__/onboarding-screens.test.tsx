@@ -6,12 +6,13 @@ import RoleScreen from '../../../../app/onboarding/index';
 import Notifications from '../../../../app/onboarding/notifications';
 import { ApiError } from '../../../shared/api/client';
 import * as native from '../../power-detection/power-monitor';
+import * as progress from '../progress';
 import { register } from '../register';
-import * as startup from '../startup';
 
 const mockPush = jest.fn();
+const mockReplace = jest.fn();
 jest.mock('expo-router', () => ({
-  useRouter: () => ({ push: mockPush }),
+  useRouter: () => ({ push: mockPush, replace: mockReplace }),
   useLocalSearchParams: () => ({ role: mockRole }),
 }));
 let mockRole: string | undefined;
@@ -21,8 +22,13 @@ jest.mock('../../power-detection/power-monitor', () => ({
   readDiagnostics: jest.fn(),
   openBatterySettings: jest.fn(),
   learnHomeNetwork: jest.fn(),
+  getOnboardingStep: jest.fn(),
+  getRole: jest.fn(),
 }));
-jest.mock('../startup', () => ({ notifyStartupChanged: jest.fn() }));
+jest.mock('../progress', () => ({
+  advanceOnboarding: jest.fn(),
+  finishOnboarding: jest.fn(),
+}));
 
 const registerMock = register as jest.Mock;
 const mocked = native as jest.Mocked<typeof native>;
@@ -30,6 +36,8 @@ const mocked = native as jest.Mocked<typeof native>;
 beforeEach(() => {
   jest.clearAllMocks();
   mockRole = undefined;
+  mocked.getOnboardingStep.mockResolvedValue(null);
+  mocked.getRole.mockResolvedValue('watch');
 });
 
 describe('¿Este teléfono se queda en casa?', () => {
@@ -57,6 +65,41 @@ describe('¿Este teléfono se queda en casa?', () => {
       }),
     );
     expect(registerMock).toHaveBeenCalledWith('follow');
+  });
+
+  it('si la app murió en la guía de batería, al volver retoma la guía y no registra de nuevo', async () => {
+    mocked.getOnboardingStep.mockResolvedValue('battery');
+    await render(<RoleScreen />);
+    await waitFor(() => expect(mockReplace).toHaveBeenCalledWith('/onboarding/battery'));
+    expect(registerMock).not.toHaveBeenCalled();
+    expect(screen.queryByText('Vigilar mi casa')).toBeNull();
+  });
+
+  it('retoma en la red de casa si ahí se quedó', async () => {
+    mocked.getOnboardingStep.mockResolvedValue('home');
+    await render(<RoleScreen />);
+    await waitFor(() => expect(mockReplace).toHaveBeenCalledWith('/onboarding/home'));
+    expect(registerMock).not.toHaveBeenCalled();
+  });
+
+  it('retoma en las notificaciones con el rol guardado', async () => {
+    mocked.getOnboardingStep.mockResolvedValue('notifications');
+    mocked.getRole.mockResolvedValue('follow');
+    await render(<RoleScreen />);
+    await waitFor(() =>
+      expect(mockReplace).toHaveBeenCalledWith({
+        pathname: '/onboarding/notifications',
+        params: { role: 'follow' },
+      }),
+    );
+    expect(registerMock).not.toHaveBeenCalled();
+  });
+
+  it('si el paso pendiente es el rol (o no hay), muestra la pregunta', async () => {
+    mocked.getOnboardingStep.mockResolvedValue('role');
+    await render(<RoleScreen />);
+    expect(await screen.findByText('Vigilar mi casa')).toBeOnTheScreen();
+    expect(mockReplace).not.toHaveBeenCalled();
   });
 
   it('si el registro falla sin red, muestra el error y permite reintentar', async () => {
@@ -90,6 +133,7 @@ describe('permiso de notificaciones', () => {
       await render(<Notifications />);
       await fireEvent.press(screen.getByText('Permitir notificaciones'));
       await waitFor(() => expect(mockPush).toHaveBeenCalledWith('/onboarding/battery'));
+      expect(progress.advanceOnboarding).toHaveBeenCalledWith('battery');
       expect(request).toHaveBeenCalledWith('android.permission.POST_NOTIFICATIONS');
     } finally {
       restore();
@@ -118,7 +162,7 @@ describe('permiso de notificaciones', () => {
     try {
       await render(<Notifications />);
       await fireEvent.press(screen.getByText('Permitir notificaciones'));
-      await waitFor(() => expect(startup.notifyStartupChanged).toHaveBeenCalledTimes(1));
+      await waitFor(() => expect(progress.finishOnboarding).toHaveBeenCalledTimes(1));
       expect(request).not.toHaveBeenCalled();
       expect(mockPush).not.toHaveBeenCalled();
     } finally {
@@ -150,6 +194,7 @@ describe('guía de batería', () => {
     mocked.readDiagnostics.mockResolvedValue({ manufacturer: 'samsung' } as never);
     await render(<Battery />);
     await fireEvent.press(await screen.findByText('Listo, ya lo hice'));
+    expect(progress.advanceOnboarding).toHaveBeenCalledWith('home');
     expect(mockPush).toHaveBeenCalledWith('/onboarding/home');
   });
 });
@@ -159,7 +204,7 @@ describe('Wi-Fi de casa', () => {
     mocked.learnHomeNetwork.mockResolvedValue(true);
     await render(<HomeNetwork />);
     await fireEvent.press(screen.getByText('Ya estoy conectado'));
-    await waitFor(() => expect(startup.notifyStartupChanged).toHaveBeenCalledTimes(1));
+    await waitFor(() => expect(progress.finishOnboarding).toHaveBeenCalledTimes(1));
   });
 
   it('si no hay Wi-Fi, avisa y no termina', async () => {
@@ -169,13 +214,13 @@ describe('Wi-Fi de casa', () => {
     expect(
       await screen.findByText(/Conéctate al Wi-Fi de tu casa y toca de nuevo/),
     ).toBeOnTheScreen();
-    expect(startup.notifyStartupChanged).not.toHaveBeenCalled();
+    expect(progress.finishOnboarding).not.toHaveBeenCalled();
   });
 
   it('Lo hago después termina sin aprender la red', async () => {
     await render(<HomeNetwork />);
     await fireEvent.press(screen.getByText('Lo hago después'));
     expect(mocked.learnHomeNetwork).not.toHaveBeenCalled();
-    expect(startup.notifyStartupChanged).toHaveBeenCalledTimes(1);
+    expect(progress.finishOnboarding).toHaveBeenCalledTimes(1);
   });
 });

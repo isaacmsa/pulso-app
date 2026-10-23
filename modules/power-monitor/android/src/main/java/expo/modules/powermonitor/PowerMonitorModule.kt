@@ -1,6 +1,7 @@
 package expo.modules.powermonitor
 
 import android.content.Context
+import android.util.Log
 import expo.modules.kotlin.exception.Exceptions
 import expo.modules.kotlin.modules.Module
 import expo.modules.kotlin.modules.ModuleDefinition
@@ -76,8 +77,20 @@ class PowerMonitorModule : Module() {
     }
 
     // El rol que eligió la persona ("watch" o "follow"); "follow" nunca arma ni sube (ver Role).
+    // "follow" además desarma lo que haya quedado armado (ver RoleChange).
     AsyncFunction("setRole") { role: String ->
-      Role.save(context, role)
+      RoleChange.apply(Role.store(context), role, Arming.androidDisarmer(context)).forEach {
+        Log.w(SnapshotRecorder.TAG, "desarmar: ${it.javaClass.simpleName}")
+      }
+    }
+
+    // Qué paso del onboarding falta ("role", "notifications", "battery", "home"), o null si terminó.
+    AsyncFunction("setOnboardingStep") { step: String? ->
+      OnboardingProgress.save(context, step)
+    }
+
+    AsyncFunction("getOnboardingStep") {
+      OnboardingProgress.read(context)
     }
 
     AsyncFunction("getRole") {

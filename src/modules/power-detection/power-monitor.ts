@@ -166,3 +166,18 @@ export type BatterySettingsKind = 'autostart' | 'battery';
 export function openBatterySettings(kind: BatterySettingsKind): Promise<boolean> {
   return PowerMonitor.openBatterySettings(kind);
 }
+
+export type OnboardingStep = 'role' | 'notifications' | 'battery' | 'home';
+
+const ONBOARDING_STEPS: readonly string[] = ['role', 'notifications', 'battery', 'home'];
+
+/** Anota en el nativo qué paso del onboarding falta; `null` lo da por terminado. */
+export function setOnboardingStep(step: OnboardingStep | null): Promise<void> {
+  return PowerMonitor.setOnboardingStep(step);
+}
+
+/** El paso pendiente, o null si no hay (terminado, o un teléfono registrado antes de esta marca). */
+export async function getOnboardingStep(): Promise<OnboardingStep | null> {
+  const step = await PowerMonitor.getOnboardingStep();
+  return step !== null && ONBOARDING_STEPS.includes(step) ? (step as OnboardingStep) : null;
+}

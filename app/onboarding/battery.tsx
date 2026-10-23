@@ -2,6 +2,7 @@ import { useRouter } from 'expo-router';
 import { useEffect, useState } from 'react';
 import { Text } from 'react-native';
 import { type BatteryStep, batteryGuide } from '../../src/modules/onboarding/battery-guide';
+import { advanceOnboarding } from '../../src/modules/onboarding/progress';
 import {
   Card,
   Message,
@@ -59,7 +60,13 @@ export default function Battery() {
           No se pudo abrir esa pantalla. Ábrelo a mano con los pasos de arriba.
         </Message>
       ) : null}
-      <PrimaryButton label="Listo, ya lo hice" onPress={() => router.push('/onboarding/home')} />
+      <PrimaryButton
+        label="Listo, ya lo hice"
+        onPress={async () => {
+          await advanceOnboarding('home');
+          router.push('/onboarding/home');
+        }}
+      />
     </OnboardingScreen>
   );
 }

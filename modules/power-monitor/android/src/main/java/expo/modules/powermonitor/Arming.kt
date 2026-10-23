@@ -47,6 +47,24 @@ object Arming {
         .any { it.state == WorkInfo.State.ENQUEUED || it.state == WorkInfo.State.RUNNING }
     }.getOrDefault(false)
 
+  /** Lo que `ensureArmed` y el onboarding dejaron armado; ver `RoleChange.apply`. */
+  fun androidDisarmer(context: Context): Disarmer = object : Disarmer {
+    private val app = context.applicationContext
+    private val work get() = WorkManager.getInstance(app)
+
+    override fun cancelHeartbeat() { work.cancelUniqueWork(HEARTBEAT) }
+    override fun cancelUpload() { work.cancelUniqueWork(UploadWorker.UNIQUE_NAME) }
+    override fun cancelTransitionCheck() { work.cancelUniqueWork(TransitionCheckWorker.UNIQUE_NAME) }
+    override fun cancelChargingJobs() {
+      val scheduler = app.getSystemService(JobScheduler::class.java)
+      scheduler.cancel(ChargingJob.PRIMARY_ID)
+      scheduler.cancel(ChargingJob.SECONDARY_ID)
+      cancelLegacyChargingJob(app)
+    }
+    override fun disarmNetworkWatch() = NetworkWatch.disarm(app)
+    override fun stopForegroundService() = setForegroundServiceEnabled(app, false)
+  }
+
   private fun cancelLegacyChargingJob(context: Context) {
     val scheduler = context.getSystemService(JobScheduler::class.java)
     val legacy = scheduler.getPendingJob(LEGACY_CHARGING_JOB_ID) ?: return

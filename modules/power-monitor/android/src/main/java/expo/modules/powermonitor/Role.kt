@@ -24,7 +24,7 @@ object Role {
 
   fun isFollowOnly(store: KeyValueStore): Boolean = read(store) == FOLLOW
 
-  private fun store(context: Context) =
+  fun store(context: Context): KeyValueStore =
     PrefsStore(context.applicationContext.getSharedPreferences(PREFS, Context.MODE_PRIVATE))
 
   fun save(context: Context, role: String) = save(store(context), role)
@@ -32,4 +32,36 @@ object Role {
   fun read(context: Context): String? = read(store(context))
 
   fun isFollowOnly(context: Context): Boolean = isFollowOnly(store(context))
+}
+
+/** Todo lo que `Arming` deja armado, uno por uno, para poder desarmarlo (y probar que no queda nada). */
+interface Disarmer {
+  fun cancelHeartbeat()
+  fun cancelUpload()
+  fun cancelTransitionCheck()
+  fun cancelChargingJobs()
+  fun disarmNetworkWatch()
+  fun stopForegroundService()
+}
+
+object RoleChange {
+  /**
+   * Guarda el rol. Si es "follow", desarma lo que un rol anterior (o el registrador de la fase 0) haya dejado
+   * andando: latido, subida (con su cadena de reintentos), comprobación de transición, trabajo C, pedido de red A y
+   * servicio D. El rol se guarda primero, así un trabajo que despierte a media baja ya ve "follow" y termina solo.
+   * Un paso que falla no impide los demás; devuelve las fallas para que el módulo las registre.
+   */
+  fun apply(store: KeyValueStore, role: String, disarmer: Disarmer): List<Throwable> {
+    Role.save(store, role)
+    if (role != Role.FOLLOW) return emptyList()
+    val steps = listOf<() -> Unit>(
+      disarmer::cancelUpload,
+      disarmer::cancelHeartbeat,
+      disarmer::cancelTransitionCheck,
+      disarmer::cancelChargingJobs,
+      disarmer::disarmNetworkWatch,
+      disarmer::stopForegroundService,
+    )
+    return steps.mapNotNull { step -> runCatching(step).exceptionOrNull() }
+  }
 }

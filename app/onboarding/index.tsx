@@ -1,5 +1,5 @@
 import { useRouter } from 'expo-router';
-import { useState } from 'react';
+import { useEffect, useState } from 'react';
 import { register } from '../../src/modules/onboarding/register';
 import {
   Message,
@@ -7,7 +7,11 @@ import {
   PrimaryButton,
   SecondaryButton,
 } from '../../src/modules/onboarding/ui';
-import type { Role } from '../../src/modules/power-detection/power-monitor';
+import {
+  getOnboardingStep,
+  getRole,
+  type Role,
+} from '../../src/modules/power-detection/power-monitor';
 import { ApiError } from '../../src/shared/api/client';
 
 function describeError(error: unknown): string {
@@ -21,6 +25,33 @@ export default function ChooseRole() {
   const router = useRouter();
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState<string | null>(null);
+  const [checking, setChecking] = useState(true);
+
+  // Si la app murió después del registro (por ejemplo en los ajustes de batería), se retoma en el paso que falta
+  // sin volver a preguntar ni a registrar.
+  useEffect(() => {
+    let alive = true;
+    (async () => {
+      try {
+        const [step, role] = await Promise.all([getOnboardingStep(), getRole()]);
+        if (!alive) return;
+        if (step === 'notifications' && role) {
+          router.replace({ pathname: '/onboarding/notifications', params: { role } });
+          return;
+        }
+        if (step === 'battery' || step === 'home') {
+          router.replace(`/onboarding/${step}`);
+          return;
+        }
+      } catch (e) {
+        console.warn('No se pudo leer el paso del onboarding', e);
+      }
+      if (alive) setChecking(false);
+    })();
+    return () => {
+      alive = false;
+    };
+  }, [router]);
 
   const choose = async (role: Role) => {
     if (busy) return;
@@ -35,6 +66,8 @@ export default function ChooseRole() {
       setBusy(false);
     }
   };
+
+  if (checking) return null;
 
   return (
     <OnboardingScreen
