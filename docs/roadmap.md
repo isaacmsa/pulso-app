@@ -58,7 +58,7 @@ Objetivo: tener datos reales de cortes desde la primera semana y un clasificador
 - [x] [app] Mecanismos C y D, con interruptor en la pantalla de registro (2,5 h)
 - [x] [app] Huella de la red de casa, diagnóstico, botones de verdad y exportar (2 h)
 - [ ] [app] APK release en el Xiaomi (hecho), el Samsung de la familia y 1 o 2 teléfonos más (1 h)
-- [ ] [api] Repo, contrato de eventos, clasificador (base, UPS, reportes, confirmaciones), resumen por día y `pnpm spike:analyze` (8,5 h)
+- [x] [api] Repo, contrato de eventos, clasificador (base, UPS, reportes, confirmaciones), resumen por día y `pnpm spike:analyze` (8,5 h)
 - [ ] Cuenta de Play Console pagada y en verificación
 - [ ] Google Group creado y primer mensaje de reclutamiento
 
@@ -66,7 +66,7 @@ Objetivo: tener datos reales de cortes desde la primera semana y un clasificador
 
 ## Fase 1 · API en staging (S3, ~11 h)
 
-- [ ] [api] Cloudflare y Supabase, esquema `app` con RLS, funciones de ingesta, auth y latido en una consulta, `devices`, `homes`, `POST /v1/events`, `GET /v1/homes/me/status`, `openapi.json`, test de contrato y deploy a staging (10 h)
+- [x] [api] Cloudflare y Supabase, esquema `app` con RLS, funciones de ingesta, auth y latido en una consulta, `devices`, `homes`, `POST /v1/events`, `GET /v1/homes/me/status`, `openapi.json`, test de contrato y deploy a staging (10 h)
 - [ ] [app] `pnpm api:generate` con `@hey-api/openapi-ts` y `api/client.ts` (base URL, token, timeouts) (1 h)
 
 **Lista cuando:** reenviar el mismo lote a staging devuelve `duplicated` igual al número de eventos.
