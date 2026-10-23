@@ -26,6 +26,8 @@ import {
   recordReport,
   setForegroundServiceEnabled,
 } from '../src/modules/power-detection/power-monitor';
+import { ApiError, unwrap } from '../src/shared/api/client';
+import { getHealth } from '../src/shared/api/generated/sdk.gen';
 import { colors } from '../src/shared/theme/colors';
 import { formatCaracas } from '../src/shared/time/caracas';
 
@@ -76,6 +78,15 @@ function describeDiagnostics(d: NativeDiagnostics): string {
   ].join('\n');
 }
 
+async function checkApi(): Promise<string> {
+  try {
+    await unwrap(getHealth());
+    return 'en línea';
+  } catch (e) {
+    return `sin respuesta (${e instanceof ApiError ? e.code : 'unknown'})`;
+  }
+}
+
 export default function DebugScreen() {
   const [events, setEvents] = useState<NativeEvent[]>([]);
   const [invalid, setInvalid] = useState(0);
@@ -84,11 +95,14 @@ export default function DebugScreen() {
   const [notice, setNotice] = useState<string | null>(null);
   const [loading, setLoading] = useState(false);
   const [fgsEnabled, setFgsEnabled] = useState(false);
+  const [apiStatus, setApiStatus] = useState<string | null>(null);
 
   const showError = (e: unknown) => setError(e instanceof Error ? e.message : String(e));
 
   const refresh = useCallback(async () => {
     setLoading(true);
+    // Aparte de lo nativo: si la API tarda o falla, la lista de eventos no espera ni se oculta.
+    const api = checkApi();
     try {
       const result = await readEvents(Date.now() - FOURTEEN_DAYS_MS);
       setEvents(result.events);
@@ -102,9 +116,9 @@ export default function DebugScreen() {
       setDiagnostics(await readDiagnostics());
     } catch {
       setDiagnostics(null);
-    } finally {
-      setLoading(false);
     }
+    setApiStatus(await api);
+    setLoading(false);
   }, []);
 
   useFocusEffect(
@@ -155,6 +169,7 @@ export default function DebugScreen() {
       {diagnostics ? (
         <Text style={styles.diagnostics}>{describeDiagnostics(diagnostics)}</Text>
       ) : null}
+      {apiStatus ? <Text style={styles.diagnostics}>API: {apiStatus}</Text> : null}
       {error ? <Text style={styles.error}>{error}</Text> : null}
       {notice ? <Text style={styles.notice}>{notice}</Text> : null}
 
