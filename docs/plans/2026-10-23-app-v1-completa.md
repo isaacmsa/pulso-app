@@ -113,15 +113,17 @@ Detalle completo en `docs/plans/2026-10-23-fase-1-cliente-api.md` (tareas 1 a 3)
 
 **Interfaces que produce:**
 - `BatchBuilder.build(pending: List<Event>, lastSent: SnapshotState?, diagnostics: JSONObject, sentAt: Long): Batch`, con `Batch(events, json, skippedIds)`. `skippedIds` son los snapshots que no cambian el estado: se marcan como subidos sin enviarse.
-- `UploadWorker.enqueue(context)`: `enqueueUniqueWork("upload", APPEND_OR_REPLACE)`, con la restricción `NetworkType.CONNECTED`, backoff exponencial de 30 s y un retraso inicial aleatorio de 0 a 10 s.
-- `LastServerStatus.read(context): String?` (el JSON de `HomeStatus`) y la función JS `getLastServerStatus(): Promise<HomeStatus | null>`, validada con `zHomeStatus`.
+- `UploadWorker.enqueue(context)`: `enqueueUniqueWork("upload", APPEND_OR_REPLACE)`, con la restricción `NetworkType.CONNECTED`, backoff exponencial de 30 s, como máximo 3 reintentos (después termina y la siguiente subida la arranca el próximo latido o cambio) y un retraso inicial aleatorio de 0 a 60 s, como dicen `docs/architecture.md` y `pulso-api/docs/api.md`.
+- `LastServerStatus.read(context)` (el JSON de `{ status, receivedAt }`) y la función JS `getLastServerStatus(): Promise<{ status: HomeStatus; receivedAt: number } | null>`, validada con `zHomeStatus`.
 
 **Comportamiento:**
 - Lee hasta 200 pendientes en orden de `at` y luego de `id`, y hace `POST /v1/events` con `Authorization: Bearer`.
 - **2xx:** marca como subidos los enviados y los saltados, guarda `status` y sigue mientras queden pendientes.
 - **429:** reintenta respetando `Retry-After`.
 - **401:** llama a `TokenVault.markInvalid` y termina sin reintentar.
-- **Otro error o sin red:** `Result.retry()`.
+- **400:** los eventos de ese lote quedan rechazados (no se reenvían) y sigue el lote siguiente. Un evento guardado ilegible también se rechaza.
+- **404** (sin casa): `Result.failure()`, sin reintento.
+- **Otro error, sin red o una excepción inesperada:** `Result.retry()`, hasta 3 veces.
 - **Sin token:** no hace nada.
 
 **Tests:**
@@ -201,7 +203,7 @@ En el Xiaomi:
 - `app/index.tsx` pasa a ser la pestaña Estado, y el enlace al registrador queda en Ajustes → Diagnóstico.
 
 **Interfaces que produce:**
-- `useHomeStatus()`: `getHomeStatus`, que sin red cae en `getLastServerStatus()`.
+- `useHomeStatus()`: `getHomeStatus`, que sin red cae en `getLastServerStatus()` y muestra su `receivedAt` ("hace 20 min").
 - `useOutages(from: number, to: number)`.
 - `formatStatus(status: HomeStatus, now: number): string`, con los tres textos de las restricciones.
 - `formatDuration(ms: number): string` ("1 h 20 min").
