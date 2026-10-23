@@ -16,7 +16,7 @@ Este es el roadmap maestro del producto. Las tareas marcadas **[app]** se hacen 
 
 **Costo total del proyecto: USD 25** (Play Console, una vez). Todo lo demás corre en planes gratuitos que no piden tarjeta (D-021).
 
-Cada fase tiene su plan detallado en el `docs/plans/` de cada repo, escrito al empezar la fase: las fases 2 a 4 dependen de lo que mida el registrador.
+Desde la fase 1, la app sigue un solo plan maestro, `docs/plans/2026-10-23-app-v1-completa.md`, que se aprueba una vez. Lo que depende de lo que mida el registrador (D-012) tiene en el plan su criterio y su salida por defecto (D-029).
 
 ## Calendario
 

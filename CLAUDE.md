@@ -2,7 +2,7 @@
 
 ## Claude Code
 
-- **Al empezar cada fase** de `docs/roadmap.md`, lee los documentos que la fase menciona y escribe su plan en `docs/plans/AAAA-MM-DD-fase-N-<nombre>.md` con la skill `superpowers:writing-plans`. Espera la aprobación de Isaac antes de tocar código.
+- **Todas las fases que faltan siguen un solo plan maestro**, `docs/plans/2026-10-23-app-v1-completa.md`, que Isaac aprueba una sola vez. Con el plan aprobado, las fases se ejecutan seguidas, sin pedir otro plan ni otra aprobación. Solo se detiene en los cortes que lista el plan: pagos y cuentas, el teléfono en la mano, datos reales y publicar en Play. Las decisiones menores se toman, se anotan en `docs/decisions.md` y se le listan a Isaac al cerrar cada fase.
 - **Para la app**, la skill `expo-mobile`.
 - **Si una tarea toca el contrato con la API**, el cambio empieza en `pulso-api` (aditivo y desplegado a staging). Después se regenera el cliente aquí con `pnpm api:generate`. Nunca se edita a mano `src/shared/api/generated/`.
 - **Las tareas que necesitan el Xiaomi** (instalar, apagar el router, tocar ajustes del fabricante) se hacen en la sesión principal con Isaac, no en subagentes. Dile qué hacer con el teléfono y qué debería ver.
