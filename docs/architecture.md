@@ -39,7 +39,7 @@ pulso-app/
 │  │  └─ onboarding/                  # pasos y guías por fabricante
 │  └─ shared/
 │     ├─ api/generated/               # cliente generado desde openapi.json (no se edita a mano)
-│     ├─ api/client.ts                # base URL, token, timeouts y reintentos
+│     ├─ api/client.ts                # URL base, token, timeout y errores (D-024)
 │     └─ ui/ · theme/ · config/
 ├─ __tests__/                         # tests de pantallas (fuera de app/)
 ├─ docs/
@@ -93,7 +93,7 @@ La app no clasifica cortes (D-016). Si el estado crudo y el del servidor no coin
 4. Kotlin arma el JSON de `POST /v1/events` a mano. El backend tiene un test de contrato con un lote real exportado del Xiaomi.
 5. **Compatibilidad:** las versiones viejas de la app siguen instaladas durante meses. El backend solo hace cambios aditivos en `/v1`. Un campo nuevo es opcional hasta que la versión mínima soportada lo mande.
 
-En la fase 0 todavía no hay API. El envoltorio del módulo nativo valida los eventos con un esquema propio, `src/modules/power-detection/native-schema.ts`. En la fase 1 se reemplaza por el esquema generado.
+En la fase 0 todavía no hay API. El envoltorio del módulo nativo valida los eventos con un esquema propio, `src/modules/power-detection/native-schema.ts`. En la fase 2a se reemplaza por el esquema generado.
 
 ## Entornos
 

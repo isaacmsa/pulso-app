@@ -67,7 +67,7 @@ Objetivo: tener datos reales de cortes desde la primera semana y un clasificador
 ## Fase 1 · API en staging (S3, ~11 h)
 
 - [x] [api] Cloudflare y Supabase, esquema `app` con RLS, funciones de ingesta, auth y latido en una consulta, `devices`, `homes`, `POST /v1/events`, `GET /v1/homes/me/status`, `openapi.json`, test de contrato y deploy a staging (10 h)
-- [ ] [app] `pnpm api:generate` con `@hey-api/openapi-ts` y `api/client.ts` (base URL, token, timeouts) (1 h)
+- [x] [app] `pnpm api:generate` con `@hey-api/openapi-ts` y `api/client.ts` (base URL, token, timeouts) (1 h)
 
 **Lista cuando:** reenviar el mismo lote a staging devuelve `duplicated` igual al número de eventos.
 

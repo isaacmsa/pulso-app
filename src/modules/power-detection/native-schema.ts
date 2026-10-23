@@ -1,7 +1,7 @@
 import { z } from 'zod';
 
 // Contrato puente Kotlin → JS. Mismos campos que `deviceEventSchema` de pulso-api/docs/api.md.
-// En la fase 1 se reemplaza por el esquema generado desde openapi.json.
+// En la fase 2a se reemplaza por el esquema generado desde openapi.json.
 
 const epochMs = z.number().int().positive();
 

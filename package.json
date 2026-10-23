@@ -20,6 +20,7 @@
   },
   "devDependencies": {
     "@biomejs/biome": "^2.5.15",
+    "@hey-api/openapi-ts": "0.99.0",
     "@testing-library/react-native": "^14.1.0",
     "@types/jest": "^30.0.0",
     "@types/react": "~19.3.0",
@@ -34,7 +35,8 @@
     "lint": "biome check .",
     "format": "biome format --write .",
     "typecheck": "tsc --noEmit",
-    "test": "jest"
+    "test": "jest",
+    "api:generate": "openapi-ts"
   },
   "private": true,
   "packageManager": "pnpm@12.14.0",
