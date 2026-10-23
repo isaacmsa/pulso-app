@@ -86,11 +86,33 @@ it('home_exists cuenta como éxito', async () => {
   expect(mocked.setRole).toHaveBeenCalledWith('watch');
 });
 
-it('otro error al crear la casa se propaga y el rol no queda guardado', async () => {
+it('otro error al crear la casa se propaga, no pide subir y el onboarding sigue en el paso del rol', async () => {
   createHomeMock.mockResolvedValue(failed('internal_error', 500));
   await expect(register('watch')).rejects.toMatchObject({ code: 'internal_error' });
-  expect(mocked.setRole).not.toHaveBeenCalled();
   expect(mocked.requestUpload).not.toHaveBeenCalled();
+  expect(mocked.setOnboardingStep).toHaveBeenCalledWith('role');
+  expect(mocked.setOnboardingStep).not.toHaveBeenCalledWith('notifications');
+});
+
+it('vigilar después de seguir arma antes de los pasos de batería', async () => {
+  const order: string[] = [];
+  mocked.setRole.mockImplementation(async (role) => {
+    order.push(`setRole:${role}`);
+  });
+  mocked.arm.mockImplementation(async () => {
+    order.push('arm');
+  });
+  mocked.setOnboardingStep.mockImplementation(async (step) => {
+    order.push(`step:${step}`);
+  });
+  await register('follow');
+  order.length = 0;
+  await register('watch');
+  // El rol watch se guarda antes de arm(): ensureArmed no sale temprano, y el teléfono queda armado
+  // durante los pasos siguientes aunque la app muera en ellos.
+  expect(order.indexOf('setRole:watch')).toBeGreaterThanOrEqual(0);
+  expect(order.indexOf('setRole:watch')).toBeLessThan(order.indexOf('arm'));
+  expect(order.indexOf('arm')).toBeLessThan(order.indexOf('step:notifications'));
 });
 
 it('si falló al crear la casa, el reintento no registra otro dispositivo y la completa', async () => {

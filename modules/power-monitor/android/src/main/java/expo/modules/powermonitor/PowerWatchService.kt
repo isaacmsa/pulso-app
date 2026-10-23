@@ -25,8 +25,16 @@ class PowerWatchService : Service() {
     }
   }
 
+  private var registered = false
+
   override fun onCreate() {
     super.onCreate()
+    // Un teléfono "follow" no vigila: si el sistema lo revive (START_STICKY de antes del desarme), se detiene solo.
+    // `start()` ya no lo arranca en follow, así que aquí no hay un startForegroundService pendiente de atender.
+    if (!shouldRun(Role.isFollowOnly(this))) {
+      stopSelf()
+      return
+    }
     val manager = getSystemService(NotificationManager::class.java)
     manager.createNotificationChannel(
       NotificationChannel(CHANNEL_ID, "Vigilancia de la luz", NotificationManager.IMPORTANCE_LOW),
@@ -50,13 +58,18 @@ class PowerWatchService : Service() {
     } else {
       registerReceiver(powerReceiver, filter)
     }
+    registered = true
     running = true
   }
 
-  override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int = START_STICKY
+  override fun onStartCommand(intent: Intent?, flags: Int, startId: Int): Int {
+    val followOnly = Role.isFollowOnly(this)
+    if (!shouldRun(followOnly)) stopSelf()
+    return startMode(followOnly)
+  }
 
   override fun onDestroy() {
-    unregisterReceiver(powerReceiver)
+    if (registered) unregisterReceiver(powerReceiver)
     running = false
     super.onDestroy()
   }
@@ -68,7 +81,14 @@ class PowerWatchService : Service() {
     private const val NOTIFICATION_ID = 1001
     const val PREF_ENABLED = "fgs.enabled"
 
+    /** Un teléfono "follow" no corre D. */
+    fun shouldRun(followOnly: Boolean): Boolean = !followOnly
+
+    /** En follow, el sistema no lo revive si el proceso muere a mitad del desarme. */
+    fun startMode(followOnly: Boolean): Int = if (followOnly) START_NOT_STICKY else START_STICKY
+
     fun start(context: Context) {
+      if (!shouldRun(Role.isFollowOnly(context))) return
       runCatching { context.startForegroundService(Intent(context, PowerWatchService::class.java)) }
         .onFailure { Log.w(SnapshotRecorder.TAG, "no se pudo iniciar el servicio en primer plano", it) }
     }

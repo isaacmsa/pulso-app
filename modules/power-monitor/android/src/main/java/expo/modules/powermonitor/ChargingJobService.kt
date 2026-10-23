@@ -21,8 +21,14 @@ class ChargingJobService : JobService() {
   private val handler = Handler(Looper.getMainLooper())
 
   override fun onStartJob(params: JobParameters): Boolean {
+    // Un teléfono que ya solo sigue una casa: no graba y no queda corriendo (false = trabajo terminado, sin relevo).
+    if (!ChargingJob.shouldRecord(Role.isFollowOnly(applicationContext))) return false
     thread { SnapshotRecorder.record(applicationContext, "charging_job") }
     handler.postDelayed({
+      if (!ChargingJob.shouldHandOver(Role.isFollowOnly(applicationContext))) {
+        jobFinished(params, false)
+        return@postDelayed
+      }
       // Primero el relevo y después terminar: jobFinished es asíncrono y, con el mismo id,
       // el trabajo viejo todavía figuraría como pendiente y el nuevo no se crearía.
       ChargingJob.schedule(applicationContext, ChargingJob.nextId(params.jobId))
@@ -33,11 +39,15 @@ class ChargingJobService : JobService() {
 
   override fun onStopJob(params: JobParameters): Boolean {
     handler.removeCallbacksAndMessages(null)
+    // cancel() de un trabajo en curso llega aquí más tarde: en follow no se graba ni se reagenda el otro id.
+    if (!ChargingJob.shouldRecord(Role.isFollowOnly(applicationContext))) return ChargingJob.RETRY_ON_STOP
     val reason = if (Build.VERSION.SDK_INT >= 31) params.stopReason else -1
     Log.i(SnapshotRecorder.TAG, "charging_job ${params.jobId} detenido, motivo=$reason")
     thread { SnapshotRecorder.record(applicationContext, "charging_job") }
     // Un trabajo nuevo con el otro id nace sin fallos acumulados: arranca en cuanto vuelve la carga.
-    ChargingJob.schedule(applicationContext, ChargingJob.nextId(params.jobId))
+    if (ChargingJob.shouldRescheduleOnStop(Role.isFollowOnly(applicationContext))) {
+      ChargingJob.schedule(applicationContext, ChargingJob.nextId(params.jobId))
+    }
     return ChargingJob.RETRY_ON_STOP
   }
 
@@ -54,10 +64,16 @@ object ChargingJob {
   /** Nunca usar el reintento del sistema: su backoff exponencial crece con cada corte. */
   const val RETRY_ON_STOP = false
 
+  /** Un teléfono "follow" no detecta: C no graba, no hace relevo y no se reagenda al detenerse. */
+  fun shouldRecord(followOnly: Boolean): Boolean = !followOnly
+  fun shouldHandOver(followOnly: Boolean): Boolean = !followOnly
+  fun shouldRescheduleOnStop(followOnly: Boolean): Boolean = !followOnly
+
   fun nextId(current: Int): Int = if (current == PRIMARY_ID) SECONDARY_ID else PRIMARY_ID
 
   /** Si no hay ningún trabajo C pendiente ni corriendo, agenda el primario. */
   fun ensureScheduled(context: Context) {
+    if (Role.isFollowOnly(context)) return
     if (!isArmed(context)) schedule(context, PRIMARY_ID)
   }
 

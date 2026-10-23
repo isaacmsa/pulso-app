@@ -27,4 +27,20 @@ class ChargingJobTest {
   fun `al detenerse no pide reintento con backoff`() {
     assertEquals(false, ChargingJob.RETRY_ON_STOP)
   }
+
+  // cancel() sobre un trabajo en curso llama a onStopJob más tarde; si este reagendara siempre, C quedaría
+  // persistido para siempre en un teléfono que ya solo sigue.
+  @Test
+  fun `en follow, el ChargingJob no se vuelve a agendar al detenerse`() {
+    assertEquals(false, ChargingJob.shouldRescheduleOnStop(followOnly = true))
+    assertEquals(true, ChargingJob.shouldRescheduleOnStop(followOnly = false))
+  }
+
+  @Test
+  fun `en follow, el ChargingJob no graba ni hace relevo`() {
+    assertEquals(false, ChargingJob.shouldRecord(followOnly = true))
+    assertEquals(false, ChargingJob.shouldHandOver(followOnly = true))
+    assertEquals(true, ChargingJob.shouldRecord(followOnly = false))
+    assertEquals(true, ChargingJob.shouldHandOver(followOnly = false))
+  }
 }
