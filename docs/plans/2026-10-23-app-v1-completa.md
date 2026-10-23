@@ -294,7 +294,7 @@ En el Xiaomi:
 
 **Pantallas:**
 - **Compartir mi casa:** `Share` con el mensaje "Sigue la luz de mi casa en Pulso: https://pulso-api.isaac-mendozasa.workers.dev/c/CODIGO".
-- **Regenerar código:** `POST /v1/homes/me/share-code`.
+- **Regenerar código:** `POST /v1/homes/me/share-code`. Quita a todos los seguidores (D-030), así que antes se confirma con el texto "Las personas que siguen tu casa dejarán de verla hasta que les mandes el código nuevo".
 - **Seguir una casa:** código de 8 caracteres en mayúsculas, con el alfabeto de la API.
 - **Casas que sigo:** cada casa con su estado, y deslizar para dejar de seguir.
 

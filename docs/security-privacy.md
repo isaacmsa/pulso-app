@@ -26,7 +26,7 @@ No se guardan nombre, teléfono, correo, ubicación, SSID, BSSID ni contactos. L
 | Amenaza | Protección | Límite honesto |
 | --- | --- | --- |
 | Robo del token del teléfono | El token vive en la bóveda del módulo nativo (Android Keystore). El servidor guarda solo el SHA-256. El token se devuelve una sola vez. Nunca aparece en logs ni en Sentry | Un teléfono con root puede extraerlo |
-| Enumerar códigos de casas para ver quién está sin luz | 8 caracteres de un alfabeto de 31 (≈ 8,5 × 10¹¹ combinaciones), límite por IP, regeneración desde ajustes | Quien ya tiene el código ve el estado hasta que se regenere |
+| Enumerar códigos de casas para ver quién está sin luz | 8 caracteres de un alfabeto de 31 (≈ 8,5 × 10¹¹ combinaciones), límite por IP, regeneración desde ajustes: el código nuevo invalida el viejo y quita a todos los seguidores (D-030) | Quien ya tiene el código ve el estado hasta que se regenere; después tiene que pedir el código nuevo |
 | Lotes falsos para inventar cortes | Token por dispositivo y límite por dispositivo | Afecta el historial propio y las alertas de quien sigue esa casa |
 | Registros masivos de dispositivos | 5 por minuto por IP (pulso-api A-014); se borran a los 7 días los que nunca mandaron nada | Con CGNAT el límite tiene que ser holgado; Play Integrity queda para v1.1 si hace falta |
 | Secretos en el bundle | Nada secreto en `EXPO_PUBLIC_*` ni en git; los secretos del Worker con `wrangler secret put` y la cadena de conexión solo en Hyperdrive | |
@@ -49,7 +49,7 @@ Publicada en `GET /privacidad`, servida por la API. Se enlaza desde la ficha de 
 - Cuánto tiempo se guarda cada cosa
 - Que se usan proveedores para operar (Cloudflare, Supabase, Expo y Firebase para el push, Sentry y GitHub para los respaldos cifrados) y que no se venden datos
 - Cómo borrar todo desde la app
-- Que el código de la casa permite a quien lo tenga ver si hay luz, y cómo regenerarlo
+- Que el código de la casa permite a quien lo tenga ver si hay luz, y que regenerarlo desde ajustes corta el acceso de todos los que la siguen
 - Un contacto (correo del desarrollador)
 
 ## Formulario de seguridad de datos de Play

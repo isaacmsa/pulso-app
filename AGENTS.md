@@ -68,7 +68,7 @@ Los que dependen de algo que todavía no existe se confirman al crearlo. Si camb
 - **Router con mini UPS**: el Wi-Fi no cae durante el corte, así que el modo base no lo ve. Es el caso típico de los clientes de Yagos Store.
 - **`org.json` en tests de JVM**: el de `android.jar` es un stub. Agregar `testImplementation 'org.json:json:…'`, y usar `JSONObject.NULL`, porque `put(key, null)` borra la clave.
 - **Versiones viejas en Play**: la gente no actualiza. La app tiene que tolerar campos nuevos en las respuestas, y el backend, lotes de versiones anteriores.
-- **16 GB de RAM**: probar en el Android físico, no en el emulador. No levantar Docker ni el simulador de iOS mientras compila Gradle.
+- **16 GB de RAM**: probar en el Android físico, no en el emulador. No levantar el simulador de iOS mientras compila Gradle. Docker Desktop limitado a 2 GB puede quedar abierto (lo usa `pulso-api`): Isaac lo autorizó el 23 de octubre.
 
 ## Documentación
 
