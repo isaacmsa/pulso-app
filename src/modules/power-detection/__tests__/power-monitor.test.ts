@@ -60,6 +60,7 @@ it('valida el diagnóstico del nativo', () => {
     ignoringBatteryOptimizations: true,
     pendingEvents: 3,
     storedEvents: 3,
+    rejectedEvents: 0,
     homeNetworkLearned: true,
     armed: { networkCallback: false, heartbeat: true, chargingJob: true, foregroundService: false },
   };
@@ -96,21 +97,40 @@ describe('getLastServerStatus', () => {
     alias: 'Casa',
     openOutageStart: 1_793_570_400_000,
   };
+  const receivedAt = 1_793_570_500_000;
 
   it('devuelve null si el nativo no tiene estado guardado', async () => {
     native.getLastServerStatus.mockResolvedValue(null);
     await expect(getLastServerStatus()).resolves.toBeNull();
   });
 
-  it('devuelve el estado validado con zHomeStatus', async () => {
-    native.getLastServerStatus.mockResolvedValue(JSON.stringify({ ...status, nuevo: 1 }));
-    await expect(getLastServerStatus()).resolves.toEqual(status);
+  it('devuelve el estado validado con zHomeStatus y la hora en que llegó', async () => {
+    native.getLastServerStatus.mockResolvedValue(
+      JSON.stringify({ status: { ...status, nuevo: 1 }, receivedAt }),
+    );
+    await expect(getLastServerStatus()).resolves.toEqual({ status, receivedAt });
   });
 
   it('devuelve null si el estado no cumple el esquema o no es JSON', async () => {
-    native.getLastServerStatus.mockResolvedValue(JSON.stringify({ ...status, state: 'nuevo' }));
+    native.getLastServerStatus.mockResolvedValue(
+      JSON.stringify({ status: { ...status, state: 'nuevo' }, receivedAt }),
+    );
     await expect(getLastServerStatus()).resolves.toBeNull();
     native.getLastServerStatus.mockResolvedValue('no-json');
     await expect(getLastServerStatus()).resolves.toBeNull();
+  });
+
+  it('devuelve null con el formato viejo, sin receivedAt', async () => {
+    native.getLastServerStatus.mockResolvedValue(JSON.stringify(status));
+    await expect(getLastServerStatus()).resolves.toBeNull();
+    native.getLastServerStatus.mockResolvedValue(JSON.stringify({ status }));
+    await expect(getLastServerStatus()).resolves.toBeNull();
+  });
+
+  it('devuelve null si receivedAt no es un entero positivo', async () => {
+    for (const bad of [0, -5, 1.5, '1793570500000']) {
+      native.getLastServerStatus.mockResolvedValue(JSON.stringify({ status, receivedAt: bad }));
+      await expect(getLastServerStatus()).resolves.toBeNull();
+    }
   });
 });

@@ -25,7 +25,7 @@ declare class PowerMonitorModule extends NativeModule<Record<string, never>> {
   getToken(): Promise<string | null>;
   /** Si el servidor rechazó el token y hay que registrar de nuevo. */
   isTokenInvalid(): Promise<boolean>;
-  /** El último HomeStatus que devolvió la subida en segundo plano, como JSON sin validar, o null. */
+  /** `{ status: HomeStatus, receivedAt }` de la última subida aceptada, como JSON sin validar, o null. */
   getLastServerStatus(): Promise<string | null>;
   /** Guarda la URL base de la API para la subida en segundo plano (la versión de la app la pone el nativo). */
   configureApi(apiUrl: string): Promise<void>;

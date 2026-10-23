@@ -94,6 +94,19 @@ class BatchBuilderTest {
   }
 
   @Test
+  fun `un evento ilegible queda en rejectedIds y no rompe el lote`() {
+    val broken = Event("0192f3a4-5b6c-7d8e-9f01-000000000002", 1_793_570_402_000L, "report", "{no es json")
+    val noState = Event("0192f3a4-5b6c-7d8e-9f01-000000000003", 1_793_570_403_000L, "snapshot", """{"kind":"snapshot"}""")
+    val pending = listOf(reportEvent(1), broken, noState, snapshotEvent(4))
+
+    val batch = BatchBuilder.build(pending, null, fullDiagnostics(), sentAt)
+
+    assertEquals(listOf(pending[0].id, pending[3].id), batch.events.map { it.id })
+    assertEquals(listOf(broken.id, noState.id), batch.rejectedIds)
+    assertEquals(2, JSONObject(batch.json).getJSONArray("events").length())
+  }
+
+  @Test
   fun `lote vacío igual se construye (latido)`() {
     val batch = BatchBuilder.build(emptyList(), null, fullDiagnostics(), sentAt)
 

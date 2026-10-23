@@ -75,6 +75,7 @@ function describeDiagnostics(d: NativeDiagnostics): string {
     `${d.manufacturer} ${d.model} · Android SDK ${d.sdkInt} · app ${d.appVersion}`,
     `Bucket: ${bucket} · Sin restricción de batería: ${d.ignoringBatteryOptimizations ? 'sí' : 'no'}`,
     `Armados: ${armed || 'ninguno'} · Red de casa: ${d.homeNetworkLearned ? 'aprendida' : 'no'}`,
+    `Eventos: ${d.storedEvents} guardados · ${d.pendingEvents} sin subir · ${d.rejectedEvents} rechazados`,
   ].join('\n');
 }
 

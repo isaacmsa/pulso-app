@@ -7,14 +7,21 @@ import org.junit.Assert.assertTrue
 import org.junit.Test
 import java.io.IOException
 import java.net.SocketTimeoutException
+import kotlin.random.Random
 
 /** EventStore en memoria: mismo orden (at, id) y misma regla de "último snapshot subido". */
 private class MemoryUploadStore(events: List<Event>) : UploadStore {
   val events = events.toMutableList()
   val uploaded = mutableSetOf<String>()
+  val rejected = mutableSetOf<String>()
+  var failWith: RuntimeException? = null
 
-  override fun pending(limit: Int): List<Event> =
-    events.filter { it.id !in uploaded }.sortedWith(compareBy({ it.at }, { it.id })).take(limit)
+  private fun open() = events.filter { it.id !in uploaded && it.id !in rejected }
+
+  override fun pending(limit: Int): List<Event> {
+    failWith?.let { throw it }
+    return open().sortedWith(compareBy({ it.at }, { it.id })).take(limit)
+  }
 
   override fun lastUploadedSnapshotJson(): String? =
     events.filter { it.kind == "snapshot" && it.id in uploaded }
@@ -24,7 +31,11 @@ private class MemoryUploadStore(events: List<Event>) : UploadStore {
     uploaded.addAll(ids)
   }
 
-  override fun pendingCount(): Int = events.count { it.id !in uploaded }
+  override fun markRejected(ids: Collection<String>) {
+    rejected.addAll(ids)
+  }
+
+  override fun pendingCount(): Int = open().size
 }
 
 private data class Sent(val url: String, val token: String, val body: JSONObject) {
@@ -57,7 +68,7 @@ private fun ok(status: String = STATUS_JSON) =
   HttpResponse(200, """{"accepted":1,"duplicated":0,"status":$status}""", null)
 
 class UploadWorkerTest {
-  private val statuses = mutableListOf<String>()
+  private val statuses = mutableListOf<Pair<String, Long>>()
   private val rejected = mutableListOf<String>()
 
   private fun uploader(store: UploadStore, http: ApiHttp, token: String? = "tok_abc") = Uploader(
@@ -67,7 +78,7 @@ class UploadWorkerTest {
     token = token,
     diagnostics = { fullDiagnostics() },
     clock = { 1_793_570_500_000L },
-    onStatus = { statuses += it },
+    onStatus = { status, receivedAt -> statuses += status to receivedAt },
     onTokenRejected = { rejected += it },
   )
 
@@ -190,8 +201,115 @@ class UploadWorkerTest {
 
     uploader(store, FakeHttp(ok())).run()
 
-    assertEquals(1, statuses.size)
-    assertEquals(JSONObject(STATUS_JSON).toString(), JSONObject(statuses.single()).toString())
+    val (status, receivedAt) = statuses.single()
+    assertEquals(JSONObject(STATUS_JSON).toString(), JSONObject(status).toString())
+    assertEquals(1_793_570_500_000L, receivedAt)
+  }
+
+  @Test
+  fun `el estado guardado lleva status y receivedAt`() {
+    val saved = JSONObject(LastServerStatus.encode(STATUS_JSON, 1_793_570_500_000L))
+
+    assertEquals(setOf("status", "receivedAt"), saved.keys().asSequence().toSet())
+    assertEquals(1_793_570_500_000L, saved.getLong("receivedAt"))
+    assertEquals(JSONObject(STATUS_JSON).toString(), saved.getJSONObject("status").toString())
+  }
+
+  @Test
+  fun `un 400 marca el lote como rechazado y sigue con el siguiente`() {
+    val all = (1..250).map { reportEvent(it) }
+    val store = MemoryUploadStore(all)
+    val http = FakeHttp(HttpResponse(400, """{"error":{"code":"validation_failed","message":"x"}}""", null), ok())
+
+    assertEquals(UploadOutcome.Done, uploader(store, http).run())
+
+    assertEquals(2, http.sent.size)
+    assertEquals(all.take(200).map { it.id }.toSet(), store.rejected)
+    assertEquals(all.drop(200).map { it.id }, http.sent[1].ids)
+    assertEquals(all.drop(200).map { it.id }.toSet(), store.uploaded)
+    assertEquals(0, store.pendingCount())
+  }
+
+  @Test
+  fun `un 400 no rechaza los snapshots saltados que no viajaron`() {
+    // El 2 repite al 1 dentro del lote rechazado: el servidor no conoce ese estado, así que el 2 vuelve a evaluarse.
+    val store = MemoryUploadStore(listOf(snapshotEvent(1), snapshotEvent(2)))
+    val http = FakeHttp(HttpResponse(400, "", null), ok())
+
+    assertEquals(UploadOutcome.Done, uploader(store, http).run())
+
+    assertEquals(setOf(snapshotEvent(1).id), store.rejected)
+    assertEquals(listOf(snapshotEvent(2).id), http.sent[1].ids)
+  }
+
+  @Test
+  fun `un evento guardado ilegible se rechaza sin frenar la subida`() {
+    val broken = Event("0192f3a4-5b6c-7d8e-9f01-000000000002", 1_793_570_402_000L, "report", "{no es json")
+    val store = MemoryUploadStore(listOf(reportEvent(1), broken, snapshotEvent(3)))
+    val http = FakeHttp()
+
+    assertEquals(UploadOutcome.Done, uploader(store, http).run())
+
+    assertEquals(listOf(reportEvent(1).id, snapshotEvent(3).id), http.sent.single().ids)
+    assertEquals(setOf(broken.id), store.rejected)
+    assertEquals(0, store.pendingCount())
+  }
+
+  @Test
+  fun `404 no reintenta`() {
+    val store = MemoryUploadStore(listOf(reportEvent(1)))
+    val http = FakeHttp(HttpResponse(404, """{"error":{"code":"not_found","message":"x"}}""", null))
+
+    val outcome = uploader(store, http).run()
+
+    assertEquals(UploadOutcome.NoHome, outcome)
+    assertEquals(WorkDecision.Failure, UploadPolicy.resultFor(outcome, runAttemptCount = 0))
+    assertEquals(1, http.sent.size)
+    assertEquals(1, store.pendingCount())
+  }
+
+  @Test
+  fun `una excepción inesperada termina en Retry`() {
+    val store = MemoryUploadStore(listOf(reportEvent(1)))
+    store.failWith = IllegalStateException("la base está bloqueada")
+
+    assertEquals(UploadOutcome.Retry, uploader(store, FakeHttp()).run())
+  }
+
+  @Test
+  fun `reintenta hasta 3 veces`() {
+    for (attempt in 0 until UploadPolicy.MAX_RETRIES) {
+      assertEquals(WorkDecision.Retry, UploadPolicy.resultFor(UploadOutcome.Retry, attempt))
+    }
+  }
+
+  @Test
+  fun `a la cuarta falla termina y deja los eventos pendientes`() {
+    val store = MemoryUploadStore(listOf(reportEvent(1), reportEvent(2)))
+    val http = FakeHttp(HttpResponse(503, "", null))
+
+    val outcome = uploader(store, http).run()
+
+    assertEquals(WorkDecision.Success, UploadPolicy.resultFor(outcome, runAttemptCount = 3))
+    assertEquals(2, store.pendingCount())
+    assertTrue(store.uploaded.isEmpty() && store.rejected.isEmpty())
+  }
+
+  @Test
+  fun `la política no reintenta lo que no es un error pasajero`() {
+    assertEquals(WorkDecision.Success, UploadPolicy.resultFor(UploadOutcome.Done, 0))
+    assertEquals(WorkDecision.Success, UploadPolicy.resultFor(UploadOutcome.NoToken, 0))
+    assertEquals(WorkDecision.Success, UploadPolicy.resultFor(UploadOutcome.TokenRejected, 0))
+    assertEquals(WorkDecision.RescheduleAfter(60_000L), UploadPolicy.resultFor(UploadOutcome.RetryAfter(60_000L), 5))
+  }
+
+  @Test
+  fun `el retraso inicial va de 0 a 60 s al azar`() {
+    assertEquals(60_000L, UploadPolicy.MAX_JITTER_MS)
+    val random = Random(42)
+    val delays = (1..1_000).map { UploadPolicy.initialDelayMs(5_000L, random) }
+    assertTrue(delays.all { it in 5_000L..65_000L })
+    assertTrue(delays.any { it > 15_000L })
   }
 
   @Test

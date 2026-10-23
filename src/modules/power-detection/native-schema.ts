@@ -21,6 +21,7 @@ export type NativeEvent = z.infer<typeof nativeEventSchema>;
 // (`nativeDiagnosticsSchema` de pulso-api/src/domain/spike/schema.ts).
 export const nativeDiagnosticsSchema = zDiagnostics.extend({
   storedEvents: z.int().gte(0),
+  rejectedEvents: z.int().gte(0),
   homeNetworkLearned: z.boolean(),
   armed: z.object({
     networkCallback: z.boolean(),

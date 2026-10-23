@@ -1,4 +1,5 @@
 import * as Sharing from 'expo-sharing';
+import { z } from 'zod';
 import PowerMonitor from '../../../modules/power-monitor';
 import type { HomeStatus } from '../../shared/api/generated/types.gen';
 import { zHomeStatus } from '../../shared/api/generated/zod.gen';
@@ -116,11 +117,19 @@ export function configureApi(apiUrl: string): Promise<void> {
   return PowerMonitor.configureApi(apiUrl);
 }
 
+const lastServerStatusSchema = z.object({
+  status: zHomeStatus,
+  receivedAt: z.int().positive(),
+});
+
+export type LastServerStatus = { status: HomeStatus; receivedAt: number };
+
 /**
- * El último estado de la casa que dio el servidor a la subida en segundo plano (D-016, D-027).
- * null si no hay, o si lo guardado no cumple `zHomeStatus`.
+ * El último estado de la casa que dio el servidor a la subida en segundo plano, con la hora (epoch ms) en que
+ * llegó (D-016, D-027). null si no hay, si lo guardado no cumple `zHomeStatus` o si viene del formato viejo
+ * sin `receivedAt`.
  */
-export async function getLastServerStatus(): Promise<HomeStatus | null> {
+export async function getLastServerStatus(): Promise<LastServerStatus | null> {
   const raw = await PowerMonitor.getLastServerStatus();
   if (raw == null) return null;
   let value: unknown;
@@ -129,6 +138,6 @@ export async function getLastServerStatus(): Promise<HomeStatus | null> {
   } catch {
     return null;
   }
-  const parsed = zHomeStatus.safeParse(value);
+  const parsed = lastServerStatusSchema.safeParse(value);
   return parsed.success ? parsed.data : null;
 }

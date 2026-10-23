@@ -26,9 +26,15 @@ data class SnapshotState(val plugged: Boolean, val onWifi: Boolean, val homeWifi
 
 /**
  * `events` son los que viajan y `json` el cuerpo de `POST /v1/events`. `skippedIds` son snapshots que repiten el
- * estado: se marcan como subidos sin enviarse.
+ * estado: se marcan como subidos sin enviarse. `rejectedIds` son eventos guardados que no se pueden leer: se marcan
+ * como rechazados y nunca viajan, para que no tumben el lote entero.
  */
-data class Batch(val events: List<Event>, val json: String, val skippedIds: List<String>)
+data class Batch(
+  val events: List<Event>,
+  val json: String,
+  val skippedIds: List<String>,
+  val rejectedIds: List<String> = emptyList(),
+)
 
 /** Arma el lote con la forma exacta de `eventBatchSchema` (pulso-api/docs/api.md). */
 object BatchBuilder {
@@ -46,26 +52,36 @@ object BatchBuilder {
   fun build(pending: List<Event>, lastSent: SnapshotState?, diagnostics: JSONObject, sentAt: Long): Batch {
     val events = mutableListOf<Event>()
     val skipped = mutableListOf<String>()
+    val rejected = mutableListOf<String>()
+    val array = JSONArray()
     var current = lastSent
     for (event in pending) {
       if (events.size == MAX_EVENTS) break
+      val parsed = runCatching { JSONObject(event.json) }.getOrNull()
+      if (parsed == null) {
+        rejected += event.id
+        continue
+      }
       if (event.kind == "snapshot") {
         val state = SnapshotState.fromJson(event.json)
-        if (state != null && state == current) {
+        if (state == null) {
+          rejected += event.id
+          continue
+        }
+        if (state == current) {
           skipped += event.id
           continue
         }
         current = state
       }
       events += event
+      array.put(parsed)
     }
-    val array = JSONArray()
-    events.forEach { array.put(JSONObject(it.json)) }
     val json = JSONObject()
       .put("sentAt", sentAt)
       .put("diagnostics", contractDiagnostics(diagnostics))
       .put("events", array)
-    return Batch(events, json.toString(), skipped)
+    return Batch(events, json.toString(), skipped, rejected)
   }
 
   private fun contractDiagnostics(full: JSONObject): JSONObject {

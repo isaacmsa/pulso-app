@@ -44,6 +44,7 @@ object Diagnostics {
     val prefs = context.getSharedPreferences(Arming.PREFS, Context.MODE_PRIVATE)
     return contract(context)
       .put("storedEvents", store.count())
+      .put("rejectedEvents", store.rejectedCount())
       .put("homeNetworkLearned", HomeNetwork(context).isLearned())
       .put(
         "armed",

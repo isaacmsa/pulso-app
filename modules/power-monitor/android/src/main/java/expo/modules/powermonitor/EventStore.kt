@@ -8,7 +8,8 @@ import android.database.sqlite.SQLiteOpenHelper
 
 /**
  * Eventos guardados en el teléfono (14 días). Es la fuente del estado crudo y de la subida.
- * La columna `uploaded` existe desde la versión 1 del esquema (fase 0), así que no hace falta migrar.
+ * La columna `uploaded` existe desde la versión 1 del esquema (fase 0), así que no hace falta migrar:
+ * vale 0 (pendiente), 1 (subido o saltado) o 2 (rechazado).
  */
 class EventStore private constructor(context: Context) :
   SQLiteOpenHelper(context.applicationContext, "power_monitor.db", null, 1), UploadStore {
@@ -55,18 +56,26 @@ class EventStore private constructor(context: Context) :
 
   override fun lastUploadedSnapshotJson(): String? =
     readableDatabase.rawQuery(
-      "SELECT json FROM events WHERE kind = 'snapshot' AND uploaded = 1 ORDER BY at DESC, id DESC LIMIT 1",
+      "SELECT json FROM events WHERE kind = 'snapshot' AND uploaded = $UPLOADED ORDER BY at DESC, id DESC LIMIT 1",
       null,
     ).use { c -> if (c.moveToFirst()) c.getString(0) else null }
 
-  /** Marca los ids en una sola transacción: o quedan todos subidos o ninguno. */
+  override fun markUploaded(ids: Collection<String>) = mark(ids, UPLOADED)
+
+  override fun markRejected(ids: Collection<String>) = mark(ids, REJECTED)
+
+  /** Rechazados en los últimos 14 días (400 del servidor o JSON ilegible). Solo para el diagnóstico local. */
+  fun rejectedCount(): Int =
+    DatabaseUtils.queryNumEntries(readableDatabase, "events", "uploaded = $REJECTED").toInt()
+
+  /** Marca los ids en una sola transacción: o quedan todos marcados o ninguno. */
   @Synchronized
-  override fun markUploaded(ids: Collection<String>) {
+  private fun mark(ids: Collection<String>, value: Int) {
     if (ids.isEmpty()) return
     val db = writableDatabase
     db.beginTransaction()
     try {
-      db.compileStatement("UPDATE events SET uploaded = 1 WHERE id = ?").use { statement ->
+      db.compileStatement("UPDATE events SET uploaded = $value WHERE id = ?").use { statement ->
         for (id in ids) {
           statement.bindString(1, id)
           statement.executeUpdateDelete()
@@ -87,6 +96,10 @@ class EventStore private constructor(context: Context) :
 
   companion object {
     const val RETENTION_MS = 1_209_600_000L
+
+    // Valores de la columna `uploaded`: 0 pendiente, 1 subido (o saltado), 2 rechazado (nunca se reenvía).
+    const val UPLOADED = 1
+    const val REJECTED = 2
 
     @Volatile private var instance: EventStore? = null
 
