@@ -60,25 +60,6 @@ export const zHomeStatus = z.object({
     openOutageStart: z.int().gt(0).nullable()
 });
 
-export const zShareCode = z.object({
-    shareCode: z.string().regex(/^[2-9A-HJKMNP-Z]{8}$/)
-});
-
-export const zFollowItem = z.object({
-    homeId: z.uuid(),
-    alias: z.string().min(1).max(40),
-    status: zHomeStatus
-});
-
-export const zFollowRequest = z.object({
-    code: z.string().regex(/^[2-9A-HJKMNP-Z]{8}$/),
-    alias: z.string().min(1).max(40)
-});
-
-export const zFollowList = z.object({
-    items: z.array(zFollowItem)
-});
-
 export const zOutageItem = z.object({
     id: z.uuid(),
     start: z.int().gt(0),
@@ -228,32 +209,6 @@ export const zUpdateHomeResponse = z.void();
  * Estado de la casa
  */
 export const zGetHomeStatusResponse = zHomeStatus;
-
-/**
- * El código nuevo
- */
-export const zRegenerateShareCodeResponse = zShareCode;
-
-/**
- * Casas que sigo, ordenadas por alias
- */
-export const zListFollowsResponse = zFollowList;
-
-export const zFollowHomeBody = zFollowRequest;
-
-/**
- * Siguiendo la casa, con su estado
- */
-export const zFollowHomeResponse = zFollowItem;
-
-export const zUnfollowHomePath = z.object({
-    homeId: z.uuid()
-});
-
-/**
- * Ya no la sigo
- */
-export const zUnfollowHomeResponse = z.void();
 
 export const zGetOutagesQuery = z.object({
     from: z.int().gt(0).lte(4102444800000),
