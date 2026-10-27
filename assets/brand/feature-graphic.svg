@@ -1,0 +1,15 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 500" width="1024" height="500">
+  <title>Pulso: sabe cuándo se fue la luz en tu casa</title>
+  <!--
+    assets/store/feature-graphic.png: gráfico destacado de Play (1024 × 500, sin transparencia).
+    Lo importante queda lejos de los bordes, porque Play lo recorta en algunas vistas.
+  -->
+  <rect width="1024" height="500" fill="#0B0F14"/>
+  <line x1="0" y1="250" x2="1024" y2="250" stroke="#141A22" stroke-width="10"/>
+  <image href="pulso-mark.svg" x="64" y="90" width="320" height="320"/>
+  <g font-family="system-ui, -apple-system, 'Segoe UI', Roboto, sans-serif" fill="#E6EDF3">
+    <text x="420" y="232" font-size="124" font-weight="800" letter-spacing="-3">Pulso</text>
+    <text x="424" y="300" font-size="38" font-weight="500">Sabe cuándo se fue la luz</text>
+    <text x="424" y="348" font-size="38" font-weight="500">en tu casa</text>
+  </g>
+</svg>

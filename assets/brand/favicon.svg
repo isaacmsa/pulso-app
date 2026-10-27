@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024" width="48" height="48">
+  <title>Pulso</title>
+  <!-- assets/favicon.png: a 48 px la marca va más grande (86%) para que se lea. -->
+  <rect width="1024" height="1024" rx="160" fill="#0B0F14"/>
+  <image href="pulso-mark.svg" x="71.68" y="71.68" width="880.64" height="880.64"/>
+</svg>

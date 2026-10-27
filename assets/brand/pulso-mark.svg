@@ -1,0 +1,19 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024" width="1024" height="1024">
+  <!--
+    Marca de Pulso: un latido que cruza un rayo. Fondo transparente; cada salida la escala y la
+    pone sobre su fondo. El hueco alrededor del rayo es transparencia real (máscara), para que la
+    versión monocromática también se lea.
+  -->
+  <title>Pulso</title>
+  <defs>
+    <path id="bolt" d="M600 150 L720 150 L640 430 L770 430 L480 880 L545 600 L430 600 Z"/>
+    <mask id="gap" maskUnits="userSpaceOnUse" x="0" y="0" width="1024" height="1024">
+      <rect width="1024" height="1024" fill="#fff"/>
+      <use href="#bolt" fill="#000" stroke="#000" stroke-width="100" stroke-linejoin="round"/>
+    </mask>
+  </defs>
+  <g transform="translate(0 -3)">
+    <polyline mask="url(#gap)" points="120,515 180,515 225,405 280,625 318,515 904,515" fill="none" stroke="#E6EDF3" stroke-width="60" stroke-linecap="round" stroke-linejoin="round"/>
+    <use href="#bolt" fill="#F5B942" stroke="#F5B942" stroke-width="28" stroke-linejoin="round"/>
+  </g>
+</svg>

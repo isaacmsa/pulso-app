@@ -17,6 +17,7 @@ Los que dependen de algo que todavía no existe se confirman al crearlo. Si camb
 | App en el Xiaomi (dev build) | `pnpm android` |
 | APK release para teléfonos de prueba | `pnpm android:release` |
 | Tests de Kotlin | `cd android && ./gradlew :power-monitor:testDebugUnitTest` |
+| Regenerar el ícono y los gráficos de la tienda desde `assets/brand/` | `pnpm brand:render` (usa Chrome de `/Applications`; `CHROME=` para otro) |
 | Regenerar el cliente de la API (fase 1) | `pnpm api:generate` (lee `OPENAPI_SOURCE`) |
 | Usar la API local desde el teléfono (fase 1) | `adb reverse tcp:8787 tcp:8787` |
 | Analizar un exporte del registrador | En `pulso-api`: `pnpm spike:analyze <archivo.json>` |

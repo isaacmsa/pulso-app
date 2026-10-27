@@ -1,0 +1,6 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024" width="1024" height="1024">
+  <title>Ícono de Pulso</title>
+  <!-- assets/icon.png: cuadrado completo; el sistema le pone la máscara. Marca al 80%. -->
+  <rect width="1024" height="1024" fill="#0B0F14"/>
+  <image href="pulso-mark.svg" x="102.4" y="102.4" width="819.2" height="819.2"/>
+</svg>

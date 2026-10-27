@@ -1,0 +1,5 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024" width="1024" height="1024">
+  <title>Pulso, pantalla de inicio</title>
+  <!-- assets/splash-icon.png: la marca sola sobre transparencia, al 90%. -->
+  <image href="pulso-mark.svg" x="51.2" y="51.2" width="921.6" height="921.6"/>
+</svg>

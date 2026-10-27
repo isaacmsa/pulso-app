@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 1024 1024" width="1024" height="1024">
+  <title>Pulso, capa delantera del ícono adaptativo</title>
+  <!--
+    assets/android-icon-foreground.png: capa delantera del ícono adaptativo, fondo transparente.
+    La marca va al 68% para quedar dentro del círculo seguro de 66 dp sobre 108 dp (radio 313 px).
+  -->
+  <image href="pulso-mark.svg" x="163.84" y="163.84" width="696.32" height="696.32"/>
+</svg>

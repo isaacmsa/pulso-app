@@ -40,7 +40,8 @@
     "format": "biome format --write .",
     "typecheck": "tsc --noEmit",
     "test": "jest",
-    "api:generate": "openapi-ts"
+    "api:generate": "openapi-ts",
+    "brand:render": "node scripts/brand/render.mjs"
   },
   "private": true,
   "packageManager": "pnpm@12.14.0",
