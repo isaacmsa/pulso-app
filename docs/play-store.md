@@ -12,7 +12,7 @@ Los requisitos se verificaron el 15 de octubre de 2026. Revisarlos de nuevo el d
 
 | Fecha | Paso |
 | --- | --- |
-| Antes del 31 oct | Cuenta personal creada y pagada (USD 25, el único pago del proyecto); verificación de identidad y del dispositivo Android en curso |
+| Antes del 7 nov (movido desde el 31 oct, Isaac, 27 oct) | Cuenta personal creada y pagada (USD 25, el único pago del proyecto); verificación de identidad y del dispositivo Android en curso |
 | 26 oct en adelante | Reclutamiento de testers (Google Group) |
 | 9 al 19 nov | App creada en Play Console, prueba interna, ficha y formularios |
 | 18 o 19 nov | Prueba cerrada enviada a revisión |

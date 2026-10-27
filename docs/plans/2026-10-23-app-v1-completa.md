@@ -23,7 +23,7 @@ Estos pasos no se pueden saltar ni hacer por ti: piden dinero o cuentas a tu nom
 
 | # | Cuándo | Qué | Por qué no lo puedo hacer yo |
 | --- | --- | --- | --- |
-| C1 | **Antes del 31 oct** | Pagar Play Console (USD 25) y empezar la verificación de identidad y del dispositivo | Es un pago y una cuenta a tu nombre (D-011). La verificación tarda días, y sin la cuenta no hay prueba cerrada el 18 o 19 de noviembre |
+| C1 | **Antes del 7 nov** (movido desde el 31 oct) | Pagar Play Console (USD 25) y empezar la verificación de identidad y del dispositivo | Es un pago y una cuenta a tu nombre (D-011). La verificación tarda días, y sin la cuenta no hay prueba cerrada el 18 o 19 de noviembre |
 | C2 | Desde ya hasta el 9 nov | Que el registrador corra en 2 o más teléfonos de la familia y te manden sus exportes | D-012 necesita 5 o más cortes reales en 2 o más teléfonos. Es un dato, no código |
 | C3 | Una vez por fase | Sesión con el Xiaomi: instalar, desenchufar, apagar la red y mirar la pantalla | Hay que tenerlo en la mano, y Xiaomi apaga el Inicio automático en cada instalación |
 | C4 | Fase 2b (~16 nov) | Crear la cuenta de Expo y hacer `eas login`; crear la app en Play Console y subir el primer AAB | Son cuentas y publicación a tu nombre |
