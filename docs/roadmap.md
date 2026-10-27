@@ -37,7 +37,7 @@ Desde la fase 1, la app sigue un solo plan maestro, `docs/plans/2026-10-23-app-v
 | Cuenta | Cuándo | Costo | Para qué |
 | --- | --- | --- | --- |
 | GitHub (repos públicos `pulso-app` y `pulso-api`) | S1, día 1 | USD 0 | Código, CI ilimitado en repos públicos y respaldos cifrados |
-| Google Play Console | S2, antes del 31 oct | **USD 25, una vez** | La verificación tarda días y la necesitamos en S5 |
+| Google Play Console | Antes del 7 nov (movido desde el 31 oct) | **USD 25, una vez** | La verificación tarda días y la necesitamos en S5 |
 | Google Group `pulso-testers` | S2 | USD 0 | Lista de la prueba cerrada |
 | Cloudflare | S3 | USD 0, sin tarjeta | Workers, Hyperdrive, Rate Limiting, crons |
 | Supabase (2 proyectos: staging y producción) | S3 | USD 0, sin tarjeta | PostgreSQL |
