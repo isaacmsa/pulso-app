@@ -58,7 +58,7 @@ Tiene que coincidir con la política.
 
 | Pregunta | Respuesta |
 | --- | --- |
-| ¿Recoge datos? | Sí: IDs del dispositivo (identificador anónimo y token push), actividad de la app (eventos de corriente y red), información y rendimiento (diagnóstico y fallos) |
+| ¿Recoge datos? | Sí: IDs del dispositivo (identificador anónimo y token push), actividad de la app (eventos de corriente y red; alias de las casas, reportes y confirmaciones como contenido generado por el usuario), información y rendimiento (diagnóstico y fallos). El desglose por tipo de dato de Play está en `docs/play-store.md` |
 | ¿Comparte datos con terceros? | No. El procesamiento por proveedores de servicio no cuenta como compartir |
 | ¿Cifrado en tránsito? | Sí (HTTPS) |
 | ¿El usuario puede pedir que se borren? | Sí, desde la app |
