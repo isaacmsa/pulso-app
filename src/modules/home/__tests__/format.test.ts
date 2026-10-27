@@ -70,3 +70,60 @@ it('weekdayLabel pone el día de la semana de una fecha de Caracas', () => {
   expect(weekdayLabel('2026-10-23')).toBe('vie 23 oct');
   expect(weekdayLabel('2026-10-19')).toBe('lun 19 oct');
 });
+
+describe('formatStatus con since de otro día (D-032)', () => {
+  const now = caracas(23, 19, 25);
+  const con = (since: number) => ({
+    state: 'con_luz' as const,
+    since,
+    alias: 'Casa',
+    openOutageStart: null,
+  });
+  const sinNoticias = (since: number) => ({ ...con(since), state: 'sin_noticias' as const });
+
+  it('since de hoy da el texto exacto de producto', () => {
+    expect(formatStatus(con(caracas(23, 14, 30)), now)).toBe('Hay luz desde las 2:30 p. m.');
+    expect(formatStatus(sinNoticias(caracas(23, 19, 10)), now)).toBe(
+      'Sin noticias de la casa desde las 7:10 p. m.',
+    );
+  });
+
+  it('since de ayer dice ayer', () => {
+    expect(formatStatus(con(caracas(22, 14, 30)), now)).toBe('Hay luz desde ayer a las 2:30 p. m.');
+    expect(formatStatus(sinNoticias(caracas(22, 19, 10)), now)).toBe(
+      'Sin noticias de la casa desde ayer a las 7:10 p. m.',
+    );
+    expect(
+      formatStatus(
+        { ...con(caracas(23, 0, 0)), state: 'sin_luz', openOutageStart: caracas(22, 23, 40) },
+        caracas(23, 6, 0),
+      ),
+    ).toBe('Se fue la luz ayer a las 11:40 p. m. (6 h 20 min)');
+  });
+
+  it('since de hace 3 días dice la fecha', () => {
+    expect(formatStatus(con(caracas(20, 14, 30)), now)).toBe(
+      'Hay luz desde el 20/10 a las 2:30 p. m.',
+    );
+    expect(formatStatus(sinNoticias(caracas(20, 19, 10)), now)).toBe(
+      'Sin noticias de la casa desde el 20/10 a las 7:10 p. m.',
+    );
+    expect(
+      formatStatus(
+        { ...con(caracas(20, 18, 0)), state: 'sin_luz', openOutageStart: caracas(20, 18, 5) },
+        now,
+      ),
+    ).toBe('Se fue la luz el 20/10 a las 6:05 p. m. (73 h 20 min)');
+  });
+
+  it('cruza la medianoche de Caracas', () => {
+    // 12:05 a. m. del 23 y el cambio fue a las 11:50 p. m. del 22: son 15 min, pero ya es "ayer".
+    expect(formatStatus(con(caracas(22, 23, 50)), caracas(23, 0, 5))).toBe(
+      'Hay luz desde ayer a las 11:50 p. m.',
+    );
+    // Un minuto antes de la medianoche sigue siendo hoy.
+    expect(formatStatus(con(caracas(22, 23, 50)), caracas(22, 23, 59))).toBe(
+      'Hay luz desde las 11:50 p. m.',
+    );
+  });
+});

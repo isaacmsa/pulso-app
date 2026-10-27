@@ -1,8 +1,8 @@
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { fireEvent, render, screen, waitFor } from '@testing-library/react-native';
 import type { ReactElement } from 'react';
-import Status from '../../../../app/(tabs)/index';
 import * as native from '../../power-detection/power-monitor';
+import Status from '../screens/StatusScreen';
 
 jest.mock('expo-router', () => {
   const { useEffect } = jest.requireActual<typeof import('react')>('react');

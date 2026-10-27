@@ -1,8 +1,8 @@
 import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { render, screen } from '@testing-library/react-native';
 import type { ReactElement } from 'react';
-import History from '../../../../app/(tabs)/history';
 import * as native from '../../power-detection/power-monitor';
+import History from '../screens/HistoryScreen';
 
 jest.mock('../../power-detection/power-monitor', () => ({ getRole: jest.fn() }));
 

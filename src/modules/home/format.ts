@@ -32,18 +32,46 @@ export function formatAgo(ms: number, now: number): string {
   return days === 1 ? 'hace 1 día' : `hace ${days} días`;
 }
 
-/** El estado de la casa en una frase (textos de docs/product.md). La app no clasifica: solo muestra lo que dio el servidor (D-016). */
+/** null si `ms` es de hoy en Caracas; si no, "ayer" o "el 12/11". */
+function dayLabel(ms: number, now: number): string | null {
+  const days = Math.round((startOfCaracasDay(now) - startOfCaracasDay(ms)) / DAY_MS);
+  if (days <= 0) return null;
+  return days === 1 ? 'ayer' : formatDate(ms);
+}
+
+/** "a las 2:30 p. m." si es de hoy; si no, "ayer a las 2:30 p. m." o "el 12/11 a las 2:30 p. m.". */
+function formatAt(ms: number, now: number): string {
+  const day = dayLabel(ms, now);
+  return `${day ? `${day} ` : ''}a las ${formatClock(ms)}`;
+}
+
+/** "el 12/11" (día/mes) en hora de Caracas. */
+function formatDate(ms: number): string {
+  const { day, month } = caracasParts(ms);
+  return `el ${String(day).padStart(2, '0')}/${String(month).padStart(2, '0')}`;
+}
+
+/**
+ * El estado de la casa en una frase (textos de docs/product.md). Si la hora no es de hoy en Caracas, dice "ayer" o la
+ * fecha (D-032). La app no clasifica: solo muestra lo que dio el servidor (D-016).
+ */
 export function formatStatus(status: HomeStatus, now: number): string {
   switch (status.state) {
     case 'con_luz':
-      return `Hay luz desde las ${formatClock(status.since)}`;
+      return `Hay luz desde ${formatSince(status.since, now)}`;
     case 'sin_luz': {
       const start = status.openOutageStart ?? status.since;
-      return `Se fue la luz a las ${formatClock(start)} (${formatDuration(now - start)})`;
+      return `Se fue la luz ${formatAt(start, now)} (${formatDuration(now - start)})`;
     }
     case 'sin_noticias':
-      return `Sin noticias de la casa desde las ${formatClock(status.since)}`;
+      return `Sin noticias de la casa desde ${formatSince(status.since, now)}`;
   }
+}
+
+/** Lo que va después de "desde": "las 2:30 p. m.", "ayer a las 2:30 p. m." o "el 12/11 a las 2:30 p. m.". */
+function formatSince(ms: number, now: number): string {
+  const day = dayLabel(ms, now);
+  return day ? `${day} a las ${formatClock(ms)}` : `las ${formatClock(ms)}`;
 }
 
 const WEEKDAYS = ['dom', 'lun', 'mar', 'mié', 'jue', 'vie', 'sáb'];
@@ -68,9 +96,7 @@ export function formatPhoneState(plugged: boolean, since: number, now: number): 
   if (startOfCaracasDay(since) === startOfCaracasDay(now)) {
     return `${label} desde las ${formatClock(since)}`;
   }
-  const { day, month } = caracasParts(since);
-  const date = `${String(day).padStart(2, '0')}/${String(month).padStart(2, '0')}`;
-  return `${label} desde el ${date} a las ${formatClock(since)}`;
+  return `${label} desde ${formatDate(since)} a las ${formatClock(since)}`;
 }
 
 /** Texto para una falla al pedir datos al servidor. */

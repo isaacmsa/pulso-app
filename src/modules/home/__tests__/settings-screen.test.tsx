@@ -2,11 +2,11 @@ import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
 import { fireEvent, render, screen, waitFor } from '@testing-library/react-native';
 import type { ReactElement } from 'react';
 import { Linking, Platform } from 'react-native';
-import Settings from '../../../../app/(tabs)/settings';
 import { STAGING_API_URL } from '../../../shared/api/client';
 import { clearQueryCache } from '../../../shared/query/client';
 import { notifyStartupChanged } from '../../onboarding/startup';
 import * as native from '../../power-detection/power-monitor';
+import Settings from '../screens/SettingsScreen';
 
 const mockPush = jest.fn();
 jest.mock('expo-router', () => ({ useRouter: () => ({ push: mockPush }) }));
