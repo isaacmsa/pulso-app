@@ -1,3 +1,4 @@
+import { PersistQueryClientProvider } from '@tanstack/react-query-persist-client';
 import { Stack } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { useEffect } from 'react';
@@ -10,6 +11,7 @@ import {
   recordAppOpen,
 } from '../src/modules/power-detection/power-monitor';
 import { resolveApiUrl, setTokenProvider } from '../src/shared/api/client';
+import { persistOptions, queryClient } from '../src/shared/query/client';
 import { colors } from '../src/shared/theme/colors';
 
 // El token vive en la bóveda nativa: el cliente lo pide en cada llamada y JS no lo guarda.
@@ -36,7 +38,7 @@ export default function RootLayout() {
   }
 
   return (
-    <>
+    <PersistQueryClientProvider client={queryClient} persistOptions={persistOptions}>
       <StatusBar style="light" />
       <Stack
         screenOptions={{
@@ -51,10 +53,10 @@ export default function RootLayout() {
           <Stack.Screen name="onboarding/home" />
         </Stack.Protected>
         <Stack.Protected guard={startup !== 'onboarding'}>
-          <Stack.Screen name="index" />
+          <Stack.Screen name="(tabs)" />
           <Stack.Screen name="debug" />
         </Stack.Protected>
       </Stack>
-    </>
+    </PersistQueryClientProvider>
   );
 }

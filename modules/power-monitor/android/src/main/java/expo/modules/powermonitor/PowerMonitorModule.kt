@@ -84,6 +84,14 @@ class PowerMonitorModule : Module() {
       }
     }
 
+    // "Borrar mis datos": JS lo llama solo después de que el servidor confirmó el borrado. Lanza si algún paso falla
+    // (borrar dos veces da lo mismo, así que JS ofrece reintentar).
+    AsyncFunction("wipe") {
+      val failures = Wipe.run(context)
+      failures.forEach { Log.w(SnapshotRecorder.TAG, "borrar: ${it.javaClass.simpleName}") }
+      if (failures.isNotEmpty()) throw IllegalStateException("No se pudo borrar todo (${failures.size} pasos fallaron)")
+    }
+
     // Qué paso del onboarding falta ("role", "notifications", "battery", "home"), o null si terminó.
     AsyncFunction("setOnboardingStep") { step: String? ->
       OnboardingProgress.save(context, step)

@@ -83,7 +83,7 @@ Objetivo: tener datos reales de cortes desde la primera semana y un clasificador
 
 ## Fase 2b · App usable (S5, primera mitad, ~5,5 h)
 
-- [ ] [app] Pantallas en modo oscuro por defecto (3 h):
+- [x] [app] Pantallas en modo oscuro por defecto (3 h):
   - Estado: estado del servidor, estado crudo del teléfono y reporte de un toque
   - Historial: semana por día y total
   - Ajustes: alias, diagnóstico, privacidad y borrar datos

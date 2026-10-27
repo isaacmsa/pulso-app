@@ -1,0 +1,58 @@
+package expo.modules.powermonitor
+
+import android.content.Context
+
+/** Todo lo que este teléfono guarda de la persona, una cosa por función, para poder borrarlo (y probarlo) sin Android. */
+class LocalData(
+  /** Marca el teléfono como "follow" para que un trabajo que despierte a media baja no arme ni suba nada. */
+  val lockRole: () -> Unit,
+  val clearEvents: () -> Unit,
+  val clearToken: () -> Unit,
+  val clearHomeFingerprint: () -> Unit,
+  val clearLastServerStatus: () -> Unit,
+  val clearRole: () -> Unit,
+  val clearOnboarding: () -> Unit,
+)
+
+/**
+ * "Borrar mis datos" en el teléfono: deja el almacén de eventos, la bóveda del token, la huella de la red de casa,
+ * el último estado del servidor, el rol y el paso del onboarding vacíos, y cancela todos los trabajos. JS lo llama
+ * solo después de que el servidor confirmó el borrado (204).
+ *
+ * Orden: primero el token (nada nuevo sale a la red), después el rol "follow" (nada nuevo se arma) y los trabajos
+ * cancelados, y recién entonces se vacían los datos, con el rol al final. Cada paso va por su cuenta: uno que
+ * falla no impide los demás. Devuelve las fallas; con alguna, JS lo dice y la persona puede repetirlo, porque
+ * borrar dos veces da lo mismo.
+ */
+object Wipe {
+  fun run(disarmer: Disarmer, data: LocalData): List<Throwable> {
+    val failures = mutableListOf<Throwable>()
+    fun attempt(step: () -> Unit) { runCatching(step).exceptionOrNull()?.let(failures::add) }
+    attempt(data.clearToken)
+    attempt(data.lockRole)
+    failures += Disarming.all(disarmer)
+    attempt(data.clearEvents)
+    attempt(data.clearHomeFingerprint)
+    attempt(data.clearLastServerStatus)
+    attempt(data.clearOnboarding)
+    attempt(data.clearRole)
+    return failures
+  }
+
+  fun androidData(context: Context): LocalData {
+    val app = context.applicationContext
+    val roleStore = Role.store(app)
+    return LocalData(
+      lockRole = { Role.save(roleStore, Role.FOLLOW) },
+      clearEvents = { EventStore.get(app).clear() },
+      clearToken = { TokenVault.clear(app) },
+      clearHomeFingerprint = { HomeNetwork(app).forget() },
+      clearLastServerStatus = { LastServerStatus.clear(app) },
+      clearRole = { Role.clear(roleStore) },
+      clearOnboarding = { OnboardingProgress.save(roleStore, null) },
+    )
+  }
+
+  fun run(context: Context): List<Throwable> =
+    run(Arming.androidDisarmer(context), androidData(context))
+}

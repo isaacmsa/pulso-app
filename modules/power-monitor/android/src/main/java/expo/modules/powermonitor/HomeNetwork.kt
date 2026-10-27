@@ -16,6 +16,9 @@ class HomeNetwork(context: Context) {
 
   fun isLearned(): Boolean = prefs.contains(KEY)
 
+  /** Olvida la huella (solo lo hace el borrado de datos). */
+  fun forget() = prefs.edit().remove(KEY).apply()
+
   /** Guarda la huella de la red Wi-Fi actual. Devuelve false si no hay Wi-Fi con gateway IPv4. */
   fun learnCurrent(): Boolean {
     val fingerprint = currentFingerprint(appContext) ?: return false

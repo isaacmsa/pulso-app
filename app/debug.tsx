@@ -1,16 +1,7 @@
 import { useFocusEffect } from 'expo-router';
 import { useCallback, useState } from 'react';
-import {
-  FlatList,
-  PermissionsAndroid,
-  Platform,
-  Pressable,
-  RefreshControl,
-  StyleSheet,
-  Switch,
-  Text,
-  View,
-} from 'react-native';
+import { FlatList, Pressable, RefreshControl, StyleSheet, Switch, Text, View } from 'react-native';
+import { requestForegroundService } from '../src/modules/power-detection/foreground-service';
 import type {
   NativeDiagnostics,
   NativeEvent,
@@ -24,7 +15,6 @@ import {
   readEvents,
   recordAppOpen,
   recordReport,
-  setForegroundServiceEnabled,
 } from '../src/modules/power-detection/power-monitor';
 import { ApiError, unwrap } from '../src/shared/api/client';
 import { getHealth } from '../src/shared/api/generated/sdk.gen';
@@ -140,15 +130,10 @@ export default function DebugScreen() {
 
   const toggleForegroundService = async (enabled: boolean) => {
     try {
-      // POST_NOTIFICATIONS existe desde Android 13 (API 33); antes no hay que pedirlo.
-      if (enabled && Number(Platform.Version) >= 33) {
-        const result = await PermissionsAndroid.request('android.permission.POST_NOTIFICATIONS');
-        if (result !== PermissionsAndroid.RESULTS.GRANTED) {
-          setError('Sin permiso de notificaciones el servicio no puede mostrarse');
-          return;
-        }
+      if ((await requestForegroundService(enabled)) === 'no_permission') {
+        setError('Sin permiso de notificaciones el servicio no puede mostrarse');
+        return;
       }
-      await setForegroundServiceEnabled(enabled);
       setFgsEnabled(enabled);
       await refresh();
     } catch (e) {

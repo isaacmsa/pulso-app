@@ -24,6 +24,9 @@ object Role {
 
   fun isFollowOnly(store: KeyValueStore): Boolean = read(store) == FOLLOW
 
+  /** Borra el rol: el teléfono vuelve a no haber elegido (solo lo hace el borrado de datos). */
+  fun clear(store: KeyValueStore) = store.remove(KEY)
+
   fun store(context: Context): KeyValueStore =
     PrefsStore(context.applicationContext.getSharedPreferences(PREFS, Context.MODE_PRIVATE))
 
@@ -44,6 +47,24 @@ interface Disarmer {
   fun stopForegroundService()
 }
 
+object Disarming {
+  /**
+   * Desarma todo, uno por uno: latido, subida (con su cadena de reintentos), comprobación de transición, trabajo C,
+   * pedido de red A y servicio D. Un paso que falla no impide los demás; devuelve las fallas.
+   */
+  fun all(disarmer: Disarmer): List<Throwable> {
+    val steps = listOf<() -> Unit>(
+      disarmer::cancelUpload,
+      disarmer::cancelHeartbeat,
+      disarmer::cancelTransitionCheck,
+      disarmer::cancelChargingJobs,
+      disarmer::disarmNetworkWatch,
+      disarmer::stopForegroundService,
+    )
+    return steps.mapNotNull { step -> runCatching(step).exceptionOrNull() }
+  }
+}
+
 object RoleChange {
   /**
    * Guarda el rol. Si es "follow", desarma lo que un rol anterior (o el registrador de la fase 0) haya dejado
@@ -54,14 +75,6 @@ object RoleChange {
   fun apply(store: KeyValueStore, role: String, disarmer: Disarmer): List<Throwable> {
     Role.save(store, role)
     if (role != Role.FOLLOW) return emptyList()
-    val steps = listOf<() -> Unit>(
-      disarmer::cancelUpload,
-      disarmer::cancelHeartbeat,
-      disarmer::cancelTransitionCheck,
-      disarmer::cancelChargingJobs,
-      disarmer::disarmNetworkWatch,
-      disarmer::stopForegroundService,
-    )
-    return steps.mapNotNull { step -> runCatching(step).exceptionOrNull() }
+    return Disarming.all(disarmer)
   }
 }

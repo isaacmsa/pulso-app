@@ -22,4 +22,6 @@ object LastServerStatus {
     store(context).put(KEY, encode(statusJson, receivedAt))
 
   fun read(context: Context): String? = store(context).get(KEY)
+
+  fun clear(context: Context) = store(context).remove(KEY)
 }

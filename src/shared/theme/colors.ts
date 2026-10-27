@@ -4,4 +4,7 @@ export const colors = {
   text: '#E6EDF3',
   textMuted: '#8B98A5',
   accent: '#F5B942',
+  ok: '#3DDC84',
+  danger: '#FF6B6B',
+  warn: '#F5B942',
 } as const;

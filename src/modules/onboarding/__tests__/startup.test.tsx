@@ -81,7 +81,7 @@ describe('RootLayout', () => {
     state('tok', true, 'watch');
     await render(<RootLayout />);
     expect(await screen.findByText('screen:onboarding/index')).toBeOnTheScreen();
-    expect(screen.queryByText('screen:index')).toBeNull();
+    expect(screen.queryByText('screen:(tabs)')).toBeNull();
     expect(mocked.arm).not.toHaveBeenCalled();
     expect(mocked.recordAppOpen).not.toHaveBeenCalled();
   });
@@ -89,9 +89,9 @@ describe('RootLayout', () => {
   it('vigilando, abre la app y arma la detección', async () => {
     state('tok', false, 'watch');
     await render(<RootLayout />);
-    expect(await screen.findByText('screen:index')).toBeOnTheScreen();
+    expect(await screen.findByText('screen:(tabs)')).toBeOnTheScreen();
     expect(screen.queryByText('screen:onboarding/index')).toBeNull();
-    await screen.findByText('screen:index');
+    await screen.findByText('screen:(tabs)');
     expect(mocked.configureApi).toHaveBeenCalled();
     expect(mocked.arm).toHaveBeenCalledTimes(1);
     expect(mocked.recordAppOpen).toHaveBeenCalledTimes(1);
@@ -101,13 +101,13 @@ describe('RootLayout', () => {
     state('tok', false, 'watch', 'battery');
     await render(<RootLayout />);
     expect(await screen.findByText('screen:onboarding/index')).toBeOnTheScreen();
-    expect(screen.queryByText('screen:index')).toBeNull();
+    expect(screen.queryByText('screen:(tabs)')).toBeNull();
   });
 
   it('Solo seguir no arma la detección ni registra el arranque', async () => {
     state('tok', false, 'follow');
     await render(<RootLayout />);
-    expect(await screen.findByText('screen:index')).toBeOnTheScreen();
+    expect(await screen.findByText('screen:(tabs)')).toBeOnTheScreen();
     expect(mocked.configureApi).toHaveBeenCalled();
     expect(mocked.arm).not.toHaveBeenCalled();
     expect(mocked.recordAppOpen).not.toHaveBeenCalled();

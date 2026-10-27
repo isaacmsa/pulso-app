@@ -37,6 +37,12 @@ class EventStore private constructor(context: Context) :
     db.delete("events", "at < ?", arrayOf((System.currentTimeMillis() - RETENTION_MS).toString()))
   }
 
+  /** Vacía el almacén, también lo pendiente de subir (solo lo hace el borrado de datos). */
+  @Synchronized
+  fun clear() {
+    writableDatabase.delete("events", null, null)
+  }
+
   /** Los eventos desde `sinceMs`, del más nuevo al más viejo, como JSON. */
   fun since(sinceMs: Long, limit: Int = 500): List<String> =
     readableDatabase.rawQuery(

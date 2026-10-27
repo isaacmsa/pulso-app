@@ -181,3 +181,11 @@ export async function getOnboardingStep(): Promise<OnboardingStep | null> {
   const step = await PowerMonitor.getOnboardingStep();
   return step !== null && ONBOARDING_STEPS.includes(step) ? (step as OnboardingStep) : null;
 }
+
+/**
+ * Borra todo lo que el teléfono guarda de la persona y cancela los trabajos. Llamarlo solo después de que el servidor
+ * confirmó el borrado (204): hasta entonces, nada local se toca. Lanza si el nativo no pudo con algún paso.
+ */
+export function wipe(): Promise<void> {
+  return PowerMonitor.wipe();
+}
