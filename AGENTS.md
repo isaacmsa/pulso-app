@@ -29,6 +29,7 @@ Los que dependen de algo que todavía no existe se confirman al crearlo. Si camb
 | Construir el APK para teléfonos de prueba | `cd android && ./gradlew app:assembleRelease -PreactNativeArchitectures=arm64-v8a,armeabi-v7a` (firmado con la clave de debug: sirve para instalar a mano, no para Play) |
 | Ver los pedidos de red de Pulso | `adb shell dumpsys connectivity \| grep isaacmendoza` |
 | Abrir la pantalla de registro | `adb shell am start -a android.intent.action.VIEW -d "pulso://debug"` |
+| Build en EAS (después de crear la cuenta de Expo, corte C4) | `eas build -p android --profile preview` (APK contra staging) y `eas build -p android --profile production` (AAB contra producción); los perfiles están en `eas.json` y EAS lleva `versionCode` (`appVersionSource: remote`) |
 
 ## Convenciones de este proyecto
 
