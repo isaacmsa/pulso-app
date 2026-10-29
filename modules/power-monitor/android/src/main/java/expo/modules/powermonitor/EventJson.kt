@@ -19,8 +19,12 @@ data class Report(val id: String, val at: Long, val value: String)
 /** La respuesta Sí/No a "¿Se fue la luz?". `outageStart` es la hora del corte que dio el servidor y nunca se reescribe. */
 data class Confirmation(val id: String, val at: Long, val outageStart: Long, val answer: Boolean) {
   companion object {
+    /** Cuánto en el futuro se tolera un `outageStart` (relojes desfasados). JS exige lo mismo. */
+    const val FUTURE_TOLERANCE_MS = 5 * 60_000L
+
     fun create(outageStart: Long, answer: Boolean, now: Long): Confirmation {
       require(outageStart > 0) { "outageStart inválido: $outageStart" }
+      require(outageStart <= now + FUTURE_TOLERANCE_MS) { "outageStart en el futuro: $outageStart" }
       return Confirmation(UuidV7.generate(now), now, outageStart, answer)
     }
   }

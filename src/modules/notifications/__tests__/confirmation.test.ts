@@ -13,13 +13,14 @@ jest.mock('expo-notifications', () => ({
   addNotificationResponseReceivedListener: jest.fn(),
   getLastNotificationResponse: jest.fn(),
   clearLastNotificationResponse: jest.fn(),
+  dismissNotificationAsync: jest.fn(),
 }));
 jest.mock('../../power-detection/power-monitor', () => ({ recordConfirmation: jest.fn() }));
 
 const notifications = Notifications as jest.Mocked<typeof Notifications>;
 const record = recordConfirmation as jest.Mock;
 
-const OUTAGE_START = 1_793_570_000_000;
+const OUTAGE_START = Date.now() - 3_600_000;
 
 function response(
   actionIdentifier: string,
@@ -47,6 +48,7 @@ beforeEach(() => {
   notifications.getLastNotificationResponse.mockReturnValue(null);
   notifications.setNotificationCategoryAsync.mockResolvedValue({} as never);
   record.mockResolvedValue(true);
+  notifications.dismissNotificationAsync.mockResolvedValue(undefined);
   warnSpy = jest.spyOn(console, 'warn').mockImplementation(() => undefined);
 });
 
@@ -93,6 +95,35 @@ describe('confirmación Sí/No', () => {
   it('tocar el cuerpo del aviso (sin acción) no guarda confirmación', async () => {
     startConfirmationResponses();
     listener(response(Notifications.DEFAULT_ACTION_IDENTIFIER));
+    await flush();
+    expect(record).not.toHaveBeenCalled();
+  });
+
+  it('responder descarta el aviso', async () => {
+    startConfirmationResponses();
+    listener(response('yes', undefined, 'notif-9'));
+    await flush();
+    expect(notifications.dismissNotificationAsync).toHaveBeenCalledWith('notif-9');
+  });
+
+  it('si no se pudo guardar, no descarta el aviso', async () => {
+    record.mockRejectedValueOnce(new Error('boom'));
+    startConfirmationResponses();
+    listener(response('yes'));
+    await flush();
+    expect(notifications.dismissNotificationAsync).not.toHaveBeenCalled();
+  });
+
+  it('una respuesta manejada se borra de la última respuesta', async () => {
+    startConfirmationResponses();
+    listener(response('no'));
+    await flush();
+    expect(notifications.clearLastNotificationResponse).toHaveBeenCalledTimes(1);
+  });
+
+  it('un outageStart en el futuro no guarda nada', async () => {
+    startConfirmationResponses();
+    listener(response('yes', { type: 'confirm', outageStart: Date.now() + 10 * 60_000 }, 'f'));
     await flush();
     expect(record).not.toHaveBeenCalled();
   });

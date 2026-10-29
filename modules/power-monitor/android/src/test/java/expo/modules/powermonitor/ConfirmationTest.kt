@@ -24,4 +24,14 @@ class ConfirmationTest {
   fun `rechaza outageStart negativo`() {
     Confirmation.create(outageStart = -5L, answer = false, now = 1_793_570_500_000L)
   }
+
+  @Test(expected = IllegalArgumentException::class)
+  fun `un outageStart en el futuro no guarda nada`() {
+    Confirmation.create(outageStart = 1_793_570_500_000L + 6 * 60_000L, answer = true, now = 1_793_570_500_000L)
+  }
+
+  @Test
+  fun `tolera hasta 5 minutos de reloj adelantado`() {
+    Confirmation.create(outageStart = 1_793_570_500_000L + 4 * 60_000L, answer = true, now = 1_793_570_500_000L)
+  }
 }

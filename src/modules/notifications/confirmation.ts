@@ -35,29 +35,54 @@ export function resetConfirmationCache(): void {
   handled.clear();
 }
 
-/** `outageStart` del push: epoch ms entero y positivo. Nada más vale, y el nativo lo vuelve a exigir. */
+/** Cuánto en el futuro se tolera un `outageStart` (relojes un poco desfasados). Kotlin exige lo mismo. */
+const FUTURE_TOLERANCE_MS = 5 * 60_000;
+
+/** `outageStart` del push: epoch ms entero, positivo y no futuro. Nada más vale, y el nativo lo vuelve a exigir. */
 function parseOutageStart(data: unknown): number | null {
   if (typeof data !== 'object' || data === null) return null;
   const { type, outageStart } = data as { type?: unknown; outageStart?: unknown };
   if (type !== 'confirm') return null;
-  return typeof outageStart === 'number' && Number.isSafeInteger(outageStart) && outageStart > 0
+  return typeof outageStart === 'number' &&
+    Number.isSafeInteger(outageStart) &&
+    outageStart > 0 &&
+    outageStart <= Date.now() + FUTURE_TOLERANCE_MS
     ? outageStart
     : null;
 }
 
 function handleResponse(response: Notifications.NotificationResponse): void {
+  // Una respuesta ya vista no debe volver a entregarse (por ejemplo tras recargar JS): se borra de la "última".
+  Notifications.clearLastNotificationResponse();
   const answer =
     response.actionIdentifier === YES ? true : response.actionIdentifier === NO ? false : null;
   if (answer === null) return; // tocar el cuerpo del aviso solo abre la app: no es una respuesta
+  // Una respuesta que llega durante el onboarding se ignora a propósito: ese teléfono todavía no tiene token ni rol,
+  // así que no hay cortes que confirmar (y el nativo tampoco guardaría nada útil).
   const { identifier, content } = response.notification.request;
   const outageStart = parseOutageStart(content.data);
   if (outageStart === null || handled.has(identifier)) return;
 
   handled.add(identifier);
-  recordConfirmation(outageStart, answer).catch((error: unknown) => {
-    handled.delete(identifier); // que un segundo intento (otra apertura) pueda guardarla
+  void save(identifier, outageStart, answer);
+}
+
+async function save(identifier: string, outageStart: number, answer: boolean): Promise<void> {
+  try {
+    await recordConfirmation(outageStart, answer);
+  } catch (error) {
+    // No se guardó y el aviso sigue en la bandeja: otro toque debe poder intentarlo de nuevo.
+    handled.delete(identifier);
     console.warn('No se pudo guardar la confirmación', error);
-  });
+    return;
+  }
+  try {
+    // Los botones de acción no descartan el aviso: sin esto, otro toque (aun en otro proceso) guardaría otra
+    // confirmación con un UUID nuevo. Ya está guardada, así que `identifier` sigue en `handled`.
+    await Notifications.dismissNotificationAsync(identifier);
+  } catch (error) {
+    console.warn('No se pudo descartar el aviso respondido', error);
+  }
 }
 
 /**
