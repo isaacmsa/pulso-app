@@ -20,13 +20,14 @@ function WeekHistory() {
   const history = outages.data;
   // Los 7 días anteriores, para comparar. Si falla o no hay datos, simplemente no se muestra la comparación.
   const previous = useOutages(from - 7 * DAY_MS, from);
+  const heights = history ? barHeights(history.days.map((d) => d.ms)) : [];
   const comparison = history ? compareWeeks(history.totalMs, previous.data?.totalMs) : null;
 
   return (
     <TabScreen
       title="Historial"
-      refreshing={outages.isRefetching}
-      onRefresh={() => void outages.refetch()}
+      refreshing={outages.isRefetching || previous.isRefetching}
+      onRefresh={() => void Promise.all([outages.refetch(), previous.refetch()])}
     >
       {history ? (
         <>
@@ -41,7 +42,7 @@ function WeekHistory() {
             {history.totalMs > 0 ? (
               <View style={styles.bars}>
                 {history.days.map((day, i) => {
-                  const height = barHeights(history.days.map((d) => d.ms))[i] ?? 0;
+                  const height = heights[i] ?? 0;
                   return (
                     <View
                       key={day.date}

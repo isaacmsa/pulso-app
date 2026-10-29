@@ -28,7 +28,7 @@ describe('compareWeeks', () => {
     expect(compareWeeks(HOUR, HOUR)).toBe('Igual que la semana pasada');
   });
 
-  it('sin datos de la semana pasada no hay comparación', () => {
+  it('sin cortes o sin cobertura la semana pasada no muestra comparación', () => {
     expect(compareWeeks(HOUR, undefined)).toBeNull();
     expect(compareWeeks(HOUR, 0)).toBeNull();
   });

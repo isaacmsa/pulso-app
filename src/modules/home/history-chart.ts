@@ -29,8 +29,8 @@ export function barHeights(values: number[], minVisible = 0.04): number[] {
 }
 
 /**
- * La comparación con la semana pasada. Los totales los da el servidor (D-016). Sin datos de la semana pasada (falló la
- * consulta o no hubo cortes) no hay con qué comparar: null.
+ * La comparación con la semana pasada. Los totales los da el servidor (D-016). Se oculta (null) si la consulta de la
+ * semana pasada falló o su total es 0: el 0 no distingue "sin cortes" de "sin cobertura" (D-039).
  */
 export function compareWeeks(
   thisWeekMs: number,

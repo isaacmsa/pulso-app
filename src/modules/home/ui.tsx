@@ -15,6 +15,7 @@ export function TabScreen({
 }) {
   return (
     <ScrollView
+      testID="tab-scroll"
       style={styles.scroll}
       contentContainerStyle={styles.content}
       keyboardShouldPersistTaps="handled"
