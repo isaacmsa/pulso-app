@@ -10,6 +10,7 @@ jest.mock('expo-constants', () => ({
 jest.mock('../../power-detection/power-monitor', () => ({
   storeToken: jest.fn(),
   getToken: jest.fn(),
+  getTokenState: jest.fn(),
   isTokenInvalid: jest.fn(),
   markTokenInvalid: jest.fn(),
   configureApi: jest.fn(),
@@ -42,6 +43,7 @@ beforeEach(() => {
   vaultToken = null;
   invalid = false;
   mocked.getToken.mockImplementation(async () => vaultToken);
+  mocked.getTokenState.mockImplementation(async () => (vaultToken ? 'present' : 'absent'));
   mocked.isTokenInvalid.mockImplementation(async () => invalid);
   mocked.storeToken.mockImplementation(async (token) => {
     vaultToken = token;
@@ -207,4 +209,21 @@ it('si createHome sigue dando 401 con el token nuevo, falla sin registrar otra v
   expect(registerDeviceMock).toHaveBeenCalledTimes(1);
   expect(createHomeMock).toHaveBeenCalledTimes(2);
   expect(mocked.requestUpload).not.toHaveBeenCalled();
+});
+
+// Registrar de nuevo crea una casa nueva y, por D-030, suelta a los seguidores: con una falla pasajera del Keystore
+// el token puede seguir bien, así que no se registra.
+it('con falla transitoria del Keystore no registra de nuevo', async () => {
+  mocked.getTokenState.mockResolvedValue('transient');
+  await expect(register('watch')).rejects.toMatchObject({ name: 'TokenUnavailableError' });
+  expect(registerDeviceMock).not.toHaveBeenCalled();
+  expect(mocked.storeToken).not.toHaveBeenCalled();
+  expect(createHomeMock).not.toHaveBeenCalled();
+});
+
+it.each(['absent', 'unreadable'] as const)('con el token %s sí registra', async (tokenState) => {
+  mocked.getTokenState.mockResolvedValue(tokenState);
+  await register('follow');
+  expect(registerDeviceMock).toHaveBeenCalledTimes(1);
+  expect(mocked.storeToken).toHaveBeenCalledWith(TOKEN);
 });

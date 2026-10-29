@@ -5,6 +5,7 @@ import {
   arm,
   configureApi,
   getToken,
+  getTokenState,
   isTokenInvalid,
   markTokenInvalid,
   type Role,
@@ -13,6 +14,14 @@ import {
   setRole,
   storeToken,
 } from '../power-detection/power-monitor';
+
+/** El Keystore falló de forma pasajera: no se sabe si hay token, y registrar de nuevo crearía otra casa (D-030). */
+export class TokenUnavailableError extends Error {
+  constructor() {
+    super('El teléfono no pudo leer su token ahora mismo');
+    this.name = 'TokenUnavailableError';
+  }
+}
 
 let inFlight: Promise<void> | null = null;
 
@@ -66,10 +75,18 @@ async function registerAndArm(role: Role): Promise<void> {
   await requestUpload();
 }
 
-/** El token guardado si sigue válido; si no hay (o el servidor lo rechazó), registra este teléfono y guarda el nuevo. */
+/**
+ * El token guardado si sigue válido; si no hay, es ilegible para siempre o el servidor lo rechazó, registra este
+ * teléfono y guarda el nuevo. Con una falla pasajera del Keystore no registra: lanza `TokenUnavailableError`.
+ */
 async function ensureRegistered(): Promise<string> {
-  const token = await getToken();
-  if (token && !(await isTokenInvalid())) return token;
+  const tokenState = await getTokenState();
+  if (tokenState === 'transient') throw new TokenUnavailableError();
+  if (tokenState === 'present' && !(await isTokenInvalid())) {
+    const token = await getToken();
+    if (!token) throw new TokenUnavailableError();
+    return token;
+  }
   const registered = await unwrap(
     registerDevice({ body: { appVersion: Constants.expoConfig?.version ?? '0.0.0' } }),
   );
@@ -79,7 +96,8 @@ async function ensureRegistered(): Promise<string> {
 
 async function createHomeIfMissing(): Promise<void> {
   try {
-    await unwrap(createHome({ body: {} }));
+    // `register` ya maneja el 401 (marca el token y registra de nuevo), así que el aviso global sobra.
+    await unwrap(createHome({ body: {} }), { handleInvalidToken: false });
   } catch (error) {
     if (!(error instanceof ApiError && error.code === 'home_exists')) throw error;
   }

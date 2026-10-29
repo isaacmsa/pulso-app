@@ -3,7 +3,7 @@ import { Stack } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { useEffect } from 'react';
 import { View } from 'react-native';
-import { useStartup } from '../src/modules/onboarding/startup';
+import { installInvalidTokenHandler, useStartup } from '../src/modules/onboarding/startup';
 import {
   arm,
   configureApi,
@@ -16,6 +16,8 @@ import { colors } from '../src/shared/theme/colors';
 
 // El token vive en la bóveda nativa: el cliente lo pide en cada llamada y JS no lo guarda.
 setTokenProvider(getToken);
+// Un 401 invalid_token en cualquier pantalla marca el token y devuelve al onboarding (I3).
+installInvalidTokenHandler();
 
 export default function RootLayout() {
   const startup = useStartup();

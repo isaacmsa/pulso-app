@@ -3,10 +3,11 @@ import {
   REQUEST_TIMEOUT_MS,
   resolveApiUrl,
   STAGING_API_URL,
+  setInvalidTokenHandler,
   setTokenProvider,
   unwrap,
 } from '../client';
-import { getHealth, getHomeStatus } from '../generated';
+import { deleteDevice, getHealth, getHomeStatus, registerDevice } from '../generated';
 
 const status = { state: 'con_luz', since: 1793628000000, alias: 'Casa', openOutageStart: null };
 
@@ -31,6 +32,7 @@ afterEach(() => {
   jest.useRealTimers();
   jest.restoreAllMocks();
   setTokenProvider(async () => null);
+  setInvalidTokenHandler(null);
 });
 
 it('resolveApiUrl usa la variable y quita la barra final', () => {
@@ -122,4 +124,72 @@ it('el mensaje de ApiError no incluye el token', async () => {
   const error = (await unwrap(getHomeStatus()).catch((e: unknown) => e)) as ApiError;
   expect(error).toBeInstanceOf(ApiError);
   expect(error.message).not.toContain('abc.def');
+});
+
+describe('token inválido', () => {
+  const invalidToken = () => json({ error: { code: 'invalid_token', message: 'x' } }, 401);
+
+  it('un 401 invalid_token en una llamada con token avisa con el token que se mandó', async () => {
+    const onInvalid = jest.fn();
+    setInvalidTokenHandler(onInvalid);
+    setTokenProvider(async () => 'abc.def');
+    mockFetch(async () => invalidToken());
+    await expect(unwrap(getHomeStatus())).rejects.toMatchObject({
+      code: 'invalid_token',
+      status: 401,
+    });
+    expect(onInvalid).toHaveBeenCalledTimes(1);
+    expect(onInvalid).toHaveBeenCalledWith('abc.def');
+  });
+
+  it('un 500 no marca el token', async () => {
+    const onInvalid = jest.fn();
+    setInvalidTokenHandler(onInvalid);
+    setTokenProvider(async () => 'abc.def');
+    mockFetch(async () => json({ error: { code: 'internal_error', message: 'x' } }, 500));
+    await expect(unwrap(getHomeStatus())).rejects.toMatchObject({ code: 'internal_error' });
+    expect(onInvalid).not.toHaveBeenCalled();
+  });
+
+  it('un 401 con otro código no marca el token', async () => {
+    const onInvalid = jest.fn();
+    setInvalidTokenHandler(onInvalid);
+    setTokenProvider(async () => 'abc.def');
+    mockFetch(async () => json({ error: { code: 'validation_failed', message: 'x' } }, 401));
+    await expect(unwrap(getHomeStatus())).rejects.toMatchObject({ code: 'validation_failed' });
+    expect(onInvalid).not.toHaveBeenCalled();
+  });
+
+  it('una llamada sin Authorization no marca nada, aunque el servidor conteste invalid_token', async () => {
+    const onInvalid = jest.fn();
+    setInvalidTokenHandler(onInvalid);
+    setTokenProvider(async () => null);
+    mockFetch(async () => invalidToken());
+    await expect(unwrap(getHomeStatus())).rejects.toMatchObject({ code: 'invalid_token' });
+    await expect(unwrap(registerDevice({ body: { appVersion: '0.1.0' } }))).rejects.toMatchObject({
+      code: 'invalid_token',
+    });
+    expect(onInvalid).not.toHaveBeenCalled();
+  });
+
+  it('con handleInvalidToken: false (deleteDevice) no avisa', async () => {
+    const onInvalid = jest.fn();
+    setInvalidTokenHandler(onInvalid);
+    setTokenProvider(async () => 'abc.def');
+    mockFetch(async () => invalidToken());
+    await expect(unwrap(deleteDevice(), { handleInvalidToken: false })).rejects.toMatchObject({
+      code: 'invalid_token',
+    });
+    expect(onInvalid).not.toHaveBeenCalled();
+  });
+
+  it('si el aviso falla, el error original sigue siendo el que se lanza', async () => {
+    setInvalidTokenHandler(async () => {
+      throw new Error('el nativo falló');
+    });
+    jest.spyOn(console, 'warn').mockImplementation(() => undefined);
+    setTokenProvider(async () => 'abc.def');
+    mockFetch(async () => invalidToken());
+    await expect(unwrap(getHomeStatus())).rejects.toMatchObject({ code: 'invalid_token' });
+  });
 });

@@ -42,6 +42,27 @@ export function setTokenProvider(provider: () => Promise<string | null>): void {
   tokenProvider = provider;
 }
 
+/**
+ * Qué hacer cuando el servidor rechaza el token de una llamada con sesión (`invalid_token`). Lo fija la raíz de la
+ * app; recibe el token que se mandó, no el que haya ahora en la bóveda (otro registro pudo reemplazarlo).
+ */
+export type InvalidTokenHandler = (sentToken: string) => Promise<void> | void;
+
+let invalidTokenHandler: InvalidTokenHandler | null = null;
+
+export function setInvalidTokenHandler(handler: InvalidTokenHandler | null): void {
+  invalidTokenHandler = handler;
+}
+
+// Respuesta -> token que viajó en su pedido. Así `unwrap` distingue una llamada con sesión de una sin ella
+// (`registerDevice`, `getHealth`) sin tocar el cliente generado, y sabe con qué token se hizo.
+const sentTokens = new WeakMap<Response, string>();
+
+function bearerOf(request: Request): string | null {
+  const match = /^Bearer (.+)$/.exec(request.headers.get('authorization') ?? '');
+  return match?.[1] ?? null;
+}
+
 function createTimeoutError(): Error {
   const error = new Error('Request timed out');
   error.name = 'TimeoutError';
@@ -61,7 +82,10 @@ async function fetchWithTimeout(input: RequestInfo | URL): Promise<Response> {
     controller.abort();
   }, REQUEST_TIMEOUT_MS);
   try {
-    return await globalThis.fetch(request, { signal: controller.signal });
+    const response = await globalThis.fetch(request, { signal: controller.signal });
+    const sent = bearerOf(request);
+    if (sent) sentTokens.set(response, sent);
+    return response;
   } catch (error) {
     if (timedOut) throw createTimeoutError();
     throw error;
@@ -90,9 +114,20 @@ function classify(error: unknown, response: Response | undefined): ApiError {
   return new ApiError('unknown');
 }
 
-// El cliente generado no lanza: devuelve { error, response }. Aquí se convierte en ApiError.
+export type UnwrapOptions = {
+  /**
+   * Si un `invalid_token` de esta llamada se avisa al manejador (por defecto sí). `deleteDevice` lo apaga: un 401
+   * allí cuenta como borrado confirmado (D-031), no como sesión perdida. `register` también, porque ya lo maneja.
+   */
+  handleInvalidToken?: boolean;
+};
+
+// El cliente generado no lanza: devuelve { error, response }. Aquí se convierte en ApiError. Si el servidor rechaza
+// el token de una llamada con sesión, se avisa una vez para que la app marque el token y vuelva a registrar (I3): hasta
+// ahora solo la subida en segundo plano lo hacía, y un teléfono que solo sigue una casa nunca sube.
 export async function unwrap<T>(
   call: Promise<{ data?: T; error?: unknown; response?: Response }>,
+  options: UnwrapOptions = {},
 ): Promise<T> {
   let result: { data?: T; error?: unknown; response?: Response };
   try {
@@ -102,5 +137,20 @@ export async function unwrap<T>(
   }
   const { data, error, response } = result;
   if (error === undefined && response?.ok !== false) return data as T;
-  throw classify(error, response);
+  const apiError = classify(error, response);
+  const sentToken = response ? sentTokens.get(response) : undefined;
+  if (
+    options.handleInvalidToken !== false &&
+    apiError.code === 'invalid_token' &&
+    apiError.status === 401 &&
+    sentToken &&
+    invalidTokenHandler
+  ) {
+    try {
+      await invalidTokenHandler(sentToken);
+    } catch (handlerError) {
+      console.warn('No se pudo marcar el token como rechazado', handlerError);
+    }
+  }
+  throw apiError;
 }

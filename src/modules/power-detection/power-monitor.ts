@@ -126,6 +126,16 @@ export function getToken(): Promise<string | null> {
   return PowerMonitor.getToken();
 }
 
+export type TokenState = 'present' | 'absent' | 'unreadable' | 'transient';
+
+/**
+ * Qué hay en la bóveda. Solo `absent` y `unreadable` justifican registrar de nuevo; con `transient` (una falla
+ * pasajera del Keystore) el token puede seguir bien, y registrar crearía otra casa y soltaría a los seguidores (D-030).
+ */
+export function getTokenState(): Promise<TokenState> {
+  return PowerMonitor.getTokenState();
+}
+
 /** Si el servidor rechazó el token y hay que registrar de nuevo. */
 export function isTokenInvalid(): Promise<boolean> {
   return PowerMonitor.isTokenInvalid();

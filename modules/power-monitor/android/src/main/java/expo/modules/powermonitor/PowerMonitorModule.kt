@@ -72,6 +72,11 @@ class PowerMonitorModule : Module() {
       TokenVault.read(context)
     }
 
+    // "present" | "absent" | "unreadable" | "transient". Solo ausente e ilegible justifican registrar de nuevo.
+    AsyncFunction("getTokenState") {
+      TokenVault.state(context).wire
+    }
+
     // El servidor rechazó este token (401) en una llamada de JS. Solo marca si sigue siendo el guardado.
     AsyncFunction("markTokenInvalid") { token: String ->
       TokenVault.markInvalid(context, token)

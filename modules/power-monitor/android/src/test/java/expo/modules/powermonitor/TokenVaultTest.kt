@@ -22,10 +22,13 @@ private class MemoryStore : KeyValueStore {
 }
 
 // Cifrador de mentira: reversible, con un prefijo para detectar datos que no son suyos.
-private class FakeCipher(private val failOnDecrypt: Boolean = false) : TokenCipher {
+private class FakeCipher(
+  private val failOnDecrypt: Boolean = false,
+  private val failure: Throwable = IllegalStateException("la clave del Keystore no se puede leer"),
+) : TokenCipher {
   override fun encrypt(plain: ByteArray): ByteArray = "ok:".toByteArray() + plain.reversedArray()
   override fun decrypt(data: ByteArray): ByteArray {
-    if (failOnDecrypt) throw IllegalStateException("la clave del Keystore no se puede leer")
+    if (failOnDecrypt) throw failure
     val prefix = "ok:".toByteArray()
     require(data.size >= prefix.size && data.copyOfRange(0, prefix.size).contentEquals(prefix)) { "texto cifrado corrupto" }
     return data.copyOfRange(prefix.size, data.size).reversedArray()
@@ -61,18 +64,60 @@ class TokenVaultTest {
   }
 
   @Test
-  fun `un texto cifrado corrupto devuelve null sin lanzar`() {
+  fun `un texto cifrado corrupto devuelve null sin lanzar y cuenta como ilegible`() {
     vault.store("tok_abc123")
     store.values[TokenVaultCore.KEY_TOKEN] = "cafebabe"
     assertNull(vault.read())
+    assertEquals(TokenState.UNREADABLE, vault.state())
     store.values[TokenVaultCore.KEY_TOKEN] = "esto no es hexadecimal"
     assertNull(vault.read())
+    assertEquals(TokenState.UNREADABLE, vault.state())
   }
 
   @Test
-  fun `una clave que el Keystore no puede leer devuelve null sin lanzar`() {
+  fun `una falla transitoria del Keystore no cuenta como token ausente`() {
     vault.store("tok_abc123")
-    assertNull(TokenVaultCore(FakeCipher(failOnDecrypt = true), store).read())
+    val flaky = TokenVaultCore(FakeCipher(failOnDecrypt = true), store)
+    assertNull(flaky.read())
+    assertEquals(TokenState.TRANSIENT, flaky.state())
+    // El token cifrado sigue ahí: cuando el Keystore responde otra vez, se lee igual.
+    assertEquals(TokenState.PRESENT, vault.state())
+    assertEquals("tok_abc123", vault.read())
+  }
+
+  @Test
+  fun `una clave invalidada cuenta como ilegible`() {
+    vault.store("tok_abc123")
+    val gone = TokenVaultCore(FakeCipher(failOnDecrypt = true, failure = PermanentKeyException("clave invalidada")), store)
+    assertNull(gone.read())
+    assertEquals(TokenState.UNREADABLE, gone.state())
+  }
+
+  @Test
+  fun `sin token guardado el estado es ausente y con uno legible es presente`() {
+    assertEquals(TokenState.ABSENT, vault.state())
+    vault.store("tok_abc123")
+    assertEquals(TokenState.PRESENT, vault.state())
+    vault.clear()
+    assertEquals(TokenState.ABSENT, vault.state())
+  }
+
+  @Test
+  fun `classifyDecryptFailure separa lo permanente de lo transitorio`() {
+    assertTrue(classifyDecryptFailure(javax.crypto.AEADBadTagException("tag")) is PermanentKeyException)
+    assertTrue(classifyDecryptFailure(java.security.UnrecoverableKeyException("clave")) is PermanentKeyException)
+    assertTrue(classifyDecryptFailure(PermanentKeyException("ya clasificada")) is PermanentKeyException)
+    assertTrue(classifyDecryptFailure(IllegalArgumentException("corto")) is PermanentKeyException)
+    assertFalse(classifyDecryptFailure(java.security.KeyStoreException("daemon caído")) is PermanentKeyException)
+    assertFalse(classifyDecryptFailure(IllegalStateException("otra cosa")) is PermanentKeyException)
+    assertFalse(classifyDecryptFailure(RuntimeException("otra cosa")) is PermanentKeyException)
+  }
+
+  @Test
+  fun `markInvalid no marca si el token no se puede leer`() {
+    vault.store("tok_abc123")
+    TokenVaultCore(FakeCipher(failOnDecrypt = true), store).markInvalid("tok_abc123")
+    assertFalse(vault.isInvalid())
   }
 
   @Test

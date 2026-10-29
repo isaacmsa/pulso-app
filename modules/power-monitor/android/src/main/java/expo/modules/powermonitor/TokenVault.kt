@@ -31,7 +31,34 @@ class PrefsStore(private val prefs: SharedPreferences) : KeyValueStore {
   }
 }
 
-/** Cifra y descifra bytes. `decrypt` lanza si los datos están corruptos o la clave no se puede usar. */
+/** La clave o el texto cifrado no volverán a servir (clave invalidada o perdida, datos corruptos). Reintentar no ayuda. */
+class PermanentKeyException(message: String, cause: Throwable? = null) : Exception(message, cause)
+
+/**
+ * Separa las fallas de `decrypt` que no tienen remedio de las que pueden pasar solas (el Keystore ocupado o caído,
+ * un error de E/S). Todo lo que no se reconoce como permanente es transitorio: ante la duda, no se descarta el token.
+ */
+fun classifyDecryptFailure(error: Throwable): Throwable = when (error) {
+  is PermanentKeyException -> error
+  is android.security.keystore.KeyPermanentlyInvalidatedException,
+  is java.security.UnrecoverableKeyException,
+  is javax.crypto.AEADBadTagException,
+  is javax.crypto.BadPaddingException,
+  is javax.crypto.IllegalBlockSizeException,
+  is IllegalArgumentException,
+  -> PermanentKeyException("el token cifrado no se puede recuperar", error)
+  else -> error
+}
+
+/** Qué hay en la bóveda. Solo `ABSENT` y `UNREADABLE` justifican registrar de nuevo; `TRANSIENT` se reintenta más tarde. */
+enum class TokenState(val wire: String) {
+  PRESENT("present"),
+  ABSENT("absent"),
+  UNREADABLE("unreadable"),
+  TRANSIENT("transient"),
+}
+
+/** Cifra y descifra bytes. `decrypt` lanza si los datos están corruptos o la clave no se puede usar (la bóveda clasifica la falla con `classifyDecryptFailure`). */
 interface TokenCipher {
   fun encrypt(plain: ByteArray): ByteArray
   fun decrypt(data: ByteArray): ByteArray
@@ -60,8 +87,9 @@ class KeystoreCipher(private val alias: String = TokenVault.KEY_ALIAS) : TokenCi
   }
 
   override fun decrypt(data: ByteArray): ByteArray {
-    require(data.size > IV_SIZE) { "texto cifrado demasiado corto" }
-    val key = keyStore().getKey(alias, null) as? SecretKey ?: throw IllegalStateException("no hay clave en el Keystore")
+    if (data.size <= IV_SIZE) throw PermanentKeyException("texto cifrado demasiado corto")
+    val key = keyStore().getKey(alias, null) as? SecretKey
+      ?: throw PermanentKeyException("no hay clave en el Keystore")
     val cipher = Cipher.getInstance(TRANSFORMATION).apply {
       init(Cipher.DECRYPT_MODE, key, GCMParameterSpec(TAG_BITS, data, 0, IV_SIZE))
     }
@@ -98,15 +126,41 @@ class TokenVaultCore(private val cipher: TokenCipher, private val store: KeyValu
     store.write(mapOf(KEY_TOKEN to encrypted), setOf(KEY_INVALID))
   }
 
-  /** null si no hay token o si no se puede descifrar: el onboarding vuelve a registrar. Nunca lanza ni registra el token. */
-  fun read(): String? = synchronized(VaultLock) { readLocked() }
+  /** null si no hay token o si no se puede leer ahora (ver `state`). Nunca lanza ni registra el token. */
+  fun read(): String? = synchronized(VaultLock) { (readLocked() as? Read.Token)?.value }
 
-  private fun readLocked(): String? {
-    val stored = store.get(KEY_TOKEN) ?: return null
+  /**
+   * Qué hay en la bóveda: ausente (nunca se guardó o se borró), ilegible (la clave ya no sirve o los datos están
+   * corruptos: no tiene remedio) o transitorio (el Keystore falló de otra forma: el token puede seguir bien).
+   * Registrar de nuevo crea una casa nueva y, por D-030, suelta a los seguidores: solo vale para los dos primeros.
+   */
+  fun state(): TokenState = synchronized(VaultLock) {
+    when (readLocked()) {
+      is Read.Token -> TokenState.PRESENT
+      Read.Absent -> TokenState.ABSENT
+      Read.Unreadable -> TokenState.UNREADABLE
+      Read.Transient -> TokenState.TRANSIENT
+    }
+  }
+
+  private sealed interface Read {
+    data class Token(val value: String) : Read
+    data object Absent : Read
+    data object Unreadable : Read
+    data object Transient : Read
+  }
+
+  private fun readLocked(): Read {
+    val stored = store.get(KEY_TOKEN) ?: return Read.Absent
+    val bytes = try {
+      stored.fromHex()
+    } catch (_: IllegalArgumentException) {
+      return Read.Unreadable
+    }
     return try {
-      String(cipher.decrypt(stored.fromHex()), Charsets.UTF_8)
-    } catch (_: Exception) {
-      null
+      Read.Token(String(cipher.decrypt(bytes), Charsets.UTF_8))
+    } catch (error: Exception) {
+      if (classifyDecryptFailure(error) is PermanentKeyException) Read.Unreadable else Read.Transient
     }
   }
 
@@ -119,7 +173,7 @@ class TokenVaultCore(private val cipher: TokenCipher, private val store: KeyValu
    * registró uno nuevo, el rechazo del viejo no debe invalidarlo.
    */
   fun markInvalid(failedToken: String) = synchronized(VaultLock) {
-    if (readLocked() == failedToken) store.put(KEY_INVALID, "1")
+    if ((readLocked() as? Read.Token)?.value == failedToken) store.put(KEY_INVALID, "1")
   }
 
   fun isInvalid(): Boolean = synchronized(VaultLock) { store.get(KEY_INVALID) == "1" }
@@ -149,6 +203,7 @@ object TokenVault {
 
   fun store(context: Context, token: String) = core(context).store(token)
   fun read(context: Context): String? = core(context).read()
+  fun state(context: Context): TokenState = core(context).state()
   fun clear(context: Context) = core(context).clear()
   fun markInvalid(context: Context, failedToken: String) = core(context).markInvalid(failedToken)
   fun isInvalid(context: Context): Boolean = core(context).isInvalid()

@@ -1,7 +1,9 @@
-import { render, screen } from '@testing-library/react-native';
+import { act, render, screen } from '@testing-library/react-native';
 import RootLayout from '../../../../app/_layout';
+import { ApiError, unwrap } from '../../../shared/api/client';
+import { getHomeStatus } from '../../../shared/api/generated';
 import * as native from '../../power-detection/power-monitor';
-import { resolveStartup } from '../startup';
+import { RETRY_TRANSIENT_MS, resolveStartup } from '../startup';
 
 jest.mock('expo-router', () => {
   const { Text: T } = jest.requireActual<typeof import('react-native')>('react-native');
@@ -17,6 +19,8 @@ jest.mock('expo-router', () => {
 jest.mock('expo-status-bar', () => ({ StatusBar: () => null }));
 jest.mock('../../power-detection/power-monitor', () => ({
   getToken: jest.fn(),
+  getTokenState: jest.fn(),
+  markTokenInvalid: jest.fn(),
   isTokenInvalid: jest.fn(),
   getRole: jest.fn(),
   getOnboardingStep: jest.fn(),
@@ -42,6 +46,7 @@ function state(
 ) {
   mocked.getOnboardingStep.mockResolvedValue(step);
   mocked.getToken.mockResolvedValue(token);
+  mocked.getTokenState.mockResolvedValue(token ? 'present' : 'absent');
   mocked.isTokenInvalid.mockResolvedValue(invalid);
   mocked.getRole.mockResolvedValue(role);
 }
@@ -67,8 +72,27 @@ describe('resolveStartup', () => {
     await expect(resolveStartup()).resolves.toBe(expected);
   });
 
+  it('con la clave ilegible, manda al onboarding a registrar de nuevo', async () => {
+    state('tok', false, 'watch');
+    mocked.getTokenState.mockResolvedValue('unreadable');
+    await expect(resolveStartup()).resolves.toBe('onboarding');
+  });
+
+  it.each([
+    ['watch', 'watch'],
+    ['follow', 'follow'],
+    [null, 'follow'],
+  ] as const)(
+    'con falla transitoria no manda al onboarding (rol %s -> %s)',
+    async (role, expected) => {
+      state('tok', false, role);
+      mocked.getTokenState.mockResolvedValue('transient');
+      await expect(resolveStartup()).resolves.toBe(expected);
+    },
+  );
+
   it('si el nativo falla, manda al onboarding en vez de seguir a ciegas', async () => {
-    mocked.getToken.mockRejectedValue(new Error('boom'));
+    mocked.getTokenState.mockRejectedValue(new Error('boom'));
     mocked.isTokenInvalid.mockResolvedValue(false);
     mocked.getRole.mockResolvedValue('watch');
     mocked.getOnboardingStep.mockResolvedValue(null);
@@ -111,5 +135,70 @@ describe('RootLayout', () => {
     expect(mocked.configureApi).toHaveBeenCalled();
     expect(mocked.arm).not.toHaveBeenCalled();
     expect(mocked.recordAppOpen).not.toHaveBeenCalled();
+  });
+
+  it('con falla transitoria, abre la app sin armar de nuevo ni registrar, y reintenta más tarde', async () => {
+    jest.useFakeTimers();
+    try {
+      state('tok', false, 'follow');
+      mocked.getTokenState.mockResolvedValue('transient');
+      await render(<RootLayout />);
+      expect(await screen.findByText('screen:(tabs)')).toBeOnTheScreen();
+      expect(screen.queryByText('screen:onboarding/index')).toBeNull();
+
+      // El Keystore sigue sin ayudar: no pasa nada. Cuando por fin dice que no hay nada, vuelve a decidir.
+      mocked.getTokenState.mockResolvedValue('absent');
+      await act(async () => {
+        await jest.advanceTimersByTimeAsync(RETRY_TRANSIENT_MS);
+      });
+      expect(await screen.findByText('screen:onboarding/index')).toBeOnTheScreen();
+    } finally {
+      jest.useRealTimers();
+    }
+  });
+
+  describe('token rechazado por el servidor', () => {
+    const fetchSpy = () => jest.spyOn(globalThis, 'fetch');
+    afterEach(() => jest.restoreAllMocks());
+
+    it('un 401 invalid_token en una pantalla vuelve al onboarding', async () => {
+      state('tok', false, 'follow');
+      mocked.markTokenInvalid.mockImplementation(async () => {
+        mocked.isTokenInvalid.mockResolvedValue(true);
+      });
+      fetchSpy().mockResolvedValue(
+        new Response(JSON.stringify({ error: { code: 'invalid_token', message: 'x' } }), {
+          status: 401,
+          headers: { 'content-type': 'application/json' },
+        }),
+      );
+      await render(<RootLayout />);
+      expect(await screen.findByText('screen:(tabs)')).toBeOnTheScreen();
+
+      // Una pantalla pide algo con el token y el servidor ya no lo reconoce.
+      await act(async () => {
+        await expect(unwrap(getHomeStatus())).rejects.toBeInstanceOf(ApiError);
+      });
+      expect(mocked.markTokenInvalid).toHaveBeenCalledWith('tok');
+      expect(await screen.findByText('screen:onboarding/index')).toBeOnTheScreen();
+      expect(screen.queryByText('screen:(tabs)')).toBeNull();
+    });
+
+    it('un 500 no marca el token ni saca de la app', async () => {
+      state('tok', false, 'follow');
+      fetchSpy().mockResolvedValue(
+        new Response(JSON.stringify({ error: { code: 'internal_error', message: 'x' } }), {
+          status: 500,
+          headers: { 'content-type': 'application/json' },
+        }),
+      );
+      await render(<RootLayout />);
+      expect(await screen.findByText('screen:(tabs)')).toBeOnTheScreen();
+      await act(async () => {
+        await expect(unwrap(getHomeStatus())).rejects.toBeInstanceOf(ApiError);
+      });
+      expect(mocked.markTokenInvalid).not.toHaveBeenCalled();
+      expect(screen.getByText('screen:(tabs)')).toBeOnTheScreen();
+    });
   });
 });

@@ -38,7 +38,7 @@ export class WipeError extends Error {
 export async function deleteMyData(): Promise<void> {
   if (!(await getToken())) throw new NoTokenError();
   try {
-    await unwrap(deleteDevice());
+    await unwrap(deleteDevice(), { handleInvalidToken: false });
   } catch (error) {
     if (!(error instanceof ApiError && error.status === 401)) throw error;
   }
