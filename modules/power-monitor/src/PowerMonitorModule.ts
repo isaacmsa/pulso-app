@@ -31,7 +31,7 @@ declare class PowerMonitorModule extends NativeModule<Record<string, never>> {
   setRole(role: string): Promise<void>;
   /** El rol guardado, o null si todavía no eligió. */
   getRole(): Promise<string | null>;
-  /** "Borrar mis datos": vacía el almacén de eventos, la bóveda del token, la huella de la red de casa, el último estado, el rol y el paso del onboarding, y cancela todos los trabajos. Lanza si algún paso falla (repetirlo es seguro). */
+  /** "Borrar mis datos": vacía el almacén de eventos, la bóveda del token, la huella de la red de casa, el último estado y el paso del onboarding, cancela todos los trabajos y deja el rol en "follow" (sin rol, el nativo vigila). Lanza si algún paso falla (repetirlo es seguro). */
   wipe(): Promise<void>;
   /** Guarda qué paso del onboarding falta ("role" | "notifications" | "battery" | "home"); null lo da por terminado. */
   setOnboardingStep(step: string | null): Promise<void>;

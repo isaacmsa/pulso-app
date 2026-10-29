@@ -83,7 +83,7 @@ La app no clasifica cortes (D-016). Si el estado crudo y el del servidor no coin
 | Eventos (snapshots, reportes, confirmaciones), marcados como subidos o pendientes | SQLite del módulo nativo (`power_monitor.db`) | 14 días; se podan al insertar |
 | Token del dispositivo | Bóveda del módulo nativo (clave AES-GCM en Android Keystore) | Hasta borrar los datos |
 | Huella de la red de casa | SharedPreferences del módulo | Hasta reaprenderla o borrar los datos |
-| Rol elegido en el onboarding (`watch` o `follow`) | SharedPreferences del módulo (`pulso_role`). Un teléfono `follow` nunca arma la detección ni encola subidas. Pasar a `follow` desarma el latido, la subida, C, A y D, y C y D no vuelven a arrancar en ese rol. Se guarda antes de armar. El onboarding pendiente lo marca el paso, no el rol | Hasta borrar los datos |
+| Rol elegido en el onboarding (`watch` o `follow`) | SharedPreferences del módulo (`pulso_role`). Un teléfono `follow` nunca arma la detección ni encola subidas. Pasar a `follow` desarma el latido, la subida, C, A y D, y C y D no vuelven a arrancar en ese rol. Se guarda antes de armar. El onboarding pendiente lo marca el paso, no el rol | Hasta cambiarlo. Borrar los datos lo deja en `follow`, porque sin rol el nativo vigila y se volvería a armar solo |
 | Paso pendiente del onboarding (`role`, `notifications`, `battery`, `home`) | SharedPreferences del módulo (`pulso_role`). Sin marca = terminado, así los teléfonos registrados antes de la marca no repiten nada. Si la app muere en medio, retoma ese paso sin registrar de nuevo | Hasta terminar el onboarding |
 | Respuestas de la API | Caché persistida de TanStack Query | Se reemplaza al refrescar |
 

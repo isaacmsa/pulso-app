@@ -1,6 +1,7 @@
 package expo.modules.powermonitor
 
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Test
@@ -16,7 +17,7 @@ private class WipeMemoryStore : KeyValueStore {
   }
 }
 
-/** Un teléfono con una casa vigilada: eventos, token, huella, último estado, rol, paso del onboarding y trabajos armados. */
+/** Un teléfono con una casa vigilada: eventos, token, huella, último estado, rol "watch", paso del onboarding y trabajos armados. */
 private class FakePhone(failing: Set<String> = emptySet()) {
   val events = mutableListOf("e1", "e2", "e3")
   val roleStore = WipeMemoryStore().also {
@@ -52,7 +53,6 @@ private class FakePhone(failing: Set<String> = emptySet()) {
     clearToken = { step("token") { vaultStore.remove(TokenVaultCore.KEY_TOKEN) } },
     clearHomeFingerprint = { step("fingerprint") { homeStore.remove("home.fingerprint") } },
     clearLastServerStatus = { step("status") { statusStore.remove("last_status") } },
-    clearRole = { step("role") { Role.clear(roleStore) } },
     clearOnboarding = { step("onboarding") { OnboardingProgress.save(roleStore, null) } },
   )
 }
@@ -68,7 +68,8 @@ class WipeTest {
     assertNull(phone.vaultStore.get(TokenVaultCore.KEY_TOKEN))
     assertNull(phone.homeStore.get("home.fingerprint"))
     assertNull(phone.statusStore.get("last_status"))
-    assertNull(Role.read(phone.roleStore))
+    // El rol queda en "follow": sin rol, todo lo nativo vigila (registrador de la fase 0) y se volvería a armar solo.
+    assertEquals(Role.FOLLOW, Role.read(phone.roleStore))
     assertNull(OnboardingProgress.read(phone.roleStore))
   }
 
@@ -77,7 +78,7 @@ class WipeTest {
     val phone = FakePhone()
     Wipe.run(phone.disarmer, phone.data)
     val lastWork = phone.order.indexOfLast { it in setOf("heartbeat", "upload", "transition", "charging", "network", "fgs") }
-    val firstData = phone.order.indexOfFirst { it in setOf("events", "fingerprint", "status", "role", "onboarding") }
+    val firstData = phone.order.indexOfFirst { it in setOf("events", "fingerprint", "status", "onboarding") }
     assertEquals(listOf("token", "lock"), phone.order.take(2))
     assertTrue(lastWork < firstData)
   }
@@ -90,8 +91,21 @@ class WipeTest {
     assertEquals(3, phone.events.size)
     assertTrue("upload" in phone.running)
     assertTrue("heartbeat" !in phone.running)
-    assertNull(Role.read(phone.roleStore))
+    assertEquals(Role.FOLLOW, Role.read(phone.roleStore))
     assertNull(phone.vaultStore.get(TokenVaultCore.KEY_TOKEN))
+  }
+
+  // Sin rol, cada guardia nativa cuenta como "vigilar": el BootReceiver (reinicio o actualización de la app) volvía a
+  // armar todo, y un onStopJob tardío de C grababa en el almacén recién vaciado y reagendaba el otro id.
+  @Test
+  fun `despues de borrar, un arranque o un onStopJob tardio no arma nada`() {
+    val phone = FakePhone()
+    Wipe.run(phone.disarmer, phone.data)
+    val followOnly = Role.isFollowOnly(phone.roleStore)
+    assertFalse(BootRearm.shouldRearm(followOnly))
+    assertFalse(ChargingJob.shouldRecord(followOnly))
+    assertFalse(ChargingJob.shouldRescheduleOnStop(followOnly))
+    assertFalse(PowerWatchService.shouldRun(followOnly))
   }
 
   @Test

@@ -13,7 +13,7 @@ class BootReceiver : BroadcastReceiver() {
     thread {
       try {
         val app = context.applicationContext
-        if (Role.isFollowOnly(app)) return@thread
+        if (!BootRearm.shouldRearm(Role.isFollowOnly(app))) return@thread
         // Los pedidos de red con PendingIntent no sobreviven al reinicio.
         if (intent.action == Intent.ACTION_BOOT_COMPLETED) NetworkWatch.onFired(app)
         Arming.ensureArmed(app)
@@ -23,4 +23,9 @@ class BootReceiver : BroadcastReceiver() {
       }
     }
   }
+}
+
+object BootRearm {
+  /** Un teléfono "follow" (también el que borró sus datos) no vuelve a armar nada al reiniciar ni al actualizarse. */
+  fun shouldRearm(followOnly: Boolean): Boolean = !followOnly
 }

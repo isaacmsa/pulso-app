@@ -24,9 +24,6 @@ object Role {
 
   fun isFollowOnly(store: KeyValueStore): Boolean = read(store) == FOLLOW
 
-  /** Borra el rol: el teléfono vuelve a no haber elegido (solo lo hace el borrado de datos). */
-  fun clear(store: KeyValueStore) = store.remove(KEY)
-
   fun store(context: Context): KeyValueStore =
     PrefsStore(context.applicationContext.getSharedPreferences(PREFS, Context.MODE_PRIVATE))
 
