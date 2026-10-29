@@ -92,7 +92,7 @@ export function setForegroundServiceEnabled(enabled: boolean): Promise<void> {
   return PowerMonitor.setForegroundServiceEnabled(enabled);
 }
 
-/** Guarda un reporte manual: los botones "Se fue la luz ahora", "Volvió" y "Fluctuando". */
+/** Guarda un reporte manual: los botones "Hay luz", "Fluctuando" y "Sin luz" de Estado, y los del registrador. */
 export async function recordReport(value: ReportValue): Promise<void> {
   await PowerMonitor.recordReport(value);
 }

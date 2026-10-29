@@ -1,6 +1,7 @@
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { QueryClientProvider } from '@tanstack/react-query';
 import { render, screen } from '@testing-library/react-native';
 import type { ReactElement } from 'react';
+import { createTestQueryClient } from '../../../shared/query/test-client';
 import * as native from '../../power-detection/power-monitor';
 import History from '../screens/HistoryScreen';
 
@@ -30,7 +31,7 @@ function json(body: unknown, status = 200): Response {
 }
 
 function renderWithQuery(ui: ReactElement) {
-  const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+  const client = createTestQueryClient();
   return render(<QueryClientProvider client={client}>{ui}</QueryClientProvider>);
 }
 

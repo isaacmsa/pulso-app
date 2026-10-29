@@ -132,10 +132,6 @@ class Uploader(
   }
 }
 
-/**
- * Sube los eventos a `POST /v1/events` (D-027). Lo encolan el latido (B) y cada snapshot que cambia el estado o
- * reporte manual. Es un cascarón: la lógica vive en `Uploader`.
- */
 /** Qué hace WorkManager con una corrida. Es independiente de Android para poder probar la política. */
 sealed interface WorkDecision {
   data object Success : WorkDecision
@@ -171,6 +167,10 @@ object UploadPolicy {
   }
 }
 
+/**
+ * Sube los eventos a `POST /v1/events` (D-027). Lo encolan el latido (B) y cada snapshot que cambia el estado o
+ * reporte manual. Es un cascarón: la lógica vive en `Uploader`.
+ */
 class UploadWorker(context: Context, params: WorkerParameters) : Worker(context, params) {
   override fun doWork(): Result {
     val context = applicationContext

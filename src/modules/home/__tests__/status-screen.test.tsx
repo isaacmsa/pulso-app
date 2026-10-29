@@ -1,6 +1,7 @@
-import { QueryClient, QueryClientProvider } from '@tanstack/react-query';
+import { QueryClientProvider } from '@tanstack/react-query';
 import { fireEvent, render, screen, waitFor } from '@testing-library/react-native';
 import type { ReactElement } from 'react';
+import { createTestQueryClient } from '../../../shared/query/test-client';
 import * as native from '../../power-detection/power-monitor';
 import Status from '../screens/StatusScreen';
 
@@ -42,10 +43,7 @@ function json(body: unknown, status = 200): Response {
   });
 }
 
-function renderWithQuery(
-  ui: ReactElement,
-  client = new QueryClient({ defaultOptions: { queries: { retry: false } } }),
-) {
+function renderWithQuery(ui: ReactElement, client = createTestQueryClient()) {
   return render(<QueryClientProvider client={client}>{ui}</QueryClientProvider>);
 }
 
@@ -119,7 +117,7 @@ it('Estado avisa cuando el estado no se pudo actualizar', async () => {
   jest
     .spyOn(globalThis, 'fetch')
     .mockResolvedValue(json({ error: { code: 'internal_error', message: 'x' } }, 500));
-  const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+  const client = createTestQueryClient();
   client.setQueryData(['home', 'status'], {
     status: { state: 'con_luz', since: caracas(14, 30), alias: 'Casa', openOutageStart: null },
     receivedAt: null,
