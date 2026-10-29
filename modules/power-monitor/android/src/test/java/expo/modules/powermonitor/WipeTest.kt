@@ -5,6 +5,8 @@ import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Test
+import java.io.File
+import java.nio.file.Files
 
 private class WipeMemoryStore : KeyValueStore {
   val values = mutableMapOf<String, String>()
@@ -18,7 +20,12 @@ private class WipeMemoryStore : KeyValueStore {
 }
 
 /** Un teléfono con una casa vigilada: eventos, token, huella, último estado, rol "watch", paso del onboarding y trabajos armados. */
-private class FakePhone(failing: Set<String> = emptySet()) {
+private class FakePhone(failing: Set<String> = emptySet(), val cacheDir: File = Files.createTempDirectory("cache").toFile()) {
+  /** Un exporte del registrador: 14 días de eventos en `cacheDir/exports`. */
+  val export = File(cacheDir, "exports/pulso-xiaomi-20261027-1830.json").apply {
+    parentFile?.mkdirs()
+    writeText("{\"events\":[]}")
+  }
   val events = mutableListOf("e1", "e2", "e3")
   val roleStore = WipeMemoryStore().also {
     Role.save(it, Role.WATCH)
@@ -54,6 +61,7 @@ private class FakePhone(failing: Set<String> = emptySet()) {
     clearHomeFingerprint = { step("fingerprint") { homeStore.remove("home.fingerprint") } },
     clearLastServerStatus = { step("status") { statusStore.remove("last_status") } },
     clearOnboarding = { step("onboarding") { OnboardingProgress.save(roleStore, null) } },
+    clearExports = { step("exports") { Exporter.clearExports(cacheDir) } },
   )
 }
 
@@ -78,7 +86,7 @@ class WipeTest {
     val phone = FakePhone()
     Wipe.run(phone.disarmer, phone.data)
     val lastWork = phone.order.indexOfLast { it in setOf("heartbeat", "upload", "transition", "charging", "network", "fgs") }
-    val firstData = phone.order.indexOfFirst { it in setOf("events", "fingerprint", "status", "onboarding") }
+    val firstData = phone.order.indexOfFirst { it in setOf("events", "fingerprint", "status", "onboarding", "exports") }
     assertEquals(listOf("token", "lock"), phone.order.take(2))
     assertTrue(lastWork < firstData)
   }
@@ -106,6 +114,16 @@ class WipeTest {
     assertFalse(ChargingJob.shouldRecord(followOnly))
     assertFalse(ChargingJob.shouldRescheduleOnStop(followOnly))
     assertFalse(PowerWatchService.shouldRun(followOnly))
+  }
+
+  @Test
+  fun `wipe borra los exportes`() {
+    val phone = FakePhone()
+    assertTrue(phone.export.exists())
+    assertTrue(Wipe.run(phone.disarmer, phone.data).isEmpty())
+    assertFalse(phone.export.exists())
+    assertFalse(File(phone.cacheDir, "exports").exists())
+    assertTrue(phone.cacheDir.exists())
   }
 
   @Test

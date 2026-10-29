@@ -38,7 +38,7 @@ Antes del mapa colaborativo (v1.1) hay que revisar este modelo: ahí los datos f
 
 ## Borrar los datos
 
-Ajustes → "Borrar mis datos" llama a `DELETE /v1/devices/me`. La página pública `/borrar-datos` explica cómo hacerlo y da un correo para pedirlo si ya no tienes la app. El servidor borra en cascada el dispositivo, su casa, eventos, cortes, seguidores y tickets de push. En el teléfono se borran el almacén de eventos, la bóveda y la huella, se cancelan los trabajos y la app vuelve al onboarding.
+Ajustes → "Borrar mis datos" llama a `DELETE /v1/devices/me`. La página pública `/borrar-datos` explica cómo hacerlo y da un correo para pedirlo si ya no tienes la app. El servidor borra en cascada el dispositivo, su casa, eventos, cortes, seguidores y tickets de push. En el teléfono se borran el almacén de eventos, la bóveda, la huella, el último estado, la caché del historial y los exportes del registrador, se cancelan los trabajos y la app vuelve al onboarding. El rol queda en `follow` para que nada se vuelva a armar solo.
 
 ## Política de privacidad
 

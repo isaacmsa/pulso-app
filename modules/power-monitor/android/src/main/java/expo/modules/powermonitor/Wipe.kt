@@ -14,11 +14,13 @@ class LocalData(
   val clearHomeFingerprint: () -> Unit,
   val clearLastServerStatus: () -> Unit,
   val clearOnboarding: () -> Unit,
+  /** Los exportes del registrador en el caché: cada uno lleva 14 días de eventos. */
+  val clearExports: () -> Unit,
 )
 
 /**
  * "Borrar mis datos" en el teléfono: deja el almacén de eventos, la bóveda del token, la huella de la red de casa,
- * el último estado del servidor y el paso del onboarding vacíos, cancela todos los trabajos y deja el rol en
+ * el último estado del servidor, el paso del onboarding y los exportes vacíos, cancela todos los trabajos y deja el rol en
  * "follow". JS lo llama solo después de que el servidor confirmó el borrado (204).
  *
  * El rol no se borra: sin rol, el arranque, una actualización de la app o un onStopJob tardío de C volverían a armar
@@ -40,6 +42,7 @@ object Wipe {
     attempt(data.clearHomeFingerprint)
     attempt(data.clearLastServerStatus)
     attempt(data.clearOnboarding)
+    attempt(data.clearExports)
     return failures
   }
 
@@ -53,6 +56,7 @@ object Wipe {
       clearHomeFingerprint = { HomeNetwork(app).forget() },
       clearLastServerStatus = { LastServerStatus.clear(app) },
       clearOnboarding = { OnboardingProgress.save(roleStore, null) },
+      clearExports = { Exporter.clearExports(app.cacheDir) },
     )
   }
 

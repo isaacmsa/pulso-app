@@ -20,11 +20,19 @@ object Exporter {
       .put("exportedAt", now)
       .put("diagnostics", Diagnostics.json(context))
       .put("events", events)
-    val dir = File(context.cacheDir, "exports").apply { mkdirs() }
+    val dir = exportsDir(context.cacheDir).apply { mkdirs() }
     val stamp = SimpleDateFormat("yyyyMMdd-HHmm", Locale.US).format(Date(now))
     val maker = Build.MANUFACTURER.lowercase(Locale.US).replace(Regex("[^a-z0-9]"), "")
     val file = File(dir, "pulso-$maker-$stamp.json")
     file.writeText(payload.toString())
     return Uri.fromFile(file).toString()
+  }
+
+  private fun exportsDir(cacheDir: File) = File(cacheDir, "exports")
+
+  /** Borra los exportes (14 días de eventos cada uno). Sin carpeta no hay nada que borrar; lanza si queda algo. */
+  fun clearExports(cacheDir: File) {
+    val dir = exportsDir(cacheDir)
+    if (dir.exists() && !dir.deleteRecursively()) throw IllegalStateException("no se pudieron borrar los exportes")
   }
 }
