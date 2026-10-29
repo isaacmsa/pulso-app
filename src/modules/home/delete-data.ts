@@ -2,7 +2,18 @@ import { ApiError, unwrap } from '../../shared/api/client';
 import { deleteDevice } from '../../shared/api/generated';
 import { clearQueryCache } from '../../shared/query/client';
 import { notifyStartupChanged } from '../onboarding/startup';
-import { wipe } from '../power-detection/power-monitor';
+import { getToken, wipe } from '../power-detection/power-monitor';
+
+/** La página pública para pedir el borrado sin la app (la misma que declara la ficha de Play). */
+export const DELETE_DATA_URL = 'https://pulso-api.isaac-mendozasa.workers.dev/borrar-datos';
+
+/** No hay token en la bóveda: el servidor no puede confirmar el borrado, así que no se tocó nada. */
+export class NoTokenError extends Error {
+  constructor() {
+    super('Este teléfono no tiene token para pedir el borrado');
+    this.name = 'NoTokenError';
+  }
+}
 
 export class WipeError extends Error {
   constructor() {
@@ -18,10 +29,14 @@ export class WipeError extends Error {
  * borrar allá. Al final avisa a la raíz, que vuelve al onboarding porque ya no hay token (el rol queda en `follow`, así
  * nada se vuelve a armar solo hasta que la persona elija de nuevo).
  *
- * Lanza `ApiError` si el servidor no confirmó (no se tocó nada local) o `WipeError` si el servidor sí borró pero el
- * teléfono no pudo limpiarse del todo (repetirlo es seguro).
+ * Sin token no se llama a la API ni se borra nada: el pedido saldría sin `Authorization`, el 401 contaría como
+ * confirmado y el teléfono quedaría limpio con la copia del servidor intacta (excepción de D-031).
+ *
+ * Lanza `NoTokenError` si no hay token, `ApiError` si el servidor no confirmó (en los dos no se tocó nada local) o
+ * `WipeError` si el servidor sí borró pero el teléfono no pudo limpiarse del todo (repetirlo es seguro).
  */
 export async function deleteMyData(): Promise<void> {
+  if (!(await getToken())) throw new NoTokenError();
   try {
     await unwrap(deleteDevice());
   } catch (error) {

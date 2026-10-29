@@ -7,7 +7,7 @@ import { updateHome } from '../../../shared/api/generated';
 import { colors } from '../../../shared/theme/colors';
 import { requestForegroundService } from '../../power-detection/foreground-service';
 import { isForegroundServiceEnabled } from '../../power-detection/power-monitor';
-import { deleteMyData, WipeError } from '../delete-data';
+import { DELETE_DATA_URL, deleteMyData, NoTokenError, WipeError } from '../delete-data';
 import { useHomeStatus, useRole } from '../queries';
 import { Button, Card, Muted, SectionTitle, TabScreen } from '../ui';
 
@@ -161,6 +161,12 @@ function DeleteSection() {
       await deleteMyData();
       // La raíz vuelve al onboarding al avisar; esta pantalla ya no se ve.
     } catch (error) {
+      if (error instanceof NoTokenError) {
+        setState({
+          error: `Este teléfono perdió su registro y no puede pedirle el borrado al servidor. No se tocó nada. Pide el borrado de lo que guarda el servidor en ${DELETE_DATA_URL}.`,
+        });
+        return;
+      }
       if (error instanceof WipeError) {
         setState({
           error: 'Se borró en el servidor, pero no se pudo limpiar este teléfono. Toca reintentar.',

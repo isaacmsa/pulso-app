@@ -14,6 +14,7 @@ jest.mock('../../onboarding/startup', () => ({ notifyStartupChanged: jest.fn() }
 jest.mock('../../../shared/query/client', () => ({ clearQueryCache: jest.fn() }));
 jest.mock('../../power-detection/power-monitor', () => ({
   getRole: jest.fn(),
+  getToken: jest.fn(),
   wipe: jest.fn(),
   isForegroundServiceEnabled: jest.fn(),
   setForegroundServiceEnabled: jest.fn(),
@@ -64,6 +65,7 @@ const noLocalChanges = () => {
 
 beforeEach(() => {
   mocked.getRole.mockResolvedValue('watch');
+  mocked.getToken.mockResolvedValue('a'.repeat(87));
   mocked.wipe.mockResolvedValue(undefined);
   mocked.isForegroundServiceEnabled.mockResolvedValue(false);
   mocked.setForegroundServiceEnabled.mockResolvedValue(undefined);
@@ -147,6 +149,24 @@ describe('Borrar mis datos', () => {
       ),
     ).toBeOnTheScreen();
     expect(notifyStartupChanged).not.toHaveBeenCalled();
+  });
+
+  // Sin token el pedido sale sin Authorization y el 401 contaría como confirmado (D-031): el teléfono se
+  // limpiaría y la copia del servidor quedaría.
+  it('sin token, borrar no toca nada y explica cómo pedir el borrado', async () => {
+    mocked.getToken.mockResolvedValue(null);
+    const fetchSpy = mockApi({
+      delete: () => json({ error: { code: 'invalid_token', message: 'Token inválido' } }, 401),
+    });
+    await renderWithQuery(<Settings />);
+    await askToDelete();
+    expect(
+      await screen.findByText(/https:\/\/pulso-api\.isaac-mendozasa\.workers\.dev\/borrar-datos/),
+    ).toBeOnTheScreen();
+    expect(fetchSpy.mock.calls.some(([input]) => (input as Request).method === 'DELETE')).toBe(
+      false,
+    );
+    noLocalChanges();
   });
 
   it('pide confirmar y cancelar no hace nada', async () => {
