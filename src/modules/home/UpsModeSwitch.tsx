@@ -9,6 +9,7 @@ type Props = { styleText?: object; styleMuted?: object };
 /** "Mi router tiene UPS": solo para teléfonos que vigilan. Cambia al instante y vuelve atrás si el servidor falla. */
 export function UpsModeSwitch({ styleText, styleMuted }: Props) {
   const [enabled, setEnabled] = useState(false);
+  const [saving, setSaving] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const touched = useRef(false);
 
@@ -19,19 +20,26 @@ export function UpsModeSwitch({ styleText, styleMuted }: Props) {
   }, []);
 
   const toggle = async (next: boolean) => {
+    if (saving) return;
+    const previous = enabled;
     touched.current = true;
     setError(null);
+    setSaving(true);
     setEnabled(next);
     try {
-      await setUpsMode(next);
+      if (!(await setUpsMode(next))) {
+        setError('Listo, pero no se pudo recordar en este teléfono.');
+      }
     } catch (e) {
-      setEnabled(!next);
+      setEnabled(previous);
       const offline = e instanceof ApiError && (e.code === 'network' || e.code === 'timeout');
       setError(
         offline
           ? 'Sin conexión con el servidor. Revisa tu internet.'
           : 'No se pudo cambiar. Intenta de nuevo.',
       );
+    } finally {
+      setSaving(false);
     }
   };
 
@@ -41,6 +49,7 @@ export function UpsModeSwitch({ styleText, styleMuted }: Props) {
         <Text style={[styles.label, styleText]}>Mi router tiene UPS</Text>
         <Switch
           value={enabled}
+          disabled={saving}
           onValueChange={(next) => void toggle(next)}
           accessibilityLabel="Mi router tiene UPS"
         />

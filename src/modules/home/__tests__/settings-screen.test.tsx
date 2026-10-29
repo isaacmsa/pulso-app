@@ -224,6 +224,32 @@ describe('Mi router tiene UPS', () => {
     expect(screen.getByLabelText('Mi router tiene UPS').props.value).toBe(false);
   });
 
+  it('mientras guarda, el interruptor no acepta otro toque', async () => {
+    let release: (r: Response) => void = () => undefined;
+    const fetchSpy = mockApi({
+      patch: () => new Promise<Response>((resolve) => (release = resolve)),
+    });
+    await renderWithQuery(<Settings />);
+    await fireEvent(await screen.findByLabelText('Mi router tiene UPS'), 'valueChange', true);
+    await waitFor(() =>
+      expect(screen.getByLabelText('Mi router tiene UPS').props.disabled).toBe(true),
+    );
+    release(new Response(null, { status: 204 }));
+    await waitFor(() =>
+      expect(screen.getByLabelText('Mi router tiene UPS').props.disabled).toBeFalsy(),
+    );
+    expect(patches(fetchSpy)).toHaveLength(1);
+  });
+
+  it('si el guardado local falla después de que el servidor aceptó, el interruptor sigue mostrando el valor aceptado', async () => {
+    jest.spyOn(AsyncStorage, 'setItem').mockRejectedValue(new Error('disco'));
+    mockApi({ patch: () => new Response(null, { status: 204 }) });
+    await renderWithQuery(<Settings />);
+    await fireEvent(await screen.findByLabelText('Mi router tiene UPS'), 'valueChange', true);
+    expect(await screen.findByText(/no se pudo recordar/i)).toBeOnTheScreen();
+    expect(screen.getByLabelText('Mi router tiene UPS').props.value).toBe(true);
+  });
+
   it('un teléfono que solo sigue no ve el interruptor', async () => {
     mocked.getRole.mockResolvedValue('follow');
     await renderWithQuery(<Settings />);

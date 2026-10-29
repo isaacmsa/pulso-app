@@ -1,3 +1,4 @@
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { setInvalidTokenHandler, setTokenProvider } from '../../../shared/api/client';
 import * as native from '../../power-detection/power-monitor';
 import { deleteMyData } from '../delete-data';
@@ -34,5 +35,26 @@ it('un 401 de deleteDevice no dispara el regreso al onboarding por token inváli
   const sent = fetchSpy.mock.calls[0]?.[0] as Request | undefined;
   expect(sent?.headers.get('authorization')).toBe('Bearer tok');
   expect(onInvalid).not.toHaveBeenCalled();
+  expect(mocked.wipe).toHaveBeenCalledTimes(1);
+});
+
+it('borrar mis datos limpia el modo UPS recordado', async () => {
+  setTokenProvider(async () => 'tok');
+  mocked.getToken.mockResolvedValue('tok');
+  mocked.wipe.mockResolvedValue(undefined);
+  await AsyncStorage.setItem('pulso-router-ups', 'ups');
+  jest.spyOn(globalThis, 'fetch').mockResolvedValue(new Response(null, { status: 204 }));
+  await deleteMyData();
+  expect(await AsyncStorage.getItem('pulso-router-ups')).toBeNull();
+});
+
+it('si AsyncStorage falla al limpiar el modo UPS, el wipe nativo igual corre', async () => {
+  setTokenProvider(async () => 'tok');
+  mocked.getToken.mockResolvedValue('tok');
+  mocked.wipe.mockResolvedValue(undefined);
+  mocked.wipe.mockClear();
+  jest.spyOn(AsyncStorage, 'removeItem').mockRejectedValue(new Error('disco'));
+  jest.spyOn(globalThis, 'fetch').mockResolvedValue(new Response(null, { status: 204 }));
+  await expect(deleteMyData()).resolves.toBeUndefined();
   expect(mocked.wipe).toHaveBeenCalledTimes(1);
 });
