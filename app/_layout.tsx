@@ -3,6 +3,7 @@ import { Stack } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { useEffect } from 'react';
 import { View } from 'react-native';
+import { registerPushToken, startPushTokenSync } from '../src/modules/notifications/push-token';
 import { installInvalidTokenHandler, useStartup } from '../src/modules/onboarding/startup';
 import {
   arm,
@@ -34,6 +35,15 @@ export default function RootLayout() {
         .catch((error: unknown) => console.warn('No se pudo armar la detección', error));
     }
   }, [startup]);
+
+  // Quien vigila y quien solo sigue reciben avisos: los dos mandan su push token. Si el permiso o el projectId faltan,
+  // `registerPushToken` no hace nada. Al terminar el onboarding `startup` cambia y esto corre con el permiso ya pedido.
+  const signedIn = startup === 'watch' || startup === 'follow';
+  useEffect(() => {
+    if (!signedIn) return;
+    void registerPushToken();
+    return startPushTokenSync();
+  }, [signedIn]);
 
   if (startup === null) {
     return <View style={{ flex: 1, backgroundColor: colors.background }} />;

@@ -97,7 +97,7 @@ Objetivo: tener datos reales de cortes desde la primera semana y un clasificador
 
 - [ ] [api] Módulo de push, reglas de inicio, regreso, resumen tardío y confirmación; seguir casas, regenerar código, `/c/:code` y `assetlinks.json` (6 h)
 - [ ] [app] Modo UPS en el onboarding y en ajustes, con el mecanismo que decidió D-012 (1,5 h)
-- [ ] [app] Firebase + FCM V1 en EAS; registro del push token (1 h)
+- [x] [app] Firebase + FCM V1 en EAS; registro del push token (1 h) _(hecho el registro del push token y el canal `cortes`; faltan el proyecto de EAS y las credenciales FCM V1, corte C5)_
 - [ ] [app] Confirmación con botones Sí y No que guarda un evento `confirmation` (1 h)
 - [ ] [app] Familia: compartir el enlace por WhatsApp, seguir con código, casas que sigo, dejar de seguir, regenerar código (2,5 h)
 - [ ] [app] Actualización 1 publicada en la pista cerrada y anunciada a los testers (1 h)

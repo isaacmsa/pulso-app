@@ -2,6 +2,7 @@ import { act, render, screen } from '@testing-library/react-native';
 import RootLayout from '../../../../app/_layout';
 import { ApiError, unwrap } from '../../../shared/api/client';
 import { getHomeStatus } from '../../../shared/api/generated';
+import { registerPushToken, startPushTokenSync } from '../../notifications/push-token';
 import * as native from '../../power-detection/power-monitor';
 import { RETRY_TRANSIENT_MS, resolveStartup } from '../startup';
 
@@ -17,6 +18,10 @@ jest.mock('expo-router', () => {
   return { Stack };
 });
 jest.mock('expo-status-bar', () => ({ StatusBar: () => null }));
+jest.mock('../../notifications/push-token', () => ({
+  registerPushToken: jest.fn(),
+  startPushTokenSync: jest.fn(() => () => undefined),
+}));
 jest.mock('../../power-detection/power-monitor', () => ({
   getToken: jest.fn(),
   getTokenState: jest.fn(),
@@ -199,6 +204,23 @@ describe('RootLayout', () => {
       });
       expect(mocked.markTokenInvalid).not.toHaveBeenCalled();
       expect(screen.getByText('screen:(tabs)')).toBeOnTheScreen();
+    });
+  });
+
+  describe('push token', () => {
+    it('al abrir la app (vigilando o siguiendo) registra el push token y escucha sus cambios', async () => {
+      state('tok', false, 'follow');
+      await render(<RootLayout />);
+      expect(await screen.findByText('screen:(tabs)')).toBeOnTheScreen();
+      expect(registerPushToken).toHaveBeenCalled();
+      expect(startPushTokenSync).toHaveBeenCalledTimes(1);
+    });
+
+    it('en el onboarding todavía no lo registra', async () => {
+      state('tok', true, 'watch');
+      await render(<RootLayout />);
+      expect(await screen.findByText('screen:onboarding/index')).toBeOnTheScreen();
+      expect(registerPushToken).not.toHaveBeenCalled();
     });
   });
 });

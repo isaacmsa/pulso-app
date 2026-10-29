@@ -29,7 +29,14 @@
           }
         }
       ],
-      "expo-sharing"
+      "expo-sharing",
+      [
+        "expo-notifications",
+        {
+          "color": "#F5B942",
+          "defaultChannel": "cortes"
+        }
+      ]
     ],
     "scheme": "pulso",
     "platforms": ["android"]
