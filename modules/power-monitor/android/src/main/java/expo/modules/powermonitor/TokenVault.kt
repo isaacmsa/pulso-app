@@ -34,20 +34,62 @@ class PrefsStore(private val prefs: SharedPreferences) : KeyValueStore {
 /** La clave o el texto cifrado no volverán a servir (clave invalidada o perdida, datos corruptos). Reintentar no ayuda. */
 class PermanentKeyException(message: String, cause: Throwable? = null) : Exception(message, cause)
 
+/** Lo que una excepción de keystore dice sobre si reintentar sirve. */
+data class KeystoreFailure(val transient: Boolean, val permanentCode: Boolean)
+
+private const val KS_KEY_PERMANENTLY_INVALIDATED = 17 // ResponseCode de keystore2
+private const val KS_INVALID_KEY_BLOB = -33 // ErrorCode de KeyMint
+
 /**
- * Separa las fallas de `decrypt` que no tienen remedio de las que pueden pasar solas (el Keystore ocupado o caído,
- * un error de E/S). Todo lo que no se reconoce como permanente es transitorio: ante la duda, no se descarta el token.
+ * Lee una excepción de keystore de la cadena. API 33+: `android.security.KeyStoreException` trae `isTransientFailure`
+ * y el código numérico. Antes de 33 no existe esa clase: cualquier `java.security.KeyStoreException` cuenta como
+ * transitoria.
  */
-fun classifyDecryptFailure(error: Throwable): Throwable = when (error) {
-  is PermanentKeyException -> error
-  is android.security.keystore.KeyPermanentlyInvalidatedException,
-  is java.security.UnrecoverableKeyException,
-  is javax.crypto.AEADBadTagException,
-  is javax.crypto.BadPaddingException,
-  is javax.crypto.IllegalBlockSizeException,
-  is IllegalArgumentException,
-  -> PermanentKeyException("el token cifrado no se puede recuperar", error)
-  else -> error
+fun probeKeystoreFailure(error: Throwable, sdkInt: Int): KeystoreFailure? {
+  if (sdkInt >= 33 && error is android.security.KeyStoreException) {
+    val code = error.numericErrorCode
+    return KeystoreFailure(
+      transient = error.isTransientFailure,
+      permanentCode = code == KS_KEY_PERMANENTLY_INVALIDATED || code == KS_INVALID_KEY_BLOB,
+    )
+  }
+  if (error is java.security.KeyStoreException) return KeystoreFailure(transient = true, permanentCode = false)
+  return null
+}
+
+/**
+ * Separa las fallas de `decrypt` que no tienen remedio de las que pueden pasar solas. Un hipo del daemon de keystore2
+ * sale envuelto (`UnrecoverableKeyException` desde `getKey`, `IllegalBlockSizeException` desde `doFinal`) con un
+ * `KeyStoreException` de causa: se recorre la cadena y, si hay uno, manda lo que diga (transitoria salvo que el código
+ * sea permanente). Sin él, valen los tipos conocidos. Todo lo demás es transitorio: ante la duda, no se descarta el
+ * token, porque registrar de nuevo crea otra casa y suelta a los seguidores (D-030).
+ */
+fun classifyDecryptFailure(
+  error: Throwable,
+  sdkInt: Int = android.os.Build.VERSION.SDK_INT,
+  probe: (Throwable, Int) -> KeystoreFailure? = ::probeKeystoreFailure,
+): Throwable {
+  if (error is PermanentKeyException) return error
+  var cause: Throwable? = error
+  var depth = 0
+  while (cause != null && depth < 10) {
+    probe(cause, sdkInt)?.let { failure ->
+      return if (failure.transient && !failure.permanentCode) error else PermanentKeyException("la clave de keystore ya no sirve", error)
+    }
+    if (cause is android.security.keystore.KeyPermanentlyInvalidatedException) {
+      return PermanentKeyException("clave invalidada", error)
+    }
+    cause = cause.cause
+    depth++
+  }
+  return when (error) {
+    is java.security.UnrecoverableKeyException,
+    is javax.crypto.AEADBadTagException,
+    is javax.crypto.BadPaddingException,
+    is IllegalArgumentException,
+    -> PermanentKeyException("el token cifrado no se puede recuperar", error)
+    else -> error
+  }
 }
 
 /** Qué hay en la bóveda. Solo `ABSENT` y `UNREADABLE` justifican registrar de nuevo; `TRANSIENT` se reintenta más tarde. */

@@ -113,6 +113,49 @@ class TokenVaultTest {
     assertFalse(classifyDecryptFailure(RuntimeException("otra cosa")) is PermanentKeyException)
   }
 
+  // Causa que hace de KeyStoreException (la clase real no se puede construir en la JVM).
+  private class FakeKsCause(val transient: Boolean, val permanentCode: Boolean = false) : Exception("keystore")
+  private val fakeProbe = { t: Throwable, _: Int ->
+    (t as? FakeKsCause)?.let { KeystoreFailure(it.transient, it.permanentCode) }
+  }
+  private fun isPermanent(error: Throwable, sdk: Int = 33) =
+    classifyDecryptFailure(error, sdk, fakeProbe) is PermanentKeyException
+
+  @Test
+  fun `un UnrecoverableKeyException envuelto con causa de keystore es transitorio`() {
+    val wrapped = java.security.UnrecoverableKeyException("Failed to obtain information about key").apply {
+      initCause(FakeKsCause(transient = true))
+    }
+    assertFalse(isPermanent(wrapped))
+  }
+
+  @Test
+  fun `IllegalBlockSizeException envuelto es transitorio`() {
+    val wrapped = javax.crypto.IllegalBlockSizeException("fallo").apply { initCause(FakeKsCause(transient = true)) }
+    assertFalse(isPermanent(wrapped))
+  }
+
+  @Test
+  fun `AEADBadTagException suelto es permanente`() {
+    assertTrue(isPermanent(javax.crypto.AEADBadTagException("tag")))
+    assertTrue(isPermanent(java.security.UnrecoverableKeyException("sin causa")))
+  }
+
+  @Test
+  fun `con causa de keystore, un codigo permanente o una falla no transitoria cuentan como permanentes`() {
+    fun wrap(cause: Exception) = java.security.UnrecoverableKeyException("x").apply { initCause(cause) }
+    assertTrue(isPermanent(wrap(FakeKsCause(transient = true, permanentCode = true))))
+    assertTrue(isPermanent(wrap(FakeKsCause(transient = false))))
+  }
+
+  @Test
+  fun `antes de API 33 un KeyStoreException de java es transitorio`() {
+    val wrapped = java.security.UnrecoverableKeyException("x").apply {
+      initCause(java.security.KeyStoreException("daemon caído"))
+    }
+    assertFalse(classifyDecryptFailure(wrapped, 31) is PermanentKeyException)
+  }
+
   @Test
   fun `markInvalid no marca si el token no se puede leer`() {
     vault.store("tok_abc123")
