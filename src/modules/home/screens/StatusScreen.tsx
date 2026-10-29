@@ -1,11 +1,11 @@
 import { useFocusEffect, useRouter } from 'expo-router';
-import { useCallback, useState } from 'react';
+import { useCallback, useEffect, useState } from 'react';
 import { Pressable, StyleSheet, Text, View } from 'react-native';
 import type { HomeStatus } from '../../../shared/api/generated/types.gen';
 import { colors } from '../../../shared/theme/colors';
 import type { ReportValue } from '../../power-detection/native-schema';
 import { recordReport } from '../../power-detection/power-monitor';
-import { detectionRisk } from '../detection-risk';
+import { BATTERY_GUIDE_ROUTE, detectionRisk } from '../detection-risk';
 import { describeError, formatAgo, formatPhoneState, formatStatus } from '../format';
 import { useDiagnostics, useHomeStatus, usePhoneState, useRole } from '../queries';
 import {
@@ -35,6 +35,16 @@ export default function StatusScreen() {
   if (role.isPending) return <TabScreen title="Estado">{null}</TabScreen>;
   if (role.data === 'follow') return <FollowOnlyPlaceholder />;
   return <HomeStatusScreen />;
+}
+
+/** Un reloj que se mueve cada minuto, para que el aviso de latido viejo aparezca aunque nada más cambie. */
+function useMinuteClock(): number {
+  const [now, setNow] = useState(() => Date.now());
+  useEffect(() => {
+    const timer = setInterval(() => setNow(Date.now()), 60_000);
+    return () => clearInterval(timer);
+  }, []);
+  return now;
 }
 
 function HomeStatusScreen() {
@@ -72,7 +82,9 @@ function HomeStatusScreen() {
     }
   };
 
-  const now = Date.now();
+  const clock = useMinuteClock();
+  // Cada render con datos nuevos toma la hora de ese momento; el reloj garantiza al menos uno por minuto.
+  const now = Math.max(Date.now(), clock);
   const home = status.data;
   const phone = phoneState.data;
   const risk = detectionRisk(diagnostics.data ?? null, phone?.lastAt ?? null, now);
@@ -83,9 +95,7 @@ function HomeStatusScreen() {
         <Pressable
           accessibilityRole="button"
           accessibilityLabel="La detección puede fallar: tu teléfono está limitando a Pulso. Revisar la batería"
-          onPress={() =>
-            router.push({ pathname: '/onboarding/battery', params: { from: 'status' } })
-          }
+          onPress={() => router.push(BATTERY_GUIDE_ROUTE)}
           style={styles.risk}
         >
           <Text style={styles.riskTitle}>La detección puede fallar</Text>

@@ -1,5 +1,5 @@
 import { QueryClientProvider } from '@tanstack/react-query';
-import { fireEvent, render, screen, waitFor } from '@testing-library/react-native';
+import { act, fireEvent, render, screen, waitFor } from '@testing-library/react-native';
 import type { ReactElement } from 'react';
 import { createTestQueryClient } from '../../../shared/query/test-client';
 import * as native from '../../power-detection/power-monitor';
@@ -287,9 +287,28 @@ describe('aviso de detección en riesgo', () => {
     mocked.readDiagnostics.mockResolvedValue({ ...HEALTHY, standbyBucket: 40 });
     await renderWithQuery(<Status />);
     fireEvent.press(await screen.findByRole('button', { name: /Revisar la batería/ }));
-    expect(mockPush).toHaveBeenCalledWith({
-      pathname: '/onboarding/battery',
-      params: { from: 'status' },
-    });
+    expect(mockPush).toHaveBeenCalledWith('/battery-guide');
+  });
+
+  it('el aviso aparece solo cuando el latido envejece con la pantalla abierta', async () => {
+    jest.useFakeTimers({ advanceTimers: true, doNotFake: ['Date'] });
+    try {
+      idle();
+      mocked.readPhoneState.mockResolvedValue({
+        plugged: true,
+        since: NOW - 3_600_000,
+        lastAt: NOW - 30 * 60_000,
+      });
+      await renderWithQuery(<Status />);
+      await screen.findByText(/Con corriente desde/);
+      expect(screen.queryByText(RISK_TEXT)).not.toBeOnTheScreen();
+      jest.spyOn(Date, 'now').mockReturnValue(NOW + 11 * 60_000);
+      await act(async () => {
+        jest.advanceTimersByTime(60_000);
+      });
+      expect(await screen.findByText(RISK_TEXT)).toBeOnTheScreen();
+    } finally {
+      jest.useRealTimers();
+    }
   });
 });

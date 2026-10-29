@@ -1,6 +1,9 @@
 import { isRiskManufacturer } from '../onboarding/battery-guide';
 import type { NativeDiagnostics } from '../power-detection/native-schema';
 
+/** Ruta de la guía de batería para teléfonos con sesión (las de `onboarding/*` solo existen en el onboarding). */
+export const BATTERY_GUIDE_ROUTE = '/battery-guide';
+
 export type RiskDiagnostics = Pick<
   NativeDiagnostics,
   'standbyBucket' | 'ignoringBatteryOptimizations' | 'manufacturer'

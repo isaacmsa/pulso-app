@@ -80,6 +80,7 @@ export default function RootLayout() {
         <Stack.Protected guard={startup !== 'onboarding'}>
           <Stack.Screen name="(tabs)" />
           <Stack.Screen name="debug" />
+          <Stack.Screen name="battery-guide" />
         </Stack.Protected>
       </Stack>
     </PersistQueryClientProvider>
