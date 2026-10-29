@@ -1,4 +1,11 @@
-import { formatAgo, formatClock, formatDuration, formatStatus, weekdayLabel } from '../format';
+import {
+  formatAgo,
+  formatClock,
+  formatDuration,
+  formatPhoneState,
+  formatStatus,
+  weekdayLabel,
+} from '../format';
 
 // Hora de Caracas (UTC−4) como epoch ms.
 const caracas = (day: number, hour: number, minute: number) =>
@@ -124,6 +131,30 @@ describe('formatStatus con since de otro día (D-032)', () => {
     // Un minuto antes de la medianoche sigue siendo hoy.
     expect(formatStatus(con(caracas(22, 23, 50)), caracas(22, 23, 59))).toBe(
       'Hay luz desde las 11:50 p. m.',
+    );
+  });
+});
+
+describe('formatPhoneState', () => {
+  const now = caracas(23, 19, 25);
+
+  it('hoy dice solo la hora', () => {
+    expect(formatPhoneState(false, caracas(23, 18, 5), now)).toBe(
+      'Sin corriente desde las 6:05 p. m.',
+    );
+  });
+
+  it('el estado del teléfono dice ayer igual que el de la casa', () => {
+    const since = caracas(22, 14, 30);
+    expect(formatPhoneState(true, since, now)).toBe('Con corriente desde ayer a las 2:30 p. m.');
+    expect(
+      formatStatus({ state: 'con_luz', since, alias: 'Casa', openOutageStart: null }, now),
+    ).toBe('Hay luz desde ayer a las 2:30 p. m.');
+  });
+
+  it('antes de ayer dice la fecha', () => {
+    expect(formatPhoneState(true, caracas(16, 18, 30), now)).toBe(
+      'Con corriente desde el 16/10 a las 6:30 p. m.',
     );
   });
 });

@@ -45,6 +45,14 @@ function formatAt(ms: number, now: number): string {
   return `${day ? `${day} ` : ''}a las ${formatClock(ms)}`;
 }
 
+/**
+ * Lo que va después de "desde": "las 2:30 p. m.", "ayer a las 2:30 p. m." o "el 12/11 a las 2:30 p. m.". Lo usan el
+ * estado de la casa y el del teléfono, para que la misma pantalla diga "ayer" igual en los dos (D-032).
+ */
+function formatSince(ms: number, now: number): string {
+  return dayLabel(ms, now) ? formatAt(ms, now) : `las ${formatClock(ms)}`;
+}
+
 /** "el 12/11" (día/mes) en hora de Caracas. */
 function formatDate(ms: number): string {
   const { day, month } = caracasParts(ms);
@@ -68,12 +76,6 @@ export function formatStatus(status: HomeStatus, now: number): string {
   }
 }
 
-/** Lo que va después de "desde": "las 2:30 p. m.", "ayer a las 2:30 p. m." o "el 12/11 a las 2:30 p. m.". */
-function formatSince(ms: number, now: number): string {
-  const day = dayLabel(ms, now);
-  return day ? `${day} a las ${formatClock(ms)}` : `las ${formatClock(ms)}`;
-}
-
 const WEEKDAYS = ['dom', 'lun', 'mar', 'mié', 'jue', 'vie', 'sáb'];
 const MONTHS = ['ene', 'feb', 'mar', 'abr', 'may', 'jun', 'jul', 'ago', 'sep', 'oct', 'nov', 'dic'];
 
@@ -92,11 +94,7 @@ export function weekRange(now: number): { from: number; to: number } {
 
 /** Lo que dice el teléfono: desde cuándo está (o no) en corriente. `since` es el primer snapshot de la racha. */
 export function formatPhoneState(plugged: boolean, since: number, now: number): string {
-  const label = plugged ? 'Con corriente' : 'Sin corriente';
-  if (startOfCaracasDay(since) === startOfCaracasDay(now)) {
-    return `${label} desde las ${formatClock(since)}`;
-  }
-  return `${label} desde ${formatDate(since)} a las ${formatClock(since)}`;
+  return `${plugged ? 'Con corriente' : 'Sin corriente'} desde ${formatSince(since, now)}`;
 }
 
 /** Texto para una falla al pedir datos al servidor. */
