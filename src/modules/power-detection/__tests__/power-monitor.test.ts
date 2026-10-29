@@ -145,6 +145,7 @@ describe('readPhoneState', () => {
     await expect(readPhoneState()).resolves.toEqual({
       plugged: true,
       since: valid.at - 7 * 86_400_000,
+      lastAt: valid.at,
     });
   });
 

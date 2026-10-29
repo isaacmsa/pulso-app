@@ -2,7 +2,12 @@ import { useQuery } from '@tanstack/react-query';
 import { ApiError, unwrap } from '../../shared/api/client';
 import { getHomeStatus, getOutages } from '../../shared/api/generated';
 import type { HomeStatus } from '../../shared/api/generated/types.gen';
-import { getLastServerStatus, getRole, readPhoneState } from '../power-detection/power-monitor';
+import {
+  getLastServerStatus,
+  getRole,
+  readDiagnostics,
+  readPhoneState,
+} from '../power-detection/power-monitor';
 
 export type HomeStatusResult = {
   status: HomeStatus;
@@ -46,4 +51,9 @@ export function useRole() {
 /** Lo que dice el teléfono: si está en corriente y desde cuándo (el nativo recorre todos sus snapshots). */
 export function usePhoneState() {
   return useQuery({ queryKey: ['phone', 'state'], queryFn: readPhoneState });
+}
+
+/** El diagnóstico del teléfono (bucket de standby, exención de batería, fabricante) para el aviso de riesgo. */
+export function useDiagnostics(enabled: boolean) {
+  return useQuery({ queryKey: ['phone', 'diagnostics'], queryFn: readDiagnostics, enabled });
 }

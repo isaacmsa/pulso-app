@@ -49,6 +49,13 @@ const GENERIC: BatteryStep[] = [
 
 const XIAOMI_FAMILY = new Set(['xiaomi', 'redmi', 'poco']);
 
+/** Fabricantes que cierran apps en segundo plano por su cuenta: la guía de batería les importa. */
+const RISK_MANUFACTURERS = new Set([...XIAOMI_FAMILY, 'samsung', 'tecno', 'infinix']);
+
+export function isRiskManufacturer(manufacturer: string): boolean {
+  return RISK_MANUFACTURERS.has(manufacturer.trim().toLowerCase());
+}
+
 /**
  * Los pasos para que el teléfono no cierre Pulso en segundo plano, según el fabricante (`Build.MANUFACTURER`).
  * Los textos salen de `docs/registrador.md`. Tecno, Infinix y cualquier otro usan la guía genérica.

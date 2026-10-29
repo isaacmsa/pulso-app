@@ -1,12 +1,13 @@
-import { useFocusEffect } from 'expo-router';
+import { useFocusEffect, useRouter } from 'expo-router';
 import { useCallback, useState } from 'react';
-import { StyleSheet, Text, View } from 'react-native';
+import { Pressable, StyleSheet, Text, View } from 'react-native';
 import type { HomeStatus } from '../../../shared/api/generated/types.gen';
 import { colors } from '../../../shared/theme/colors';
 import type { ReportValue } from '../../power-detection/native-schema';
 import { recordReport } from '../../power-detection/power-monitor';
+import { detectionRisk } from '../detection-risk';
 import { describeError, formatAgo, formatPhoneState, formatStatus } from '../format';
-import { useHomeStatus, usePhoneState, useRole } from '../queries';
+import { useDiagnostics, useHomeStatus, usePhoneState, useRole } from '../queries';
 import {
   Button,
   Card,
@@ -39,21 +40,26 @@ export default function StatusScreen() {
 function HomeStatusScreen() {
   const status = useHomeStatus();
   const phoneState = usePhoneState();
+  const diagnostics = useDiagnostics(true);
+  const router = useRouter();
   const [notice, setNotice] = useState<{ text: string; error: boolean } | null>(null);
 
   const { refetch: refetchStatus } = status;
   const { refetch: refetchPhone } = phoneState;
+  const { refetch: refetchDiagnostics } = diagnostics;
   // Al volver a esta pestaña se refresca; `cancelRefetch: false` evita repetir el pedido de la primera carga.
   useFocusEffect(
     useCallback(() => {
       void refetchStatus({ cancelRefetch: false });
       void refetchPhone({ cancelRefetch: false });
-    }, [refetchStatus, refetchPhone]),
+      void refetchDiagnostics({ cancelRefetch: false });
+    }, [refetchStatus, refetchPhone, refetchDiagnostics]),
   );
 
   const refresh = () => {
     void refetchStatus();
     void refetchPhone();
+    void refetchDiagnostics();
   };
 
   const report = async (value: ReportValue) => {
@@ -69,9 +75,24 @@ function HomeStatusScreen() {
   const now = Date.now();
   const home = status.data;
   const phone = phoneState.data;
+  const risk = detectionRisk(diagnostics.data ?? null, phone?.lastAt ?? null, now);
 
   return (
     <TabScreen title="Estado" refreshing={status.isRefetching} onRefresh={refresh}>
+      {risk ? (
+        <Pressable
+          accessibilityRole="button"
+          accessibilityLabel="La detección puede fallar: tu teléfono está limitando a Pulso. Revisar la batería"
+          onPress={() =>
+            router.push({ pathname: '/onboarding/battery', params: { from: 'status' } })
+          }
+          style={styles.risk}
+        >
+          <Text style={styles.riskTitle}>La detección puede fallar</Text>
+          <Text style={styles.riskBody}>Tu teléfono está limitando a Pulso.</Text>
+          <Text style={styles.riskAction}>Revisar la batería</Text>
+        </Pressable>
+      ) : null}
       {home ? (
         <Card>
           <Text style={styles.alias}>{home.status.alias}</Text>
@@ -134,5 +155,16 @@ const styles = StyleSheet.create({
   reports: { flexDirection: 'row', gap: 8 },
   reportButton: { flex: 1 },
   notice: { color: colors.ok, fontSize: 15 },
+  risk: {
+    backgroundColor: colors.surface,
+    borderColor: colors.warn,
+    borderWidth: 1,
+    borderRadius: 12,
+    padding: 16,
+    gap: 4,
+  },
+  riskTitle: { color: colors.warn, fontSize: 17, fontWeight: '700' },
+  riskBody: { color: colors.text, fontSize: 15 },
+  riskAction: { color: colors.warn, fontSize: 15, fontWeight: '600', marginTop: 4 },
   noticeError: { color: colors.danger, fontSize: 15 },
 });

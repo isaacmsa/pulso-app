@@ -5,15 +5,20 @@ import { createTestQueryClient } from '../../../shared/query/test-client';
 import * as native from '../../power-detection/power-monitor';
 import Status from '../screens/StatusScreen';
 
+const mockPush = jest.fn();
 jest.mock('expo-router', () => {
   const { useEffect } = jest.requireActual<typeof import('react')>('react');
-  return { useFocusEffect: (effect: () => void) => useEffect(effect, [effect]) };
+  return {
+    useFocusEffect: (effect: () => void) => useEffect(effect, [effect]),
+    useRouter: () => ({ push: mockPush }),
+  };
 });
 jest.mock('../../power-detection/power-monitor', () => ({
   getRole: jest.fn(),
   getLastServerStatus: jest.fn(),
   readEvents: jest.fn(),
   readPhoneState: jest.fn(),
+  readDiagnostics: jest.fn(),
   recordReport: jest.fn(),
 }));
 
@@ -22,6 +27,23 @@ const mocked = native as jest.Mocked<typeof native>;
 // Viernes 23 de octubre de 2026, 6:30 p. m. en Caracas.
 const NOW = Date.UTC(2026, 9, 23, 22, 30);
 const caracas = (hour: number, minute: number) => Date.UTC(2026, 9, 23, hour + 4, minute);
+
+const HEALTHY = {
+  appVersion: '1.0.0',
+  manufacturer: 'Google',
+  model: 'Pixel',
+  sdkInt: 35,
+  standbyBucket: 10,
+  ignoringBatteryOptimizations: false,
+  pendingEvents: 0,
+  storedEvents: 0,
+  rejectedEvents: 0,
+  homeNetworkLearned: true,
+  armed: { networkCallback: true, heartbeat: true, chargingJob: true, foregroundService: false },
+};
+const RISK_TEXT = /La detección puede fallar/;
+const idle = () =>
+  jest.spyOn(globalThis, 'fetch').mockRejectedValue(new TypeError('Network request failed'));
 
 const snapshot = (at: number, plugged: boolean, id: string) => ({
   kind: 'snapshot' as const,
@@ -53,6 +75,7 @@ beforeEach(() => {
   mocked.getLastServerStatus.mockResolvedValue(null);
   mocked.readEvents.mockResolvedValue({ events: [], invalid: 0 });
   mocked.readPhoneState.mockResolvedValue(null);
+  mocked.readDiagnostics.mockResolvedValue(HEALTHY);
   mocked.recordReport.mockResolvedValue(undefined);
 });
 
@@ -142,7 +165,11 @@ it('Estado no muestra el aviso cuando el estado llegó bien', async () => {
 
 it('Estado muestra lo que dice el teléfono: sin corriente desde que dejó de estar en corriente', async () => {
   jest.spyOn(globalThis, 'fetch').mockRejectedValue(new TypeError('Network request failed'));
-  mocked.readPhoneState.mockResolvedValue({ plugged: false, since: caracas(18, 5) });
+  mocked.readPhoneState.mockResolvedValue({
+    plugged: false,
+    since: caracas(18, 5),
+    lastAt: NOW - 60_000,
+  });
   await renderWithQuery(<Status />);
   expect(await screen.findByText('Sin corriente desde las 6:05 p. m.')).toBeOnTheScreen();
 });
@@ -161,7 +188,11 @@ it('Estado da el inicio real de una racha de una semana, aunque pase de 500 even
     invalid: 0,
   });
   // El nativo recorre todos los snapshots guardados: enchufado desde hace una semana.
-  mocked.readPhoneState.mockResolvedValue({ plugged: true, since: NOW - 7 * 24 * 60 * 60_000 });
+  mocked.readPhoneState.mockResolvedValue({
+    plugged: true,
+    since: NOW - 7 * 24 * 60 * 60_000,
+    lastAt: NOW - 60_000,
+  });
   await renderWithQuery(<Status />);
   expect(
     await screen.findByText('Con corriente desde el 16/10 a las 6:30 p. m.'),
@@ -193,4 +224,72 @@ it('un teléfono que solo sigue casas no pide nada y lo dice', async () => {
   expect(await screen.findByText('Este teléfono solo sigue casas')).toBeOnTheScreen();
   expect(fetchSpy).not.toHaveBeenCalled();
   expect(mocked.readPhoneState).not.toHaveBeenCalled();
+});
+
+describe('aviso de detección en riesgo', () => {
+  it('bucket 40 muestra el aviso', async () => {
+    idle();
+    mocked.readDiagnostics.mockResolvedValue({ ...HEALTHY, standbyBucket: 40 });
+    await renderWithQuery(<Status />);
+    expect(await screen.findByText(RISK_TEXT)).toBeOnTheScreen();
+  });
+
+  it('bucket 45 muestra el aviso', async () => {
+    idle();
+    mocked.readDiagnostics.mockResolvedValue({ ...HEALTHY, standbyBucket: 45 });
+    await renderWithQuery(<Status />);
+    expect(await screen.findByText(RISK_TEXT)).toBeOnTheScreen();
+  });
+
+  it('latido de hace 41 min muestra el aviso', async () => {
+    idle();
+    mocked.readPhoneState.mockResolvedValue({
+      plugged: true,
+      since: NOW - 3_600_000,
+      lastAt: NOW - 41 * 60_000,
+    });
+    await renderWithQuery(<Status />);
+    expect(await screen.findByText(RISK_TEXT)).toBeOnTheScreen();
+  });
+
+  it('Xiaomi sin exención muestra el aviso', async () => {
+    idle();
+    mocked.readDiagnostics.mockResolvedValue({ ...HEALTHY, manufacturer: 'Xiaomi' });
+    await renderWithQuery(<Status />);
+    expect(await screen.findByText(RISK_TEXT)).toBeOnTheScreen();
+  });
+
+  it('todo bien no muestra nada', async () => {
+    idle();
+    mocked.readPhoneState.mockResolvedValue({
+      plugged: true,
+      since: NOW - 3_600_000,
+      lastAt: NOW - 5 * 60_000,
+    });
+    await renderWithQuery(<Status />);
+    await screen.findByText(/Con corriente desde/);
+    await waitFor(() => expect(mocked.readDiagnostics).toHaveBeenCalled());
+    expect(screen.queryByText(RISK_TEXT)).not.toBeOnTheScreen();
+  });
+
+  it('un teléfono que solo sigue no ve el aviso', async () => {
+    idle();
+    mocked.getRole.mockResolvedValue('follow');
+    mocked.readDiagnostics.mockResolvedValue({ ...HEALTHY, standbyBucket: 45 });
+    await renderWithQuery(<Status />);
+    await screen.findByText('Este teléfono solo sigue casas');
+    expect(screen.queryByText(RISK_TEXT)).not.toBeOnTheScreen();
+    expect(mocked.readDiagnostics).not.toHaveBeenCalled();
+  });
+
+  it('tocar el aviso abre la guía de batería', async () => {
+    idle();
+    mocked.readDiagnostics.mockResolvedValue({ ...HEALTHY, standbyBucket: 40 });
+    await renderWithQuery(<Status />);
+    fireEvent.press(await screen.findByRole('button', { name: /Revisar la batería/ }));
+    expect(mockPush).toHaveBeenCalledWith({
+      pathname: '/onboarding/battery',
+      params: { from: 'status' },
+    });
+  });
 });

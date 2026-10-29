@@ -1,0 +1,37 @@
+import { isRiskManufacturer } from '../onboarding/battery-guide';
+import type { NativeDiagnostics } from '../power-detection/native-schema';
+
+export type RiskDiagnostics = Pick<
+  NativeDiagnostics,
+  'standbyBucket' | 'ignoringBatteryOptimizations' | 'manufacturer'
+>;
+
+export type RiskReason = 'standby_bucket' | 'battery_optimization' | 'stale_heartbeat';
+
+/** Android pasa a `rare` (40) o `restricted` (45) a las apps que nadie abre: sus trabajos se retrasan horas. */
+const RARE_BUCKET = 40;
+/** El latido corre cada ~15 min; con más de 40 min de silencio algo lo está frenando. */
+const STALE_HEARTBEAT_MS = 40 * 60_000;
+
+/**
+ * Por qué la detección de este teléfono está en riesgo, o null si todo va bien. Sin diagnóstico (todavía no
+ * cargó) solo se mira el latido; sin snapshots no hay latido que juzgar.
+ */
+export function detectionRisk(
+  diagnostics: RiskDiagnostics | null,
+  lastSnapshotAt: number | null,
+  now: number,
+): RiskReason | null {
+  if (diagnostics) {
+    if (diagnostics.standbyBucket !== null && diagnostics.standbyBucket >= RARE_BUCKET) {
+      return 'standby_bucket';
+    }
+    if (!diagnostics.ignoringBatteryOptimizations && isRiskManufacturer(diagnostics.manufacturer)) {
+      return 'battery_optimization';
+    }
+  }
+  if (lastSnapshotAt !== null && now - lastSnapshotAt > STALE_HEARTBEAT_MS) {
+    return 'stale_heartbeat';
+  }
+  return null;
+}

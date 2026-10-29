@@ -1,4 +1,4 @@
-import { useRouter } from 'expo-router';
+import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useEffect, useState } from 'react';
 import { Text } from 'react-native';
 import { UpsModeSwitch } from '../../src/modules/home/UpsModeSwitch';
@@ -20,6 +20,8 @@ import {
 
 export default function Battery() {
   const router = useRouter();
+  // Desde el aviso de Estado, "Listo" solo vuelve: el onboarding ya terminó.
+  const { from } = useLocalSearchParams<{ from?: string }>();
   const [steps, setSteps] = useState<BatteryStep[] | null>(null);
   const [notOpened, setNotOpened] = useState(false);
 
@@ -67,6 +69,10 @@ export default function Battery() {
       <PrimaryButton
         label="Listo, ya lo hice"
         onPress={async () => {
+          if (from === 'status') {
+            router.back();
+            return;
+          }
           await advanceOnboarding('home');
           router.push('/onboarding/home');
         }}
