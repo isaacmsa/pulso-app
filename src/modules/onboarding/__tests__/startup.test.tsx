@@ -2,6 +2,7 @@ import { act, render, screen } from '@testing-library/react-native';
 import RootLayout from '../../../../app/_layout';
 import { ApiError, unwrap } from '../../../shared/api/client';
 import { getHomeStatus } from '../../../shared/api/generated';
+import { startConfirmationResponses } from '../../notifications/confirmation';
 import { registerPushToken, startPushTokenSync } from '../../notifications/push-token';
 import * as native from '../../power-detection/power-monitor';
 import { RETRY_TRANSIENT_MS, resolveStartup } from '../startup';
@@ -18,6 +19,10 @@ jest.mock('expo-router', () => {
   return { Stack };
 });
 jest.mock('expo-status-bar', () => ({ StatusBar: () => null }));
+jest.mock('../../notifications/confirmation', () => ({
+  setupNotifications: jest.fn(() => Promise.resolve()),
+  startConfirmationResponses: jest.fn(() => () => undefined),
+}));
 jest.mock('../../notifications/push-token', () => ({
   registerPushToken: jest.fn(),
   startPushTokenSync: jest.fn(() => () => undefined),
@@ -38,6 +43,8 @@ const mocked = native as jest.Mocked<typeof native>;
 
 beforeEach(() => {
   jest.resetAllMocks();
+  (startPushTokenSync as jest.Mock).mockReturnValue(() => undefined);
+  (startConfirmationResponses as jest.Mock).mockReturnValue(() => undefined);
   mocked.configureApi.mockResolvedValue(undefined);
   mocked.arm.mockResolvedValue(undefined);
   mocked.recordAppOpen.mockResolvedValue({} as never);
@@ -214,6 +221,7 @@ describe('RootLayout', () => {
       expect(await screen.findByText('screen:(tabs)')).toBeOnTheScreen();
       expect(registerPushToken).toHaveBeenCalled();
       expect(startPushTokenSync).toHaveBeenCalledTimes(1);
+      expect(startConfirmationResponses).toHaveBeenCalledTimes(1);
     });
 
     it('en el onboarding todavía no lo registra', async () => {

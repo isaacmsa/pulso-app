@@ -36,4 +36,23 @@ class EventJsonTest {
     assertTrue(json.has("homeWifi"))
     assertTrue(json.isNull("homeWifi"))
   }
+
+  @Test
+  fun `confirmation se serializa con outageStart y answer`() {
+    val json = JSONObject(
+      EventJson.confirmation(
+        Confirmation(
+          id = "0192f3a4-5b6c-7d8e-9f01-23456789abcd",
+          at = 1_793_570_500_000L,
+          outageStart = 1_793_570_000_000L,
+          answer = false,
+        ),
+      ),
+    )
+    assertEquals(setOf("kind", "id", "at", "outageStart", "answer"), json.keys().asSequence().toSet())
+    assertEquals("confirmation", json.getString("kind"))
+    assertEquals(1_793_570_500_000L, json.getLong("at"))
+    assertEquals(1_793_570_000_000L, json.getLong("outageStart"))
+    assertEquals(false, json.getBoolean("answer"))
+  }
 }

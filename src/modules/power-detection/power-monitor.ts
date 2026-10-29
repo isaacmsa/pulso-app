@@ -223,3 +223,11 @@ export async function getOnboardingStep(): Promise<OnboardingStep | null> {
 export function wipe(): Promise<void> {
   return PowerMonitor.wipe();
 }
+
+/**
+ * Guarda la respuesta a "¿Se fue la luz?" con la hora de ahora y el `outageStart` del push, tal cual. Devuelve si se
+ * guardó: un teléfono `follow` no la guarda. Lanza si `outageStart` no es positivo.
+ */
+export async function recordConfirmation(outageStart: number, answer: boolean): Promise<boolean> {
+  return (await PowerMonitor.recordConfirmation(outageStart, answer)) !== null;
+}

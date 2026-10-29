@@ -16,6 +16,16 @@ data class Snapshot(
 
 data class Report(val id: String, val at: Long, val value: String)
 
+/** La respuesta Sí/No a "¿Se fue la luz?". `outageStart` es la hora del corte que dio el servidor y nunca se reescribe. */
+data class Confirmation(val id: String, val at: Long, val outageStart: Long, val answer: Boolean) {
+  companion object {
+    fun create(outageStart: Long, answer: Boolean, now: Long): Confirmation {
+      require(outageStart > 0) { "outageStart inválido: $outageStart" }
+      return Confirmation(UuidV7.generate(now), now, outageStart, answer)
+    }
+  }
+}
+
 /** Serializa los eventos con la forma exacta de `pulso-api/docs/api.md`. Los null se escriben, no se omiten. */
 object EventJson {
   fun snapshot(s: Snapshot): String =
@@ -38,5 +48,14 @@ object EventJson {
       .put("id", r.id)
       .put("at", r.at)
       .put("value", r.value)
+      .toString()
+
+  fun confirmation(c: Confirmation): String =
+    JSONObject()
+      .put("kind", "confirmation")
+      .put("id", c.id)
+      .put("at", c.at)
+      .put("outageStart", c.outageStart)
+      .put("answer", c.answer)
       .toString()
 }

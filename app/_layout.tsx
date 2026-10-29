@@ -3,6 +3,10 @@ import { Stack } from 'expo-router';
 import { StatusBar } from 'expo-status-bar';
 import { useEffect } from 'react';
 import { View } from 'react-native';
+import {
+  setupNotifications,
+  startConfirmationResponses,
+} from '../src/modules/notifications/confirmation';
 import { registerPushToken, startPushTokenSync } from '../src/modules/notifications/push-token';
 import { installInvalidTokenHandler, useStartup } from '../src/modules/onboarding/startup';
 import {
@@ -19,6 +23,10 @@ import { colors } from '../src/shared/theme/colors';
 setTokenProvider(getToken);
 // Un 401 invalid_token en cualquier pantalla marca el token y devuelve al onboarding (I3).
 installInvalidTokenHandler();
+// Los avisos se muestran aunque la app esté abierta, y "¿Se fue la luz?" lleva los botones Sí y No (D-028).
+setupNotifications().catch((error: unknown) =>
+  console.warn('No se pudo preparar los avisos', error),
+);
 
 export default function RootLayout() {
   const startup = useStartup();
@@ -42,7 +50,12 @@ export default function RootLayout() {
   useEffect(() => {
     if (!signedIn) return;
     void registerPushToken();
-    return startPushTokenSync();
+    const stopSync = startPushTokenSync();
+    const stopResponses = startConfirmationResponses();
+    return () => {
+      stopSync();
+      stopResponses();
+    };
   }, [signedIn]);
 
   if (startup === null) {

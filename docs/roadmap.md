@@ -99,7 +99,7 @@ Objetivo: tener datos reales de cortes desde la primera semana y un clasificador
 - [ ] [app] Modo UPS en el onboarding y en ajustes, con el mecanismo que decidió D-012 (1,5 h)
 - [x] [app] Registro del push token y canal `cortes` (expo-notifications) (1 h)
 - [ ] [app] Credenciales FCM V1 en EAS (corte C5)
-- [ ] [app] Confirmación con botones Sí y No que guarda un evento `confirmation` (1 h)
+- [x] [app] Confirmación con botones Sí y No que guarda un evento `confirmation` (1 h)
 - [ ] [app] Familia: compartir el enlace por WhatsApp, seguir con código, casas que sigo, dejar de seguir, regenerar código (2,5 h)
 - [ ] [app] Actualización 1 publicada en la pista cerrada y anunciada a los testers (1 h)
 

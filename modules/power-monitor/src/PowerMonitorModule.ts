@@ -9,6 +9,8 @@ declare class PowerMonitorModule extends NativeModule<Record<string, never>> {
   setForegroundServiceEnabled(enabled: boolean): Promise<void>;
   /** Guarda un reporte manual ("hay_luz" | "fluctuando" | "sin_luz") y lo devuelve como JSON. */
   recordReport(value: string): Promise<string>;
+  /** Guarda la respuesta Sí/No a "¿Se fue la luz?" y encola la subida. `outageStart` (epoch ms, el del push) debe ser > 0 o lanza. Devuelve el evento como JSON, o null en un teléfono "follow". */
+  recordConfirmation(outageStart: number, answer: boolean): Promise<string | null>;
   /** Aprende la huella de la red Wi-Fi actual como "la de casa". */
   learnHomeNetwork(): Promise<boolean>;
   /** Diagnóstico del registrador como JSON. */

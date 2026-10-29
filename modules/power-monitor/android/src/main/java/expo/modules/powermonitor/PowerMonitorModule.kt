@@ -38,6 +38,17 @@ class PowerMonitorModule : Module() {
       json
     }
 
+    // Sí/No al aviso "¿Se fue la luz?" (D-028). Un teléfono "follow" no la guarda: solo quien vigila la casa recibe
+    // ese aviso, y un follow no sube nada. Devuelve el evento como JSON, o null si no se guardó.
+    AsyncFunction("recordConfirmation") { outageStart: Double, answer: Boolean ->
+      if (Role.isFollowOnly(context)) return@AsyncFunction null
+      val confirmation = Confirmation.create(outageStart.toLong(), answer, System.currentTimeMillis())
+      val json = EventJson.confirmation(confirmation)
+      EventStore.get(context).insert(confirmation.id, confirmation.at, "confirmation", json)
+      UploadWorker.enqueue(context)
+      json
+    }
+
     AsyncFunction("learnHomeNetwork") {
       HomeNetwork(context).learnCurrent()
     }
