@@ -7,6 +7,7 @@ import {
   isTokenInvalid,
   PowerMonitorError,
   readEvents,
+  readPhoneState,
   storeToken,
 } from '../power-monitor';
 
@@ -20,6 +21,7 @@ jest.mock('../../../../modules/power-monitor', () => ({
     isTokenInvalid: jest.fn(),
     configureApi: jest.fn(),
     getLastServerStatus: jest.fn(),
+    getPhoneStateSince: jest.fn(),
   },
 }));
 const native = PowerMonitor as jest.Mocked<typeof PowerMonitor>;
@@ -132,5 +134,27 @@ describe('getLastServerStatus', () => {
       native.getLastServerStatus.mockResolvedValue(JSON.stringify({ status, receivedAt: bad }));
       await expect(getLastServerStatus()).resolves.toBeNull();
     }
+  });
+});
+
+describe('readPhoneState', () => {
+  it('devuelve si está en corriente y el inicio de la racha que da el nativo', async () => {
+    native.getPhoneStateSince.mockResolvedValue(
+      JSON.stringify({ snapshot: valid, since: valid.at - 7 * 86_400_000 }),
+    );
+    await expect(readPhoneState()).resolves.toEqual({
+      plugged: true,
+      since: valid.at - 7 * 86_400_000,
+    });
+  });
+
+  it('sin snapshots guardados devuelve null', async () => {
+    native.getPhoneStateSince.mockResolvedValue(null);
+    await expect(readPhoneState()).resolves.toBeNull();
+  });
+
+  it('falla con invalid_event si el nativo no cumple el contrato', async () => {
+    native.getPhoneStateSince.mockResolvedValue(JSON.stringify({ snapshot: valid }));
+    await expect(readPhoneState()).rejects.toMatchObject({ code: 'invalid_event' });
   });
 });

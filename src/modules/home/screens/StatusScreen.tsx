@@ -6,8 +6,7 @@ import { colors } from '../../../shared/theme/colors';
 import type { ReportValue } from '../../power-detection/native-schema';
 import { recordReport } from '../../power-detection/power-monitor';
 import { describeError, formatAgo, formatPhoneState, formatStatus } from '../format';
-import { currentPhoneState } from '../phone-state';
-import { useHomeStatus, usePhoneEvents, useRole } from '../queries';
+import { useHomeStatus, usePhoneState, useRole } from '../queries';
 import {
   Button,
   Card,
@@ -39,11 +38,11 @@ export default function StatusScreen() {
 
 function HomeStatusScreen() {
   const status = useHomeStatus();
-  const phoneEvents = usePhoneEvents();
+  const phoneState = usePhoneState();
   const [notice, setNotice] = useState<{ text: string; error: boolean } | null>(null);
 
   const { refetch: refetchStatus } = status;
-  const { refetch: refetchPhone } = phoneEvents;
+  const { refetch: refetchPhone } = phoneState;
   // Al volver a esta pestaña se refresca; `cancelRefetch: false` evita repetir el pedido de la primera carga.
   useFocusEffect(
     useCallback(() => {
@@ -69,7 +68,7 @@ function HomeStatusScreen() {
 
   const now = Date.now();
   const home = status.data;
-  const phone = phoneEvents.data ? currentPhoneState(phoneEvents.data) : null;
+  const phone = phoneState.data;
 
   return (
     <TabScreen title="Estado" refreshing={status.isRefetching} onRefresh={refresh}>
@@ -96,9 +95,9 @@ function HomeStatusScreen() {
         <Card>
           {phone ? (
             <Text style={styles.phone}>{formatPhoneState(phone.plugged, phone.since, now)}</Text>
-          ) : phoneEvents.isError ? (
+          ) : phoneState.isError ? (
             <Muted>No se pudo leer el estado del teléfono.</Muted>
-          ) : phoneEvents.isSuccess ? (
+          ) : phoneState.isSuccess ? (
             <Muted>Todavía no hay lecturas de este teléfono.</Muted>
           ) : (
             <Muted>Cargando…</Muted>

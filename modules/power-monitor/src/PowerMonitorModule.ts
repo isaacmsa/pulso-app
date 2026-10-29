@@ -19,6 +19,8 @@ declare class PowerMonitorModule extends NativeModule<Record<string, never>> {
   isForegroundServiceEnabled(): Promise<boolean>;
   /** Eventos guardados desde `sinceMs`, del más nuevo al más viejo, como un arreglo JSON. */
   getEvents(sinceMs: number): Promise<string>;
+  /** `{ snapshot, since }`: el snapshot más nuevo y el inicio de su racha de `plugged` sobre todos los snapshots guardados, como JSON, o null si no hay ninguno. */
+  getPhoneStateSince(): Promise<string | null>;
   /** Guarda el token del dispositivo en la bóveda nativa (Android Keystore). Reemplaza el anterior y limpia la marca de inválido. */
   storeToken(token: string): Promise<void>;
   /** Token del dispositivo, o null si no hay o el Keystore no puede leerlo. */

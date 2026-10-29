@@ -58,6 +58,11 @@ class PowerMonitorModule : Module() {
       "[" + EventStore.get(context).since(sinceMs.toLong()).joinToString(",") + "]"
     }
 
+    // "Este teléfono": `{ snapshot, since }` con el snapshot más nuevo y el inicio de su racha de `plugged`, o null.
+    AsyncFunction("getPhoneStateSince") {
+      EventStore.get(context).currentStreakStart()?.let(PhoneStreaks::json)
+    }
+
     // Bóveda del token (regla 3): JS lo entrega al registrarse y lo pide en cada llamada; nunca lo guarda.
     AsyncFunction("storeToken") { token: String ->
       TokenVault.store(context, token)

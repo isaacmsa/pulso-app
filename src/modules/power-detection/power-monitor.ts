@@ -47,6 +47,25 @@ export async function readEvents(
   return { events, invalid };
 }
 
+const phoneStateSchema = z.object({ snapshot: nativeSnapshotSchema, since: z.int().positive() });
+
+export type PhoneState = { plugged: boolean; since: number };
+
+/**
+ * El estado crudo del teléfono: si está en corriente y desde cuándo, sin tocar al servidor. `since` es el primer
+ * snapshot de la racha actual. Lo calcula el nativo sobre todos los snapshots guardados (14 días), no sobre los
+ * últimos 500 eventos de `readEvents`, que el relevo de C y el latido llenan en unos 2 días. null si no hay snapshots.
+ */
+export async function readPhoneState(): Promise<PhoneState | null> {
+  const raw = await PowerMonitor.getPhoneStateSince();
+  if (raw == null) return null;
+  const parsed = phoneStateSchema.safeParse(parseJson(raw));
+  if (!parsed.success) {
+    throw new PowerMonitorError('invalid_event', 'El estado del teléfono no cumple el contrato');
+  }
+  return { plugged: parsed.data.snapshot.plugged, since: parsed.data.since };
+}
+
 /** Toma un snapshot ahora (fuente `app_open`) y lo devuelve validado. */
 export async function recordAppOpen(): Promise<NativeSnapshot> {
   const parsed = nativeSnapshotSchema.safeParse(

@@ -2,7 +2,7 @@ import { useQuery } from '@tanstack/react-query';
 import { ApiError, unwrap } from '../../shared/api/client';
 import { getHomeStatus, getOutages } from '../../shared/api/generated';
 import type { HomeStatus } from '../../shared/api/generated/types.gen';
-import { getLastServerStatus, getRole, readEvents } from '../power-detection/power-monitor';
+import { getLastServerStatus, getRole, readPhoneState } from '../power-detection/power-monitor';
 
 export type HomeStatusResult = {
   status: HomeStatus;
@@ -43,12 +43,7 @@ export function useRole() {
   return useQuery({ queryKey: ['role'], queryFn: getRole, staleTime: 0 });
 }
 
-const PHONE_WINDOW_MS = 14 * 24 * 60 * 60 * 1000;
-
-/** Lo que el teléfono guardó, para decir el estado crudo (cuándo dejó de estar en corriente). */
-export function usePhoneEvents() {
-  return useQuery({
-    queryKey: ['phone', 'events'],
-    queryFn: () => readEvents(Date.now() - PHONE_WINDOW_MS).then((result) => result.events),
-  });
+/** Lo que dice el teléfono: si está en corriente y desde cuándo (el nativo recorre todos sus snapshots). */
+export function usePhoneState() {
+  return useQuery({ queryKey: ['phone', 'state'], queryFn: readPhoneState });
 }

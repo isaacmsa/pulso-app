@@ -94,6 +94,15 @@ class EventStore private constructor(context: Context) :
     }
   }
 
+  /** La racha actual de `plugged` sobre todos los snapshots guardados (ver `PhoneStreaks`), o null si no hay. */
+  fun currentStreakStart(): PhoneStreak? =
+    readableDatabase.rawQuery(
+      "SELECT at, json FROM events WHERE kind = 'snapshot' ORDER BY at DESC, id DESC",
+      null,
+    ).use { c ->
+      PhoneStreaks.current(generateSequence { if (c.moveToNext()) PhoneStreaks.Row(c.getLong(0), c.getString(1)) else null })
+    }
+
   fun lastSnapshotJson(): String? =
     readableDatabase.rawQuery(
       "SELECT json FROM events WHERE kind = 'snapshot' ORDER BY at DESC, id DESC LIMIT 1",
