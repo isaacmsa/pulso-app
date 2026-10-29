@@ -11,6 +11,7 @@ jest.mock('../../power-detection/power-monitor', () => ({
   storeToken: jest.fn(),
   getToken: jest.fn(),
   isTokenInvalid: jest.fn(),
+  markTokenInvalid: jest.fn(),
   configureApi: jest.fn(),
   arm: jest.fn(),
   setRole: jest.fn(),
@@ -45,6 +46,9 @@ beforeEach(() => {
   mocked.storeToken.mockImplementation(async (token) => {
     vaultToken = token;
     invalid = false;
+  });
+  mocked.markTokenInvalid.mockImplementation(async (token) => {
+    if (token === vaultToken) invalid = true;
   });
   mocked.configureApi.mockResolvedValue(undefined);
   mocked.arm.mockResolvedValue(undefined);
@@ -178,4 +182,29 @@ it('si el registro falla, el onboarding queda en el paso del rol', async () => {
   await expect(register('watch')).rejects.toMatchObject({ code: 'network' });
   expect(mocked.setOnboardingStep).toHaveBeenCalledWith('role');
   expect(mocked.setOnboardingStep).not.toHaveBeenCalledWith('notifications');
+});
+
+// Un token que el teléfono cree válido pero que el servidor ya borró: createHome da 401 en cada reintento y el
+// onboarding quedaba en un lazo sin salida.
+it('si createHome da 401, registra de nuevo una sola vez', async () => {
+  vaultToken = 'viejo';
+  createHomeMock
+    .mockResolvedValueOnce(failed('invalid_token', 401))
+    .mockResolvedValue(ok({ homeId: 'h', shareCode: 'ABCDEFGH' }));
+  await expect(register('watch')).resolves.toBeUndefined();
+  expect(mocked.markTokenInvalid).toHaveBeenCalledWith('viejo');
+  expect(registerDeviceMock).toHaveBeenCalledTimes(1);
+  expect(mocked.storeToken).toHaveBeenCalledWith(TOKEN);
+  expect(createHomeMock).toHaveBeenCalledTimes(2);
+  expect(mocked.requestUpload).toHaveBeenCalledTimes(1);
+  expect(mocked.setOnboardingStep).toHaveBeenLastCalledWith('notifications');
+});
+
+it('si createHome sigue dando 401 con el token nuevo, falla sin registrar otra vez', async () => {
+  vaultToken = 'viejo';
+  createHomeMock.mockResolvedValue(failed('invalid_token', 401));
+  await expect(register('watch')).rejects.toMatchObject({ code: 'invalid_token' });
+  expect(registerDeviceMock).toHaveBeenCalledTimes(1);
+  expect(createHomeMock).toHaveBeenCalledTimes(2);
+  expect(mocked.requestUpload).not.toHaveBeenCalled();
 });

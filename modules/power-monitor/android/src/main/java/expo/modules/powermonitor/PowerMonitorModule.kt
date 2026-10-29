@@ -72,6 +72,11 @@ class PowerMonitorModule : Module() {
       TokenVault.read(context)
     }
 
+    // El servidor rechazó este token (401) en una llamada de JS. Solo marca si sigue siendo el guardado.
+    AsyncFunction("markTokenInvalid") { token: String ->
+      TokenVault.markInvalid(context, token)
+    }
+
     AsyncFunction("isTokenInvalid") {
       TokenVault.isInvalid(context)
     }

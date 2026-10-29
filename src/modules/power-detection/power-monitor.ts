@@ -131,6 +131,11 @@ export function isTokenInvalid(): Promise<boolean> {
   return PowerMonitor.isTokenInvalid();
 }
 
+/** El servidor rechazó `token` (401): el nativo lo marca, si sigue siendo el guardado, para registrar de nuevo. */
+export function markTokenInvalid(token: string): Promise<void> {
+  return PowerMonitor.markTokenInvalid(token);
+}
+
 /** Le dice al nativo dónde está la API, para la subida en segundo plano. */
 export function configureApi(apiUrl: string): Promise<void> {
   return PowerMonitor.configureApi(apiUrl);

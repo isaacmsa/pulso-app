@@ -6,6 +6,7 @@ import {
   configureApi,
   getToken,
   isTokenInvalid,
+  markTokenInvalid,
   type Role,
   requestUpload,
   setOnboardingStep,
@@ -23,6 +24,8 @@ let inFlight: Promise<void> | null = null;
  *   pide subir.
  * - `watch`: arma la detección, crea la casa (`home_exists` cuenta como éxito) y pide subir ya, para que los
  *   primeros eventos no esperen al próximo latido.
+ * - Si el servidor rechaza el token (`invalid_token`: el teléfono lo cree válido pero allá ya no existe), lo marca
+ *   inválido en el nativo y registra de nuevo una sola vez; si el token nuevo también falla, el error se propaga.
  *
  * Antes de empezar anota el paso pendiente (`role`) y al terminar el siguiente (`notifications`), para que, si
  * el sistema mata la app en medio del onboarding, se retome ahí sin registrar de nuevo.
@@ -45,21 +48,39 @@ async function registerAndArm(role: Role): Promise<void> {
   // sale temprano si venía de "follow", y el teléfono queda armado durante los pasos siguientes aunque la app muera.
   await setRole(role);
 
-  const token = await getToken();
-  if (!token || (await isTokenInvalid())) {
-    const registered = await unwrap(
-      registerDevice({ body: { appVersion: Constants.expoConfig?.version ?? '0.0.0' } }),
-    );
-    await storeToken(registered.token);
-  }
+  const token = await ensureRegistered();
   await configureApi(resolveApiUrl(process.env.EXPO_PUBLIC_API_URL));
   if (role === 'follow') return;
 
   await arm();
   try {
+    await createHomeIfMissing();
+  } catch (error) {
+    if (!(error instanceof ApiError && (error.code === 'invalid_token' || error.status === 401))) {
+      throw error;
+    }
+    await markTokenInvalid(token);
+    await ensureRegistered();
+    await createHomeIfMissing();
+  }
+  await requestUpload();
+}
+
+/** El token guardado si sigue válido; si no hay (o el servidor lo rechazó), registra este teléfono y guarda el nuevo. */
+async function ensureRegistered(): Promise<string> {
+  const token = await getToken();
+  if (token && !(await isTokenInvalid())) return token;
+  const registered = await unwrap(
+    registerDevice({ body: { appVersion: Constants.expoConfig?.version ?? '0.0.0' } }),
+  );
+  await storeToken(registered.token);
+  return registered.token;
+}
+
+async function createHomeIfMissing(): Promise<void> {
+  try {
     await unwrap(createHome({ body: {} }));
   } catch (error) {
     if (!(error instanceof ApiError && error.code === 'home_exists')) throw error;
   }
-  await requestUpload();
 }

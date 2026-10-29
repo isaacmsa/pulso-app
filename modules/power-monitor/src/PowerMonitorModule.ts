@@ -25,6 +25,8 @@ declare class PowerMonitorModule extends NativeModule<Record<string, never>> {
   storeToken(token: string): Promise<void>;
   /** Token del dispositivo, o null si no hay o el Keystore no puede leerlo. */
   getToken(): Promise<string | null>;
+  /** Marca el token como rechazado por el servidor, solo si `token` sigue siendo el guardado (otro registro pudo reemplazarlo). */
+  markTokenInvalid(token: string): Promise<void>;
   /** Si el servidor rechazó el token y hay que registrar de nuevo. */
   isTokenInvalid(): Promise<boolean>;
   /** `{ status: HomeStatus, receivedAt }` de la última subida aceptada, como JSON sin validar, o null. */
