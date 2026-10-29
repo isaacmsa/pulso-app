@@ -1,3 +1,4 @@
+import AsyncStorage from '@react-native-async-storage/async-storage';
 import { QueryClientProvider } from '@tanstack/react-query';
 import { fireEvent, render, screen, waitFor } from '@testing-library/react-native';
 import type { ReactElement } from 'react';
@@ -184,6 +185,53 @@ describe('Borrar mis datos', () => {
   });
 });
 
+describe('Mi router tiene UPS', () => {
+  const patches = (spy: jest.SpyInstance) =>
+    spy.mock.calls.map(([r]) => r as Request).filter((r) => r.method === 'PATCH');
+
+  beforeEach(async () => {
+    await AsyncStorage.clear();
+  });
+
+  it('activar UPS llama a updateHome con mode ups', async () => {
+    const fetchSpy = mockApi({ patch: () => new Response(null, { status: 204 }) });
+    await renderWithQuery(<Settings />);
+    await fireEvent(await screen.findByLabelText('Mi router tiene UPS'), 'valueChange', true);
+    await waitFor(() => expect(patches(fetchSpy)).toHaveLength(1));
+    expect(await patches(fetchSpy)[0]?.clone().json()).toEqual({ mode: 'ups' });
+    await waitFor(() =>
+      expect(screen.getByLabelText('Mi router tiene UPS').props.value).toBe(true),
+    );
+  });
+
+  it('desactivar llama con base', async () => {
+    await AsyncStorage.setItem('pulso-router-ups', 'ups');
+    const fetchSpy = mockApi({ patch: () => new Response(null, { status: 204 }) });
+    await renderWithQuery(<Settings />);
+    await waitFor(() =>
+      expect(screen.getByLabelText('Mi router tiene UPS').props.value).toBe(true),
+    );
+    await fireEvent(screen.getByLabelText('Mi router tiene UPS'), 'valueChange', false);
+    await waitFor(() => expect(patches(fetchSpy)).toHaveLength(1));
+    expect(await patches(fetchSpy)[0]?.clone().json()).toEqual({ mode: 'base' });
+  });
+
+  it('si falla, el interruptor vuelve y muestra el error', async () => {
+    mockApi({ patch: offline });
+    await renderWithQuery(<Settings />);
+    await fireEvent(await screen.findByLabelText('Mi router tiene UPS'), 'valueChange', true);
+    expect(await screen.findByText(/Sin conexión con el servidor/)).toBeOnTheScreen();
+    expect(screen.getByLabelText('Mi router tiene UPS').props.value).toBe(false);
+  });
+
+  it('un teléfono que solo sigue no ve el interruptor', async () => {
+    mocked.getRole.mockResolvedValue('follow');
+    await renderWithQuery(<Settings />);
+    expect(await screen.findByText('Borrar mis datos')).toBeOnTheScreen();
+    expect(screen.queryByLabelText('Mi router tiene UPS')).toBeNull();
+  });
+});
+
 describe('Ajustes', () => {
   it('guarda el alias con updateHome', async () => {
     const fetchSpy = mockApi({ patch: () => new Response(null, { status: 204 }) });
@@ -231,7 +279,11 @@ describe('Ajustes', () => {
     Object.defineProperty(Platform, 'Version', { value: 31, configurable: true });
     try {
       await renderWithQuery(<Settings />);
-      await fireEvent(await screen.findByRole('switch'), 'valueChange', true);
+      await fireEvent(
+        await screen.findByLabelText('Servicio en primer plano'),
+        'valueChange',
+        true,
+      );
       await waitFor(() => expect(mocked.setForegroundServiceEnabled).toHaveBeenCalledWith(true));
     } finally {
       Object.defineProperty(Platform, 'Version', { value: original, configurable: true });

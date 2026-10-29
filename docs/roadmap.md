@@ -96,7 +96,7 @@ Objetivo: tener datos reales de cortes desde la primera semana y un clasificador
 ## Fase 3 · Familia, push y UPS (S5, segunda mitad, y S6, ~13 h)
 
 - [ ] [api] Módulo de push, reglas de inicio, regreso, resumen tardío y confirmación; seguir casas, regenerar código, `/c/:code` y `assetlinks.json` (6 h)
-- [ ] [app] Modo UPS en el onboarding y en ajustes, con el mecanismo que decidió D-012 (1,5 h)
+- [x] [app] Modo UPS en el onboarding y en ajustes, con el mecanismo que decidió D-012 (1,5 h)
 - [x] [app] Registro del push token y canal `cortes` (expo-notifications) (1 h)
 - [ ] [app] Credenciales FCM V1 en EAS (corte C5)
 - [x] [app] Confirmación con botones Sí y No que guarda un evento `confirmation` (1 h)

@@ -209,6 +209,13 @@ describe('guía de batería', () => {
     expect(await screen.findByText(/Ábrelo a mano/)).toBeOnTheScreen();
   });
 
+  it('el onboarding de vigilar muestra la opción UPS', async () => {
+    mocked.readDiagnostics.mockResolvedValue({ manufacturer: 'samsung' } as never);
+    await render(<Battery />);
+    expect(await screen.findByLabelText('Mi router tiene UPS')).toBeOnTheScreen();
+    expect(screen.getByText(/Experimental/)).toBeOnTheScreen();
+  });
+
   it('Listo sigue a la red de casa', async () => {
     mocked.readDiagnostics.mockResolvedValue({ manufacturer: 'samsung' } as never);
     await render(<Battery />);

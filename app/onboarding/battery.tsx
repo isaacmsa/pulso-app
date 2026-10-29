@@ -1,6 +1,7 @@
 import { useRouter } from 'expo-router';
 import { useEffect, useState } from 'react';
 import { Text } from 'react-native';
+import { UpsModeSwitch } from '../../src/modules/home/UpsModeSwitch';
 import { type BatteryStep, batteryGuide } from '../../src/modules/onboarding/battery-guide';
 import { advanceOnboarding } from '../../src/modules/onboarding/progress';
 import {
@@ -60,6 +61,9 @@ export default function Battery() {
           No se pudo abrir esa pantalla. Ábrelo a mano con los pasos de arriba.
         </Message>
       ) : null}
+      <Card>
+        <UpsModeSwitch styleText={textStyles.cardTitle} styleMuted={textStyles.cardBody} />
+      </Card>
       <PrimaryButton
         label="Listo, ya lo hice"
         onPress={async () => {

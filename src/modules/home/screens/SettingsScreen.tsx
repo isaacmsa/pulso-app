@@ -10,6 +10,7 @@ import { requestForegroundService } from '../../power-detection/foreground-servi
 import { isForegroundServiceEnabled } from '../../power-detection/power-monitor';
 import { DELETE_DATA_URL, deleteMyData, NoTokenError, WipeError } from '../delete-data';
 import { useHomeStatus, useRole } from '../queries';
+import { UpsModeSwitch } from '../UpsModeSwitch';
 import { Button, Card, Muted, SectionTitle, TabScreen } from '../ui';
 
 export default function SettingsScreen() {
@@ -28,6 +29,14 @@ export default function SettingsScreen() {
     <TabScreen title="Ajustes">
       {watches ? <AliasSection /> : null}
       {watches ? <ForegroundServiceSection /> : null}
+      {watches ? (
+        <View style={styles.section}>
+          <SectionTitle>Tu router</SectionTitle>
+          <Card>
+            <UpsModeSwitch />
+          </Card>
+        </View>
+      ) : null}
       {role.data === 'follow' ? <WatchThisHomeSection /> : null}
 
       <Card>

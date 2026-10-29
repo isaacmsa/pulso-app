@@ -3,6 +3,7 @@ import { deleteDevice } from '../../shared/api/generated';
 import { clearQueryCache } from '../../shared/query/client';
 import { notifyStartupChanged } from '../onboarding/startup';
 import { getToken, wipe } from '../power-detection/power-monitor';
+import { clearUpsMode } from './ups-mode';
 
 /** La página pública para pedir el borrado sin la app (la misma que declara la ficha de Play). */
 export const DELETE_DATA_URL = 'https://pulso-api.isaac-mendozasa.workers.dev/borrar-datos';
@@ -45,6 +46,7 @@ export async function deleteMyData(): Promise<void> {
   try {
     // La caché primero: si la app muere entre los dos pasos, no queda el historial de esta casa en el disco.
     await clearQueryCache();
+    await clearUpsMode();
     await wipe();
   } catch {
     throw new WipeError();
