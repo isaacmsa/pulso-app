@@ -44,3 +44,27 @@ it('las notas de la versión caben en 500 caracteres sin contar las etiquetas', 
   expect(length(notes)).toBeGreaterThan(0);
   expect(length(notes)).toBeLessThanOrEqual(500);
 });
+
+describe('formulario de seguridad de datos', () => {
+  const form = section.slice(
+    section.indexOf('### Seguridad de datos'),
+    section.indexOf('### Clasificación'),
+  );
+  const row = (type: string) =>
+    form.split('\n').find((line) => line.startsWith(`| ${type} |`)) ?? '';
+
+  it('marca lo que todavía no trae la versión de la prueba', () => {
+    expect(row('IDs del dispositivo u otros IDs')).toMatch(
+      /token push \(entra en la actualización 1\)/,
+    );
+    expect(row('Información y rendimiento de la app → Registros de fallos')).toMatch(
+      /\(entra en la fase 4\)/,
+    );
+    expect(form).toMatch(/al pedir el acceso a producción/i);
+  });
+
+  it('el contenido generado por el usuario es solo el alias de la casa', () => {
+    const cells = row('Actividad en la app → Otro contenido generado por el usuario').split(' | ');
+    expect(cells[1]).toBe('Alias de la casa');
+  });
+});

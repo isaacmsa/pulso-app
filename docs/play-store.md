@@ -146,16 +146,18 @@ Sale de la tabla "Formulario de seguridad de datos de Play" de `docs/security-pr
 
 | Tipo de dato en Play | Qué es en Pulso | ¿Se recoge? | ¿Se comparte? | ¿Efímero? | ¿Obligatorio? | Para qué |
 | --- | --- | --- | --- | --- | --- | --- |
-| IDs del dispositivo u otros IDs | Identificador anónimo del dispositivo y token push | Sí | No | No | Sí | Funcionalidad de la app; prevención de fraudes y seguridad (límites por dispositivo) |
-| Actividad en la app → Otras acciones | Eventos de corriente, Wi-Fi, internet, "red de casa sí/no", pantalla y batería, con su hora | Sí | No | No | Sí | Funcionalidad de la app |
-| Actividad en la app → Otro contenido generado por el usuario | Alias de la casa y de las casas que sigo; reportes y confirmaciones | Sí | No | No | No: la persona decide escribirlos o tocarlos | Funcionalidad de la app |
-| Información y rendimiento de la app → Registros de fallos | Errores de la app (Sentry) | Sí | No | No | Sí | Estadísticas; funcionalidad de la app |
+| IDs del dispositivo u otros IDs | Identificador anónimo del dispositivo y token push (entra en la actualización 1) | Sí | No | No | Sí | Funcionalidad de la app; prevención de fraudes y seguridad (límites por dispositivo) |
+| Actividad en la app → Otras acciones | Eventos de corriente, Wi-Fi, internet, "red de casa sí/no", pantalla y batería, con su hora; reportes manuales ("Hay luz", "Fluctuando", "Sin luz") y confirmaciones | Sí | No | No | Sí | Funcionalidad de la app |
+| Actividad en la app → Otro contenido generado por el usuario | Alias de la casa | Sí | No | No | No: la persona decide si lo cambia | Funcionalidad de la app |
+| Información y rendimiento de la app → Registros de fallos | Errores de la app en Sentry (entra en la fase 4) | Sí | No | No | Sí | Estadísticas; funcionalidad de la app |
 | Información y rendimiento de la app → Diagnóstico | Fabricante, modelo, versión de Android y de la app, ahorro de batería | Sí | No | No | Sí | Estadísticas; funcionalidad de la app |
 | Ubicación, información personal, financiera, de salud, mensajes, fotos, audio, archivos, calendario, contactos, apps instaladas, historial web | Nada | No | | | | |
 
 "Compartir" es No en todos: Cloudflare, Supabase, Expo, Firebase, Sentry y GitHub son proveedores que procesan los datos para que Pulso funcione, y Play no lo cuenta como compartir.
 
-El alias y los reportes no aparecen como tipo aparte en la tabla de `docs/security-privacy.md`; se declaran como "otro contenido generado por el usuario" porque el alias es texto libre. La tabla de ese documento se actualizó en el mismo commit.
+Solo el alias de la casa es "otro contenido generado por el usuario", porque es texto libre. Los reportes y las confirmaciones son toques en botones con un valor fijo: van con las otras acciones. La tabla de `docs/security-privacy.md` dice lo mismo.
+
+Al pedir el acceso a producción hay que reconciliar este formulario con lo que trae esa versión: si el push o Sentry no entraron en la v1, se quitan el token push y los registros de fallos (D-034).
 
 ### Clasificación de contenido
 
