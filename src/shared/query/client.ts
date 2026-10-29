@@ -2,6 +2,7 @@ import AsyncStorage from '@react-native-async-storage/async-storage';
 import { createAsyncStoragePersister } from '@tanstack/query-async-storage-persister';
 import { defaultShouldDehydrateQuery, focusManager, QueryClient } from '@tanstack/react-query';
 import type { PersistQueryClientProviderProps } from '@tanstack/react-query-persist-client';
+import Constants from 'expo-constants';
 import { AppState } from 'react-native';
 import { ApiError } from '../api/client';
 
@@ -36,9 +37,12 @@ export const persister = createAsyncStoragePersister({ storage: AsyncStorage, ke
 // Solo el historial se guarda en el disco, para verlo sin red. El estado de la casa sale del nativo
 // (`getLastServerStatus`), y el rol y lo del teléfono se leen del nativo cada vez. Nada de esto lleva el token:
 // son respuestas del servidor y el token nunca pasa por la caché (regla 3).
+// `buster` ata la copia del disco a la versión de la app: una versión nueva puede cambiar la forma de lo guardado, y
+// TanStack descarta la caché de otra versión en lugar de restaurarla.
 export const persistOptions: PersistQueryClientProviderProps['persistOptions'] = {
   persister,
   maxAge: WEEK_MS,
+  buster: Constants.expoConfig?.version ?? '0.0.0',
   dehydrateOptions: {
     shouldDehydrateQuery: (query) =>
       defaultShouldDehydrateQuery(query) &&
