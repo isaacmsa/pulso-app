@@ -5,6 +5,7 @@ import { Linking, Pressable, StyleSheet, Switch, Text, TextInput, View } from 'r
 import { ApiError, resolveApiUrl, unwrap } from '../../../shared/api/client';
 import { updateHome } from '../../../shared/api/generated';
 import { colors } from '../../../shared/theme/colors';
+import { restartOnboardingAtRole } from '../../onboarding/progress';
 import { requestForegroundService } from '../../power-detection/foreground-service';
 import { isForegroundServiceEnabled } from '../../power-detection/power-monitor';
 import { DELETE_DATA_URL, deleteMyData, NoTokenError, WipeError } from '../delete-data';
@@ -27,6 +28,7 @@ export default function SettingsScreen() {
     <TabScreen title="Ajustes">
       {watches ? <AliasSection /> : null}
       {watches ? <ForegroundServiceSection /> : null}
+      {role.data === 'follow' ? <WatchThisHomeSection /> : null}
 
       <Card>
         <Row label="Diagnóstico" onPress={() => router.push('/debug')} />
@@ -44,6 +46,31 @@ function Row({ label, onPress }: { label: string; onPress: () => void }) {
       <Text style={styles.rowLabel}>{label}</Text>
       <Text style={styles.chevron}>›</Text>
     </Pressable>
+  );
+}
+
+function WatchThisHomeSection() {
+  const [error, setError] = useState<string | null>(null);
+
+  const start = async () => {
+    setError(null);
+    try {
+      await restartOnboardingAtRole();
+      // La raíz vuelve al onboarding al avisar; esta pantalla ya no se ve.
+    } catch {
+      setError('No se pudo cambiar. Intenta de nuevo.');
+    }
+  };
+
+  return (
+    <View style={styles.section}>
+      <SectionTitle>Este teléfono</SectionTitle>
+      <Card>
+        <Row label="Vigilar esta casa" onPress={() => void start()} />
+        <Muted>Si este teléfono se queda enchufado en casa, Pulso detecta solo los cortes.</Muted>
+        {error ? <Text style={styles.error}>{error}</Text> : null}
+      </Card>
+    </View>
   );
 }
 

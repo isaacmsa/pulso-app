@@ -22,3 +22,12 @@ export async function finishOnboarding(): Promise<void> {
   }
   notifyStartupChanged();
 }
+
+/**
+ * Un teléfono "Solo seguir" que pasa a vigilar esta casa: vuelve al paso del rol del onboarding sin borrar nada. El
+ * token sigue sirviendo, así que `register('watch')` no registra otro dispositivo: guarda el rol, arma y crea la casa.
+ */
+export async function restartOnboardingAtRole(): Promise<void> {
+  await setOnboardingStep('role');
+  notifyStartupChanged();
+}

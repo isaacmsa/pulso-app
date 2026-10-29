@@ -15,6 +15,7 @@ jest.mock('../../../shared/query/client', () => ({ clearQueryCache: jest.fn() })
 jest.mock('../../power-detection/power-monitor', () => ({
   getRole: jest.fn(),
   getToken: jest.fn(),
+  setOnboardingStep: jest.fn(),
   wipe: jest.fn(),
   isForegroundServiceEnabled: jest.fn(),
   setForegroundServiceEnabled: jest.fn(),
@@ -66,6 +67,7 @@ const noLocalChanges = () => {
 beforeEach(() => {
   mocked.getRole.mockResolvedValue('watch');
   mocked.getToken.mockResolvedValue('a'.repeat(87));
+  mocked.setOnboardingStep.mockResolvedValue(undefined);
   mocked.wipe.mockResolvedValue(undefined);
   mocked.isForegroundServiceEnabled.mockResolvedValue(false);
   mocked.setForegroundServiceEnabled.mockResolvedValue(undefined);
@@ -245,5 +247,24 @@ describe('Ajustes', () => {
     expect(screen.queryByText('Guardar')).toBeNull();
     expect(screen.queryByRole('switch')).toBeNull();
     expect(fetchSpy).not.toHaveBeenCalled();
+  });
+
+  it('un teléfono que solo sigue casas puede pasar a vigilar esta casa sin borrar nada', async () => {
+    mocked.getRole.mockResolvedValue('follow');
+    const fetchSpy = jest.spyOn(globalThis, 'fetch');
+    await renderWithQuery(<Settings />);
+    await fireEvent.press(await screen.findByText('Vigilar esta casa'));
+    // Vuelve al paso del rol del onboarding: el token y el registro quedan como están.
+    await waitFor(() => expect(notifyStartupChanged).toHaveBeenCalledTimes(1));
+    expect(mocked.setOnboardingStep).toHaveBeenCalledWith('role');
+    expect(mocked.wipe).not.toHaveBeenCalled();
+    expect(fetchSpy).not.toHaveBeenCalled();
+  });
+
+  it('un teléfono que vigila no ve Vigilar esta casa', async () => {
+    mockApi({});
+    await renderWithQuery(<Settings />);
+    expect(await screen.findByText('Borrar mis datos')).toBeOnTheScreen();
+    expect(screen.queryByText('Vigilar esta casa')).toBeNull();
   });
 });

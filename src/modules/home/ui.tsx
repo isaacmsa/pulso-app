@@ -79,7 +79,10 @@ export function FollowOnlyPlaceholder() {
     <TabScreen title="Pulso">
       <Card>
         <Text style={styles.placeholderTitle}>Este teléfono solo sigue casas</Text>
-        <Text style={styles.muted}>Las casas que sigas van a aparecer aquí.</Text>
+        <Text style={styles.muted}>
+          Seguir casas llega en la próxima actualización. Si este teléfono se queda en casa, puedes
+          vigilarla desde Ajustes.
+        </Text>
       </Card>
     </TabScreen>
   );

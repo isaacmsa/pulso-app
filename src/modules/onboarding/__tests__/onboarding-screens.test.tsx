@@ -67,6 +67,13 @@ describe('¿Este teléfono se queda en casa?', () => {
     expect(registerMock).toHaveBeenCalledWith('follow');
   });
 
+  it('Solo seguir avisa que seguir casas llega en la próxima actualización', async () => {
+    await render(<RoleScreen />);
+    expect(
+      await screen.findByText('Seguir casas llega en la próxima actualización.'),
+    ).toBeOnTheScreen();
+  });
+
   it('si la app murió en la guía de batería, al volver retoma la guía y no registra de nuevo', async () => {
     mocked.getOnboardingStep.mockResolvedValue('battery');
     await render(<RoleScreen />);
@@ -124,6 +131,18 @@ describe('permiso de notificaciones', () => {
     return () =>
       Object.defineProperty(Platform, 'Version', { value: original, configurable: true });
   }
+
+  // Esta versión no trae push ni seguir casas: el permiso lo usan D (si se activa) y los avisos que vienen después.
+  it('dice para qué sirve el permiso en esta versión, sin prometer avisos de casas seguidas', async () => {
+    mockRole = 'watch';
+    await render(<Notifications />);
+    expect(
+      screen.getByText(
+        'Este permiso lo usa el servicio en primer plano, si lo activas en Ajustes. Los avisos de cuando se va y vuelve la luz llegan en la próxima actualización.',
+      ),
+    ).toBeOnTheScreen();
+    expect(screen.queryByText(/la casa que sigues/)).toBeNull();
+  });
 
   it('en Android 13 pide el permiso y sigue a la batería si vigila', async () => {
     const restore = withAndroid(34);

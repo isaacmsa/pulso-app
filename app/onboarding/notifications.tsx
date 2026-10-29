@@ -45,8 +45,8 @@ export default function Notifications() {
 
   return (
     <OnboardingScreen
-      title="Avisos de la luz"
-      intro="Pulso te avisa cuando se va y cuando vuelve la luz en la casa que sigues. Para eso necesita permiso para enviarte notificaciones."
+      title="Notificaciones"
+      intro="Este permiso lo usa el servicio en primer plano, si lo activas en Ajustes. Los avisos de cuando se va y vuelve la luz llegan en la próxima actualización."
     >
       <PrimaryButton label="Permitir notificaciones" onPress={allow} disabled={busy} />
       <SecondaryButton label="Ahora no" onPress={() => void next()} disabled={busy} />
