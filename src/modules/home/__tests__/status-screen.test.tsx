@@ -42,8 +42,10 @@ function json(body: unknown, status = 200): Response {
   });
 }
 
-function renderWithQuery(ui: ReactElement) {
-  const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+function renderWithQuery(
+  ui: ReactElement,
+  client = new QueryClient({ defaultOptions: { queries: { retry: false } } }),
+) {
   return render(<QueryClientProvider client={client}>{ui}</QueryClientProvider>);
 }
 
@@ -109,6 +111,35 @@ it('Estado muestra el error cuando la respuesta no cumple el contrato', async ()
     ),
   ).toBeOnTheScreen();
   expect(screen.getByText('Reintentar')).toBeOnTheScreen();
+});
+
+it('Estado avisa cuando el estado no se pudo actualizar', async () => {
+  // Un 500 (o 429, 401, una respuesta que no cumple el contrato) no cae en el último estado guardado: TanStack
+  // conserva el dato viejo y la tarjeta no puede mostrarlo como si fuera de ahora.
+  jest
+    .spyOn(globalThis, 'fetch')
+    .mockResolvedValue(json({ error: { code: 'internal_error', message: 'x' } }, 500));
+  const client = new QueryClient({ defaultOptions: { queries: { retry: false } } });
+  client.setQueryData(['home', 'status'], {
+    status: { state: 'con_luz', since: caracas(14, 30), alias: 'Casa', openOutageStart: null },
+    receivedAt: null,
+  });
+  await renderWithQuery(<Status />, client);
+  expect(
+    await screen.findByText('No se pudo actualizar. Esto es lo último que se guardó.'),
+  ).toBeOnTheScreen();
+  expect(screen.getByText('Hay luz desde las 2:30 p. m.')).toBeOnTheScreen();
+});
+
+it('Estado no muestra el aviso cuando el estado llegó bien', async () => {
+  jest
+    .spyOn(globalThis, 'fetch')
+    .mockResolvedValue(
+      json({ state: 'con_luz', since: caracas(14, 30), alias: 'Casa', openOutageStart: null }),
+    );
+  await renderWithQuery(<Status />);
+  expect(await screen.findByText('Hay luz desde las 2:30 p. m.')).toBeOnTheScreen();
+  expect(screen.queryByText(/No se pudo actualizar/)).toBeNull();
 });
 
 it('Estado muestra lo que dice el teléfono: sin corriente desde que dejó de estar en corriente', async () => {

@@ -81,6 +81,10 @@ function HomeStatusScreen() {
           {home.receivedAt !== null ? (
             <Muted>{`Sin conexión. Es lo último que dio el servidor, ${formatAgo(home.receivedAt, now)}.`}</Muted>
           ) : null}
+          {/* Un refresco que falló por otra cosa que la red (5xx, 429, 401, contrato) deja el dato viejo. */}
+          {status.isError ? (
+            <Muted>No se pudo actualizar. Esto es lo último que se guardó.</Muted>
+          ) : null}
         </Card>
       ) : status.isError ? (
         <ErrorBlock message={describeError(status.error)} onRetry={() => void refetchStatus()} />
