@@ -1,6 +1,7 @@
 import { QueryClientProvider } from '@tanstack/react-query';
-import { render, screen } from '@testing-library/react-native';
+import { render, screen, within } from '@testing-library/react-native';
 import type { ReactElement } from 'react';
+import { StyleSheet } from 'react-native';
 import { createTestQueryClient } from '../../../shared/query/test-client';
 import * as native from '../../power-detection/power-monitor';
 import History from '../screens/HistoryScreen';
@@ -92,4 +93,74 @@ it('un teléfono que solo sigue casas no pide nada y lo dice', async () => {
   await renderWithQuery(<History />);
   expect(await screen.findByText('Este teléfono solo sigue casas')).toBeOnTheScreen();
   expect(fetchSpy).not.toHaveBeenCalled();
+});
+
+const PREV_WEEK = WEEK.map((d, i) => ({
+  ...d,
+  date: `2026-10-${10 + i}`,
+  ms: i === 0 ? 30 * 60_000 : 0,
+}));
+
+/** Responde según el rango pedido: la semana actual o la anterior (termina el 17 a medianoche). */
+function mockWeeks(current: unknown, previous: Response | Error) {
+  jest.spyOn(globalThis, 'fetch').mockImplementation(async (input) => {
+    const from = Number(new URL((input as Request).url).searchParams.get('from'));
+    const isCurrent = from === Date.UTC(2026, 9, 17, 4, 0);
+    if (isCurrent) return json(current);
+    if (previous instanceof Error) throw previous;
+    return previous;
+  });
+}
+
+const currentBody = { items: [], reports: [], totalMs: 3 * HOUR + 50 * 60_000, days: WEEK };
+
+it('la barra más alta es la del día con más horas', async () => {
+  mockWeeks(currentBody, json({ items: [], reports: [], totalMs: 0, days: PREV_WEEK }));
+  await renderWithQuery(<History />);
+  const tallest = await screen.findByLabelText('Domingo: 2 h sin luz');
+  const other = screen.getByLabelText('Martes: 1 h 20 min sin luz');
+  const heightOf = (el: Parameters<typeof within>[0]) =>
+    (StyleSheet.flatten(within(el).getByTestId('bar-fill').props.style) as { height: string })
+      .height;
+  expect(heightOf(tallest)).toBe('100%');
+  expect(parseFloat(heightOf(other) as string)).toBeCloseTo((80 / 120) * 100);
+});
+
+it('la comparación dice más o menos con su diferencia', async () => {
+  mockWeeks(
+    currentBody,
+    json({ items: [], reports: [], totalMs: HOUR + 40 * 60_000, days: PREV_WEEK }),
+  );
+  await renderWithQuery(<History />);
+  expect(await screen.findByText('2 h 10 min más que la semana pasada')).toBeOnTheScreen();
+});
+
+it('igual si no cambió', async () => {
+  mockWeeks(currentBody, json({ ...currentBody, days: PREV_WEEK }));
+  await renderWithQuery(<History />);
+  expect(await screen.findByText('Igual que la semana pasada')).toBeOnTheScreen();
+});
+
+it('sin datos de la semana pasada no muestra comparación', async () => {
+  mockWeeks(currentBody, new TypeError('Network request failed'));
+  await renderWithQuery(<History />);
+  expect(await screen.findByText('3 h 50 min')).toBeOnTheScreen();
+  expect(screen.queryByText(/la semana pasada/)).toBeNull();
+});
+
+it('una semana sin cortes muestra el estado vacío', async () => {
+  mockWeeks(
+    { ...currentBody, totalMs: 0, days: WEEK.map((d) => ({ ...d, ms: 0 })) },
+    json({ ...currentBody, days: PREV_WEEK }),
+  );
+  await renderWithQuery(<History />);
+  expect(await screen.findByText('Sin cortes esta semana')).toBeOnTheScreen();
+  expect(screen.queryByTestId('bar-fill')).toBeNull();
+});
+
+it('cada barra tiene su texto accesible', async () => {
+  mockWeeks(currentBody, json({ ...currentBody, days: PREV_WEEK }));
+  await renderWithQuery(<History />);
+  expect(await screen.findByLabelText('Jueves: 30 min sin luz')).toBeOnTheScreen();
+  expect(screen.getByLabelText('Sábado: sin cortes')).toBeOnTheScreen();
 });

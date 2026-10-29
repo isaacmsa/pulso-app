@@ -1,6 +1,8 @@
 import { StyleSheet, Text, View } from 'react-native';
 import { colors } from '../../../shared/theme/colors';
+import { DAY_MS } from '../../../shared/time/caracas';
 import { describeError, formatDuration, weekdayLabel, weekRange } from '../format';
+import { barHeights, compareWeeks, weekdayFull, weekdayShort } from '../history-chart';
 import { useOutages, useRole } from '../queries';
 import { Card, ErrorBlock, FollowOnlyPlaceholder, Muted, SectionTitle, TabScreen } from '../ui';
 
@@ -16,6 +18,9 @@ function WeekHistory() {
   const { from, to } = weekRange(Date.now());
   const outages = useOutages(from, to);
   const history = outages.data;
+  // Los 7 días anteriores, para comparar. Si falla o no hay datos, simplemente no se muestra la comparación.
+  const previous = useOutages(from - 7 * DAY_MS, from);
+  const comparison = history ? compareWeeks(history.totalMs, previous.data?.totalMs) : null;
 
   return (
     <TabScreen
@@ -32,6 +37,36 @@ function WeekHistory() {
             ) : (
               <Text style={styles.total}>Sin cortes esta semana</Text>
             )}
+            {comparison ? <Text style={styles.comparison}>{comparison}</Text> : null}
+            {history.totalMs > 0 ? (
+              <View style={styles.bars}>
+                {history.days.map((day, i) => {
+                  const height = barHeights(history.days.map((d) => d.ms))[i] ?? 0;
+                  return (
+                    <View
+                      key={day.date}
+                      style={styles.barColumn}
+                      accessible
+                      accessibilityLabel={
+                        day.ms > 0
+                          ? `${weekdayFull(day.date)}: ${formatDuration(day.ms)} sin luz`
+                          : `${weekdayFull(day.date)}: sin cortes`
+                      }
+                    >
+                      <View style={styles.barTrack}>
+                        {day.ms > 0 ? (
+                          <View
+                            testID="bar-fill"
+                            style={[styles.barFill, { height: `${height * 100}%` }]}
+                          />
+                        ) : null}
+                      </View>
+                      <Text style={styles.barLabel}>{weekdayShort(day.date)}</Text>
+                    </View>
+                  );
+                })}
+              </View>
+            ) : null}
             {outages.isError ? (
               <Muted>No se pudo actualizar. Esto es lo último que se guardó.</Muted>
             ) : null}
@@ -60,6 +95,12 @@ function WeekHistory() {
 
 const styles = StyleSheet.create({
   total: { color: colors.text, fontSize: 28, fontWeight: '700' },
+  comparison: { color: colors.textMuted, fontSize: 14, marginTop: 4 },
+  bars: { flexDirection: 'row', gap: 6, marginTop: 16 },
+  barColumn: { flex: 1, alignItems: 'center', gap: 6 },
+  barTrack: { height: 96, width: '100%', justifyContent: 'flex-end' },
+  barFill: { width: '100%', backgroundColor: colors.warn, borderRadius: 4 },
+  barLabel: { color: colors.textMuted, fontSize: 12 },
   row: { flexDirection: 'row', justifyContent: 'space-between', paddingVertical: 4 },
   day: { color: colors.text, fontSize: 16 },
   hours: { color: colors.text, fontSize: 16, fontWeight: '600' },
