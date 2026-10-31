@@ -12,7 +12,7 @@
 
 ## Cómo se ejecuta
 
-1. **Una sola aprobación.** Con este plan aprobado, ejecuto fase tras fase. Cada tarea de código la hace un subagente nuevo, y otro revisor la revisa antes de pasar a la siguiente. Al cerrar cada fase hay una revisión de toda la rama. Te aviso del avance, pero no te pido aprobar nada más, salvo los cortes de abajo.
+1. **Una sola aprobación.** Con este plan aprobado, ejecuto fase tras fase. Desde el 30 de octubre, en modo ligero (pedido de Isaac para gastar menos): las tareas chicas las hago directo con TDD, sin revisor por tarea; hay una revisión de toda la fase al cerrarla, con una sola ronda de correcciones; el modelo más capaz queda para lo delicado (token, subida en segundo plano, push, borrados). Te aviso del avance, pero no te pido aprobar nada más, salvo los cortes de abajo.
 2. **Las decisiones menores las tomo yo** y las anoto en `docs/decisions.md` con su trade-off. Te las listo al cerrar cada fase.
 3. **Las verificaciones con el teléfono se agrupan**: una sesión con el Xiaomi por fase, no una por tarea.
 4. **La sesión del backend** ejecuta las tareas [api] en el orden de este plan. Cuando una tarea de la app espera una del backend, sigo con la próxima que no dependa de ella.
