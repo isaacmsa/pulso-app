@@ -2,6 +2,7 @@ import { act, render, screen } from '@testing-library/react-native';
 import RootLayout from '../../../../app/_layout';
 import { ApiError, unwrap } from '../../../shared/api/client';
 import { getHomeStatus } from '../../../shared/api/generated';
+import { queryClient } from '../../../shared/query/client';
 import { startConfirmationResponses } from '../../notifications/confirmation';
 import { registerPushToken, startPushTokenSync } from '../../notifications/push-token';
 import * as native from '../../power-detection/power-monitor';
@@ -131,6 +132,26 @@ describe('RootLayout', () => {
     expect(mocked.configureApi).toHaveBeenCalled();
     expect(mocked.arm).toHaveBeenCalledTimes(1);
     expect(mocked.recordAppOpen).toHaveBeenCalledTimes(1);
+  });
+
+  it('al abrir, el estado del teléfono se relee después de registrar el arranque', async () => {
+    // Tras Doze el último snapshot es viejo: sin releer, Estado muestra un momento el aviso de latido viejo.
+    state('tok', false, 'watch');
+    let finishAppOpen: (value: never) => void = () => undefined;
+    mocked.recordAppOpen.mockReturnValue(
+      new Promise<never>((resolve) => {
+        finishAppOpen = resolve;
+      }),
+    );
+    const invalidate = jest.spyOn(queryClient, 'invalidateQueries');
+    await render(<RootLayout />);
+    await screen.findByText('screen:(tabs)');
+    await act(async () => undefined);
+    expect(mocked.recordAppOpen).toHaveBeenCalledTimes(1);
+    expect(invalidate).not.toHaveBeenCalledWith({ queryKey: ['phone', 'state'] });
+    await act(async () => finishAppOpen({} as never));
+    expect(invalidate).toHaveBeenCalledWith({ queryKey: ['phone', 'state'] });
+    invalidate.mockRestore();
   });
 
   it('si la app murió en la guía de batería, no arma ni abre la app: sigue en el onboarding', async () => {

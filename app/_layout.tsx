@@ -56,9 +56,12 @@ export default function RootLayout() {
       console.warn('No se pudo guardar la URL de la API', error),
     );
     // Solo un teléfono que vigila una casa arma la detección: "Solo seguir" no detecta nada.
+    // Con el snapshot del arranque ya guardado se relee el estado del teléfono: tras Doze, el que había en caché
+    // tiene un latido viejo y Estado mostraría un momento el aviso de riesgo.
     if (startup === 'watch') {
       arm()
         .then(recordAppOpen)
+        .then(() => queryClient.invalidateQueries({ queryKey: ['phone', 'state'] }))
         .catch((error: unknown) => console.warn('No se pudo armar la detección', error));
     }
   }, [startup]);
