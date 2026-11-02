@@ -13,3 +13,6 @@ jest.mock('expo-splash-screen', () => ({
   preventAutoHideAsync: jest.fn(() => Promise.resolve(true)),
   hideAsync: jest.fn(() => Promise.resolve()),
 }));
+
+// Sentry trae módulos ESM que Jest no carga; en las pruebas es un mock (la app lo arranca desde app/_layout.tsx).
+jest.mock('@sentry/react-native', () => ({ init: jest.fn() }));

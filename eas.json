@@ -10,7 +10,8 @@
         "buildType": "apk"
       },
       "env": {
-        "EXPO_PUBLIC_API_URL": "https://pulso-api-staging.isaac-mendozasa.workers.dev"
+        "EXPO_PUBLIC_API_URL": "https://pulso-api-staging.isaac-mendozasa.workers.dev",
+        "SENTRY_DISABLE_AUTO_UPLOAD": "true"
       }
     },
     "preview": {
@@ -19,13 +20,15 @@
         "buildType": "apk"
       },
       "env": {
-        "EXPO_PUBLIC_API_URL": "https://pulso-api-staging.isaac-mendozasa.workers.dev"
+        "EXPO_PUBLIC_API_URL": "https://pulso-api-staging.isaac-mendozasa.workers.dev",
+        "SENTRY_DISABLE_AUTO_UPLOAD": "true"
       }
     },
     "production": {
       "autoIncrement": true,
       "env": {
-        "EXPO_PUBLIC_API_URL": "https://pulso-api.isaac-mendozasa.workers.dev"
+        "EXPO_PUBLIC_API_URL": "https://pulso-api.isaac-mendozasa.workers.dev",
+        "SENTRY_DISABLE_AUTO_UPLOAD": "true"
       }
     }
   }

@@ -1,5 +1,6 @@
 nodeLinker: hoisted
 allowBuilds:
+  '@sentry/cli': true
   '@parcel/watcher': false
   unrs-resolver: false
 minimumReleaseAgeExclude:

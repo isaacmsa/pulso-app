@@ -70,6 +70,7 @@ Los que dependen de algo que todavía no existe se confirman al crearlo. Si camb
 - **Router con mini UPS**: el Wi-Fi no cae durante el corte, así que el modo base no lo ve. Es el caso típico de los clientes de Yagos Store.
 - **`org.json` en tests de JVM**: el de `android.jar` es un stub. Agregar `testImplementation 'org.json:json:…'`, y usar `JSONObject.NULL`, porque `put(key, null)` borra la clave.
 - **Versiones viejas en Play**: la gente no actualiza. La app tiene que tolerar campos nuevos en las respuestas, y el backend, lotes de versiones anteriores.
+- **Sentry está apagado hasta el corte C6** (`src/shared/observability/`, filtros en `scrub.ts`). Al crear la cuenta de Sentry, Isaac carga dos valores: `EXPO_PUBLIC_SENTRY_DSN` en el bloque `env` de cada perfil de `eas.json` (el DSN es público por diseño), y `SENTRY_AUTH_TOKEN` como secreto de EAS (`eas secret:create`; es secreto de verdad, nunca en `eas.json` ni en `EXPO_PUBLIC_*`). Además, quitar `SENTRY_DISABLE_AUTO_UPLOAD` de `eas.json` y poner `organization` y `project` en el plugin de `app.json`; mientras esa variable esté en `true`, los builds no suben source maps y no fallan por falta del token.
 - **16 GB de RAM**: probar en el Android físico, no en el emulador. No levantar el simulador de iOS mientras compila Gradle. Docker Desktop limitado a 2 GB puede quedar abierto (lo usa `pulso-api`): Isaac lo autorizó el 23 de octubre.
 
 ## Documentación

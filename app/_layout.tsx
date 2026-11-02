@@ -16,8 +16,12 @@ import {
   recordAppOpen,
 } from '../src/modules/power-detection/power-monitor';
 import { resolveApiUrl, setTokenProvider } from '../src/shared/api/client';
+import { initSentry } from '../src/shared/observability/sentry';
 import { persistOptions, queryClient } from '../src/shared/query/client';
 import { colors } from '../src/shared/theme/colors';
+
+// Sentry solo se enciende si el build trae EXPO_PUBLIC_SENTRY_DSN (corte C6); los filtros de privacidad van en scrub.ts.
+initSentry();
 
 async function keepSplash() {
   await SplashScreen.preventAutoHideAsync();
