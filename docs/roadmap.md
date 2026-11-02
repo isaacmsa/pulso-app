@@ -112,6 +112,7 @@ Objetivo: tener datos reales de cortes desde la primera semana y un clasificador
 - [x] [app] Aviso en Estado si la detección está en riesgo: bucket `rare` o `restricted`, optimización de batería activa o latido de más de 40 min
 - [x] [app] Historial: barras por día y comparación con la semana anterior (1,5 h)
 - [x] [app] Estados vacíos, de error y sin red; textos y accesibilidad básica (1,5 h)
+- [x] [app] Subida: espera al azar de 0 a 60 s ya con red, una sola subida pendiente sin red, 413 como 400, latido tras un 400, tope de 64 KB en la respuesta y corrida detenida entre lotes
 - [ ] [app] Actualización 2 publicada (1 h)
 
 **Lista cuando:** apagar el Wi-Fi y los datos del Xiaomi durante 45 minutos deja la casa en "sin noticias" en el segundo Android, y volver a conectarlos la regresa al estado correcto.

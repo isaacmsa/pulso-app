@@ -57,7 +57,8 @@ Teléfono de la casa (Kotlin, sin depender de JS)
   EventStore (SQLite del módulo) ── 14 días locales; la UI lo lee para el estado crudo
         │  solo cambios de estado; el latido sube aunque no haya cambios
         ▼
-  UploadWorker (WorkManager, requiere red, backoff y jitter de 0 a 60 s)
+  UploadWorker (WorkManager, requiere red, backoff; una sola subida pendiente;
+        │  espera 0 a 60 s al azar al arrancar, ya con red, no al encolar)
         │  POST /v1/events  ·  Bearer token
         ▼
 pulso-api: valida, corrige el desfase, guarda idempotente, clasifica, decide el push

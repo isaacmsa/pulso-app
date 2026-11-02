@@ -1,6 +1,8 @@
 package expo.modules.powermonitor
 
+import java.io.ByteArrayOutputStream
 import java.io.IOException
+import java.io.InputStream
 import java.net.HttpURLConnection
 import java.net.URL
 
@@ -31,7 +33,7 @@ class UrlConnectionApiHttp(private val timeoutMs: Int = 15_000) : ApiHttp {
       val code = connection.responseCode
       val stream = if (code in 200..299) connection.inputStream else connection.errorStream
       val text = try {
-        stream?.bufferedReader(Charsets.UTF_8)?.use { it.readText() }
+        stream?.use { readCapped(it) }
       } catch (_: IOException) {
         null
       }
@@ -42,6 +44,22 @@ class UrlConnectionApiHttp(private val timeoutMs: Int = 15_000) : ApiHttp {
   }
 
   companion object {
+    /** La respuesta de `/v1/events` ocupa unos cientos de bytes; más que esto no se lee. */
+    const val MAX_BODY_BYTES = 64 * 1024
+
+    /** Lee hasta `max` bytes como UTF-8. Un cuerpo más grande devuelve null: cortado no se podría leer como JSON. */
+    fun readCapped(stream: InputStream, max: Int = MAX_BODY_BYTES): String? {
+      val out = ByteArrayOutputStream()
+      val buffer = ByteArray(8 * 1024)
+      while (true) {
+        val n = stream.read(buffer)
+        if (n < 0) break
+        if (out.size() + n > max) return null
+        out.write(buffer, 0, n)
+      }
+      return out.toString(Charsets.UTF_8.name())
+    }
+
     /** Solo la forma en segundos, que es la que usa pulso-api. Una fecha HTTP se ignora. */
     fun parseRetryAfter(value: String?): Long? = value?.trim()?.toLongOrNull()?.takeIf { it >= 0 }
   }

@@ -1,10 +1,13 @@
 package expo.modules.powermonitor
 
 import org.json.JSONObject
+import androidx.work.WorkInfo
 import org.junit.Assert.assertEquals
+import org.junit.Assert.assertFalse
 import org.junit.Assert.assertNull
 import org.junit.Assert.assertTrue
 import org.junit.Test
+import java.io.ByteArrayInputStream
 import java.io.IOException
 import java.net.SocketTimeoutException
 import kotlin.random.Random
@@ -71,7 +74,12 @@ class UploadWorkerTest {
   private val statuses = mutableListOf<Pair<String, Long>>()
   private val rejected = mutableListOf<String>()
 
-  private fun uploader(store: UploadStore, http: ApiHttp, token: String? = "tok_abc") = Uploader(
+  private fun uploader(
+    store: UploadStore,
+    http: ApiHttp,
+    token: String? = "tok_abc",
+    shouldStop: () -> Boolean = { false },
+  ) = Uploader(
     store = store,
     http = http,
     apiUrl = "https://api.example.test",
@@ -80,6 +88,7 @@ class UploadWorkerTest {
     clock = { 1_793_570_500_000L },
     onStatus = { status, receivedAt -> statuses += status to receivedAt },
     onTokenRejected = { rejected += it },
+    shouldStop = shouldStop,
   )
 
   @Test
@@ -339,5 +348,89 @@ class UploadWorkerTest {
     assertEquals(5L, UrlConnectionApiHttp.parseRetryAfter(" 5 "))
     assertNull(UrlConnectionApiHttp.parseRetryAfter("Wed, 21 Oct 2026 07:28:00 GMT"))
     assertNull(UrlConnectionApiHttp.parseRetryAfter(null))
+  }
+
+  @Test
+  fun `una subida encolada sin red espera 0–60 s después de que vuelve la red`() {
+    // Encolar no gasta la espera: la solicitud no trae retraso propio, así que no se consume mientras no hay red.
+    assertEquals(0L, UploadPolicy.ENQUEUE_DELAY_MS)
+    // La primera corrida llega cuando vuelve la red y se reprograma una vez con 0 a 60 s al azar.
+    val random = Random(42)
+    val delays = (1..1_000).map {
+      val decision = UploadPolicy.startDecision(waited = false, runAttemptCount = 0, random = random)
+      (decision as StartDecision.WaitFirst).delayMs
+    }
+    assertTrue(delays.all { it in 0L..UploadPolicy.MAX_JITTER_MS })
+    assertTrue(delays.any { it > 15_000L })
+    // La reprogramada ya esperó y sube; un reintento con backoff tampoco vuelve a esperar.
+    assertEquals(StartDecision.Upload, UploadPolicy.startDecision(waited = true, runAttemptCount = 0))
+    assertEquals(StartDecision.Upload, UploadPolicy.startDecision(waited = false, runAttemptCount = 1))
+  }
+
+  @Test
+  fun `sin red, varios latidos dejan una sola subida pendiente`() {
+    // La cadena única "upload": sin red, la primera queda ENQUEUED esperando la red.
+    val chain = mutableListOf<WorkInfo.State>()
+    repeat(8) { if (UploadPolicy.shouldEnqueue(chain)) chain += WorkInfo.State.ENQUEUED }
+    assertEquals(listOf(WorkInfo.State.ENQUEUED), chain)
+  }
+
+  @Test
+  fun `solo se encadena una subida detrás de la que está corriendo`() {
+    assertTrue(UploadPolicy.shouldEnqueue(emptyList()))
+    assertTrue(UploadPolicy.shouldEnqueue(listOf(WorkInfo.State.SUCCEEDED)))
+    assertTrue(UploadPolicy.shouldEnqueue(listOf(WorkInfo.State.FAILED, WorkInfo.State.CANCELLED)))
+    assertTrue(UploadPolicy.shouldEnqueue(listOf(WorkInfo.State.SUCCEEDED, WorkInfo.State.RUNNING)))
+    assertFalse(UploadPolicy.shouldEnqueue(listOf(WorkInfo.State.ENQUEUED)))
+    assertFalse(UploadPolicy.shouldEnqueue(listOf(WorkInfo.State.BLOCKED)))
+    assertFalse(UploadPolicy.shouldEnqueue(listOf(WorkInfo.State.RUNNING, WorkInfo.State.BLOCKED)))
+  }
+
+  @Test
+  fun `el cuerpo de la respuesta se lee hasta 64 KB`() {
+    assertEquals(64 * 1024, UrlConnectionApiHttp.MAX_BODY_BYTES)
+    val max = UrlConnectionApiHttp.MAX_BODY_BYTES
+    val small = "{\"ok\":true,\"alias\":\"Casa de Mamá\"}"
+    assertEquals(small, UrlConnectionApiHttp.readCapped(ByteArrayInputStream(small.toByteArray())))
+    assertEquals(max, UrlConnectionApiHttp.readCapped(ByteArrayInputStream(ByteArray(max) { 'a'.code.toByte() }))?.length)
+    assertNull(UrlConnectionApiHttp.readCapped(ByteArrayInputStream(ByteArray(max + 1) { 'a'.code.toByte() })))
+  }
+
+  @Test
+  fun `una corrida detenida no manda el lote siguiente`() {
+    val store = MemoryUploadStore((1..450).map { reportEvent(it) })
+    val http = FakeHttp()
+
+    val outcome = uploader(store, http, shouldStop = { http.sent.isNotEmpty() }).run()
+
+    assertEquals(UploadOutcome.Retry, outcome)
+    assertEquals(1, http.sent.size)
+    assertEquals(250, store.pendingCount())
+  }
+
+  @Test
+  fun `un 413 rechaza el lote y sigue como un 400`() {
+    val all = (1..250).map { reportEvent(it) }
+    val store = MemoryUploadStore(all)
+    val http = FakeHttp(HttpResponse(413, "", null), ok())
+
+    assertEquals(UploadOutcome.Done, uploader(store, http).run())
+
+    assertEquals(all.take(200).map { it.id }.toSet(), store.rejected)
+    assertEquals(all.drop(200).map { it.id }.toSet(), store.uploaded)
+    assertEquals(0, store.pendingCount())
+  }
+
+  @Test
+  fun `una corrida cuyo único pedido recibió 400 igual manda el latido`() {
+    val store = MemoryUploadStore(listOf(reportEvent(1)))
+    val http = FakeHttp(HttpResponse(400, "", null), ok())
+
+    assertEquals(UploadOutcome.Done, uploader(store, http).run())
+
+    assertEquals(2, http.sent.size)
+    assertTrue(http.sent[1].ids.isEmpty())
+    assertEquals(setOf(reportEvent(1).id), store.rejected)
+    assertEquals(1, statuses.size)
   }
 }
