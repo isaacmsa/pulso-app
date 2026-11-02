@@ -26,8 +26,8 @@ Desde la fase 1, la app sigue un solo plan maestro, `docs/plans/2026-10-23-app-v
 | S2 | 26 oct al 1 nov | 0b · Mecanismos y clasificador | APK en 3 o más teléfonos; clasificador testeado; Play Console pagada |
 | S3 | 2 al 8 nov | 1 · API en staging | `POST /v1/events` idempotente en staging, con Supabase y Hyperdrive |
 | S4 | 9 al 15 nov | 2a · Subida, decisión y onboarding | Los eventos del Xiaomi llegan a staging; D-012 tomada |
-| S5 | 16 al 22 nov | 2b · App usable y comienzo de la fase 3 | **Prueba cerrada enviada a revisión** (18 o 19 nov) |
-| S6 | 23 al 29 nov | 3 · Familia, push y UPS | 15 o más testers inscritos; actualización 1 (~27 nov) |
+| S5 | 16 al 22 nov | 2b · App usable y comienzo de la fase 3 | **Prueba cerrada enviada a revisión** (18 o 19 nov), con todo lo construido (D-043); C4 antes de ~10 nov y C5 antes de ~15 nov |
+| S6 | 23 al 29 nov | 3 · Familia, push y UPS | 15 o más testers inscritos; actualización 1 (~27 nov): D-012, feedback y umbrales (D-043) |
 | S7 | 30 nov al 6 dic | 4 · Robustez | Actualización 2 (~4 dic); 14 días cumplidos (~5 dic); solicitud enviada |
 | S8 | 7 al 13 dic | 5 · Producción | Aprobación (~12 dic); lanzamiento escalonado |
 | S9 | 14 al 21 dic | 5 · Colchón | **Pulso en Google Play** (~15 dic) |
@@ -95,13 +95,15 @@ Objetivo: tener datos reales de cortes desde la primera semana y un clasificador
 
 ## Fase 3 · Familia, push y UPS (S5, segunda mitad, y S6, ~13 h)
 
+Por D-043 la familia, el push y el modo UPS ya van en la prueba cerrada del 18 o 19 de noviembre; la actualización 1 trae D-012, los arreglos de los testers y el ajuste de umbrales. Las credenciales FCM (C5) se necesitan antes de ~15 nov.
+
 - [ ] [api] Módulo de push, reglas de inicio, regreso, resumen tardío y confirmación; seguir casas, regenerar código, `/c/:code` y `assetlinks.json` (6 h)
 - [x] [app] Modo UPS en el onboarding y en ajustes, con el mecanismo que decidió D-012 (1,5 h)
 - [x] [app] Registro del push token y canal `cortes` (expo-notifications) (1 h)
 - [ ] [app] Credenciales FCM V1 en EAS (corte C5)
 - [x] [app] Confirmación con botones Sí y No que guarda un evento `confirmation` (1 h)
 - [x] [app] Familia: compartir el enlace por WhatsApp, seguir con código, casas que sigo, dejar de seguir, regenerar código (2,5 h)
-- [ ] [app] Actualización 1 publicada en la pista cerrada y anunciada a los testers (1 h)
+- [ ] [app] Actualización 1 (D-012, arreglos de los testers y ajuste de umbrales, D-043) publicada en la pista cerrada y anunciada a los testers (1 h)
 
 **Lista cuando:** un corte simulado en el Xiaomi llega como push a un segundo Android que sigue la casa (de la familia, o el emulador de Android Studio con Google Play), y `/c/:code` muestra "Se fue la luz a las…".
 

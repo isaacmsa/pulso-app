@@ -15,10 +15,12 @@ Los requisitos se verificaron el 15 de octubre de 2026. Revisarlos de nuevo el d
 | --- | --- |
 | Antes del 7 nov (movido desde el 31 oct, Isaac, 27 oct) | Cuenta personal creada y pagada (USD 25, el único pago del proyecto); verificación de identidad y del dispositivo Android en curso |
 | 26 oct en adelante | Reclutamiento de testers (Google Group) |
+| Antes de ~10 nov (C4) | Cuenta de Expo creada y `eas login` hecho (D-043) |
+| Antes de ~15 nov (C5) | Proyecto de Firebase y clave FCM V1 subida a EAS, para que el push entre en la prueba cerrada (D-043) |
 | 9 al 19 nov | App creada en Play Console, prueba interna, ficha y formularios |
 | 18 o 19 nov | Prueba cerrada enviada a revisión |
 | ~21 nov | Prueba cerrada aprobada; testers inscritos (meta: 15 o más) |
-| ~27 nov y ~4 dic | Actualizaciones 1 y 2 publicadas en la pista cerrada |
+| ~27 nov y ~4 dic | Actualizaciones 1 y 2 publicadas en la pista cerrada (D-012, arreglos de los testers y ajuste de umbrales) |
 | ~5 dic | 14 días seguidos con 12 o más testers |
 | ~5 o 6 dic | Solicitud de acceso a producción |
 | ~12 dic | Aprobación (Google puede tardar hasta 7 días o más) |
@@ -41,7 +43,7 @@ Los requisitos se verificaron el 15 de octubre de 2026. Revisarlos de nuevo el d
 
 ## Ficha y formularios (borrador listo para pegar)
 
-Textos para la versión de la prueba cerrada del 18 o 19 de noviembre, en español de Latinoamérica (`es-419`), que es el idioma predeterminado de la ficha. Describen solo lo que trae esa versión: la familia, el push y el modo UPS llegan con la actualización 1, y su párrafo va aparte, para pegarlo ese día. Los conteos cuentan caracteres Unicode con los saltos de línea (`[...texto].length` en Node), y `__tests__/play-listing.test.ts` falla si un texto pasa el límite de Play.
+Textos para la versión de la prueba cerrada del 18 o 19 de noviembre, en español de Latinoamérica (`es-419`), que es el idioma predeterminado de la ficha. Describen todo lo que trae esa versión, que sale con todo lo construido (D-043): detección, estado, historial, reportes, push, confirmación, familia y modo UPS. Los conteos cuentan caracteres Unicode con los saltos de línea (`[...texto].length` en Node), y `__tests__/play-listing.test.ts` falla si un texto pasa el límite de Play.
 
 ### Nombre
 
@@ -75,13 +77,20 @@ QUÉ HACE
 • Si notas algo, avisas con un toque: hay luz, fluctuando o sin luz. Esos reportes ayudan a afinar la detección.
 • En Ajustes hay un diagnóstico de la detección (batería, fabricante y registro de eventos) para cuando algo falla.
 
+AVISOS A LA FAMILIA
+• Comparte el código de tu casa por WhatsApp. Quien lo tenga recibe un aviso cuando se va la luz y cuando vuelve.
+• Quien no tenga Pulso puede ver si hay luz desde el enlace que le mandaste, en el navegador.
+• Si te arrepientes, generas un código nuevo en Ajustes y el viejo deja de servir.
+• Pulso te pregunta "¿Se fue la luz de 6:05 a 8:10?" para confirmar cada corte.
+• Modo para routers con UPS (experimental): lo activas si tu router sigue con Wi-Fi durante el corte.
+
 CÓMO FUNCIONA
 Cuando se va la luz, el teléfono deja de cargar y el router se apaga. Pulso ve las dos cosas y las guarda con su hora. Si el teléfono tiene datos móviles, el corte se registra mientras pasa. Si no, Pulso sube lo que guardó cuando vuelven la luz y el internet, y el historial queda con la hora real del corte.
 
 LO QUE NECESITAS
 • Un teléfono Android que se quede en casa, enchufado y conectado al Wi-Fi.
 • Algunos teléfonos (Xiaomi, Samsung y otros) cierran las apps que nadie abre. La primera vez, Pulso te guía paso a paso para que eso no pase.
-• Si tu router está conectado a un UPS, el Wi-Fi no se cae durante el corte y por ahora Pulso puede no verlo.
+• Si tu router está conectado a un UPS, el Wi-Fi no se cae durante el corte: activa el modo UPS en Ajustes.
 
 TU PRIVACIDAD
 • No pide tu ubicación ni lee el nombre de tu Wi-Fi. Reconoce la red de tu casa con una huella que se calcula y se queda en el teléfono.
@@ -95,20 +104,7 @@ Pulso mide lo que pasa en tu casa. No adivina cuándo se va a ir la luz ni muest
 Pulso es gratis y no tiene anuncios.
 ```
 
-1991 caracteres (límite: 4000). La primera frase explica la detección automática, como pide la ficha.
-
-**Para la actualización 1 (~27 nov).** Se agrega este bloque después de "QUÉ HACE", y se borra la línea del UPS de "LO QUE NECESITAS":
-
-```text
-AVISOS A LA FAMILIA
-• Comparte el código de tu casa por WhatsApp. Quien lo tenga recibe un aviso cuando se va la luz y cuando vuelve.
-• Quien no tenga Pulso puede ver si hay luz desde el enlace que le mandaste, en el navegador.
-• Si te arrepientes, generas un código nuevo en Ajustes y el viejo deja de servir.
-• Pulso te pregunta "¿Se fue la luz de 6:05 a 8:10?" para confirmar cada corte.
-• Modo para routers con UPS (experimental): lo activas si tu router sigue con Wi-Fi durante el corte.
-```
-
-Con ese bloque y sin la línea del UPS, la descripción larga queda en 2375 caracteres. Antes de pegarlo, confirmar que cada punto llegó de verdad en esa versión.
+2483 caracteres (límite: 4000). La primera frase explica la detección automática, como pide la ficha.
 
 ### Categoría y contacto
 
@@ -134,7 +130,7 @@ Antes de pegarlas, abrirlas desde el teléfono sin sesión: tienen que cargar si
 
 ### Seguridad de datos
 
-Sale de la tabla "Formulario de seguridad de datos de Play" de `docs/security-privacy.md`, que manda. Aquí va desglosada en los tipos de datos que pide Play. Se declara desde ya todo lo de la v1, aunque el token push llega con la actualización 1 y Sentry en la fase 4: declarar de más no se castiga, y así el formulario no cambia durante la prueba.
+Sale de la tabla "Formulario de seguridad de datos de Play" de `docs/security-privacy.md`, que manda. Aquí va desglosada en los tipos de datos que pide Play. Se declara desde ya todo lo de la v1: el token push está desde la prueba cerrada (D-043) y Sentry llega en la fase 4 (C6). Declarar de más no se castiga, y así el formulario no cambia durante la prueba.
 
 | Pregunta | Respuesta |
 | --- | --- |
@@ -146,10 +142,10 @@ Sale de la tabla "Formulario de seguridad de datos de Play" de `docs/security-pr
 
 | Tipo de dato en Play | Qué es en Pulso | ¿Se recoge? | ¿Se comparte? | ¿Efímero? | ¿Obligatorio? | Para qué |
 | --- | --- | --- | --- | --- | --- | --- |
-| IDs del dispositivo u otros IDs | Identificador anónimo del dispositivo y token push (entra en la actualización 1) | Sí | No | No | Sí | Funcionalidad de la app; prevención de fraudes y seguridad (límites por dispositivo) |
+| IDs del dispositivo u otros IDs | Identificador anónimo del dispositivo y token push (desde la prueba cerrada) | Sí | No | No | Sí | Funcionalidad de la app; prevención de fraudes y seguridad (límites por dispositivo) |
 | Actividad en la app → Otras acciones | Eventos de corriente, Wi-Fi, internet, "red de casa sí/no", pantalla y batería, con su hora; reportes manuales ("Hay luz", "Fluctuando", "Sin luz") y confirmaciones | Sí | No | No | Sí | Funcionalidad de la app |
 | Actividad en la app → Otro contenido generado por el usuario | Alias de la casa | Sí | No | No | No: la persona decide si lo cambia | Funcionalidad de la app |
-| Información y rendimiento de la app → Registros de fallos | Errores de la app en Sentry (entra en la fase 4) | Sí | No | No | Sí | Estadísticas; funcionalidad de la app |
+| Información y rendimiento de la app → Registros de fallos | Errores de la app en Sentry (entra en la fase 4 / C6) | Sí | No | No | Sí | Estadísticas; funcionalidad de la app |
 | Información y rendimiento de la app → Diagnóstico | Fabricante, modelo, versión de Android y de la app, ahorro de batería | Sí | No | No | Sí | Estadísticas; funcionalidad de la app |
 | Ubicación, información personal, financiera, de salud, mensajes, fotos, audio, archivos, calendario, contactos, apps instaladas, historial web | Nada | No | | | | |
 
@@ -169,7 +165,7 @@ Cuestionario de IARC:
 | Categoría | "Todos los demás tipos de apps" (utilidades, productividad, comunicación y otras) |
 | Violencia, miedo, sexualidad, lenguaje ofensivo, drogas, alcohol o tabaco | No |
 | Apuestas, simuladas o reales | No |
-| ¿Los usuarios interactúan o intercambian contenido entre ellos? | No en la prueba cerrada. Desde la actualización 1, quien tiene el código ve el alias de la casa: revisar la respuesta ese día |
+| ¿Los usuarios interactúan o intercambian contenido entre ellos? | Quien tiene el código de una casa ve su alias (familia, D-043): revisar la respuesta al llenar el cuestionario |
 | ¿Comparte la ubicación del usuario con otros? | No |
 | ¿Permite compras digitales? | No |
 | ¿Navegador web o buscador sin restricciones? | No |
@@ -183,7 +179,7 @@ Cuestionario de IARC:
 | ¿Puede atraer a niños sin querer? | No |
 | Acceso a la app | "Todas las funciones están disponibles sin acceso especial". No hay inicio de sesión; para revisar sin un Wi-Fi de casa basta tocar "Lo hago después" en el último paso del onboarding |
 | Anuncios | No, la app no tiene anuncios |
-| ID de publicidad | No se usa. Al agregar Firebase (actualización 1), revisar el manifiesto final con `aapt dump permissions` para confirmar que no aparece `com.google.android.gms.permission.AD_ID` |
+| ID de publicidad | No se usa. Con Firebase en la prueba cerrada, revisar el manifiesto final con `aapt dump permissions` para confirmar que no aparece `com.google.android.gms.permission.AD_ID` |
 | App gubernamental | No |
 | Funciones financieras | Ninguna |
 | App de salud | No |
@@ -246,7 +242,7 @@ Se toman en el Xiaomi, en modo oscuro, con datos reales de la casa (nada inventa
 | 6 | Onboarding: "Que el teléfono no cierre Pulso" | Mismo recorrido, paso de batería | "Te guía para que el teléfono no la cierre" |
 | 7 | Ajustes, con "Borrar mis datos" y "Política de privacidad" | Nada especial | "Sin ubicación ni cuentas. Borra tus datos cuando quieras" |
 
-Para la actualización 1 se suma una octava, con el push de "Se fue la luz" en la cortina: "Avisa a la familia cuando se va y cuando vuelve".
+Se suma una octava, con el push de "Se fue la luz" en la cortina: "Avisa a la familia cuando se va y cuando vuelve".
 
 ### Notas de la versión de la primera prueba cerrada
 
@@ -255,13 +251,12 @@ Para la actualización 1 se suma una octava, con el push de "Se fue la luz" en l
 Primera versión de prueba de Pulso.
 • Detecta sola cuándo se va y vuelve la luz en tu casa, con el teléfono enchufado.
 • Muestra cómo está la casa y las horas sin luz de la semana.
-• Botones para avisar si hay luz, si está fluctuando o si se fue.
-• En Ajustes: diagnóstico de la detección y "Borrar mis datos".
-Déjala instalada, con el teléfono enchufado en casa, y cuéntanos en el grupo si notó cada corte.
+• Avisa con un toque, confirma cada corte con Sí o No y manda avisos a la familia que sigue tu casa.
+• Modo UPS (experimental) y "Borrar mis datos" en Ajustes.
+Déjala instalada y enchufada en casa, y cuéntanos en el grupo si notó cada corte.
 </es-419>
 ```
-
-407 caracteres entre las etiquetas (límite: 500).
+422 caracteres entre las etiquetas (límite: 500).
 
 ## Testers
 

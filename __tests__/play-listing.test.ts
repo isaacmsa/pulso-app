@@ -32,11 +32,6 @@ it('la descripción larga cabe en 4000 caracteres y empieza por la detección au
   expect(long.startsWith('Pulso detecta solo')).toBe(true);
 });
 
-it('la descripción larga con el bloque de la actualización 1 sigue cabiendo', () => {
-  const extra = blockAfter('**Para la actualización 1');
-  expect(length(blockAfter('### Descripción larga')) + length(extra) + 2).toBeLessThanOrEqual(4000);
-});
-
 it('las notas de la versión caben en 500 caracteres sin contar las etiquetas', () => {
   const notes = blockAfter('### Notas de la versión')
     .replace(/^<es-419>\n/, '')
@@ -55,10 +50,10 @@ describe('formulario de seguridad de datos', () => {
 
   it('marca lo que todavía no trae la versión de la prueba', () => {
     expect(row('IDs del dispositivo u otros IDs')).toMatch(
-      /token push \(entra en la actualización 1\)/,
+      /token push \(desde la prueba cerrada\)/,
     );
     expect(row('Información y rendimiento de la app → Registros de fallos')).toMatch(
-      /\(entra en la fase 4\)/,
+      /\(entra en la fase 4 \/ C6\)/,
     );
     expect(form).toMatch(/al pedir el acceso a producción/i);
   });

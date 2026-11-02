@@ -52,22 +52,22 @@ Quien vive en la casa, sin red, ve el estado crudo de su propio teléfono ("Sin 
 
 | Funcionalidad | Prueba cerrada (19 nov) | Actualizaciones durante la prueba | v1.1 | Más adelante |
 | --- | --- | --- | --- | --- |
-| Detección automática de cortes en casa | Sí | Ajuste de umbrales con las confirmaciones | | |
-| Modo router con UPS | | Actualización 1 (~27 nov), experimental | Mejoras con los datos del piloto | |
+| Detección automática de cortes en casa | Sí | Mecanismos finales (D-012) y ajuste de umbrales con las confirmaciones (D-013) | | |
+| Modo router con UPS | Sí, experimental | Mejoras según el feedback | Mejoras con los datos del piloto | |
 | Reporte manual de un toque: hay luz, fluctuando, sin luz | Sí | | | |
 | Historial y horas sin luz por semana | Sí, lista por día | Barras por día y comparación con la semana anterior | Gráfica mensual | Exportar a PDF |
 | Diagnóstico de la detección (batería, fabricante, último latido) | Sí, en ajustes | Aviso en la pantalla principal si la detección está en riesgo | | |
 | Borrar todos mis datos | Sí | | | |
-| Push de corte y regreso | | Actualización 1 (~27 nov) | | |
-| Confirmación "¿Se fue la luz de 6:05 a 8:10?" | | Actualización 1 | | |
-| Seguir una casa con código (app y enlace web) | | Actualización 1 | | |
-| Estado "sin noticias" | | Actualización 2 (~4 dic) | | |
+| Push de corte y regreso | Sí | | | |
+| Confirmación "¿Se fue la luz de 6:05 a 8:10?" | Sí | | | |
+| Seguir una casa con código (app y enlace web) | Sí | | | |
+| Estado "sin noticias" | Sí (ya está en el servidor) | | | |
 | iPhone | No | | Solo seguir una casa | |
 | Web Push para seguir desde el navegador | No | | Evaluar | |
 | Mapa colaborativo por zona | No | | Con ubicación aproximada opcional | Pronóstico por zona |
 | Cuentas, contraseñas, pagos | No | No | No | |
 
-La prueba cerrada arranca con lo que genera datos (detección, estado, historial, reportes). La parte de familia llega como primera actualización: así hay un cambio real durante la prueba, que es lo que Google espera ver.
+La prueba cerrada sale con todo lo que ya está construido (D-043): los testers ven el producto completo y hay una sola rama que mantener. El cambio real que Google espera ver durante la prueba viene de D-012 (los mecanismos finales de detección), los arreglos de lo que digan los testers y el ajuste de umbrales, no de la familia.
 
 ## Piloto con Yagos Store
 
