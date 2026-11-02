@@ -41,6 +41,7 @@ export function PrimaryButton({
       onPress={onPress}
       disabled={disabled}
       accessibilityRole="button"
+      accessibilityLabel={label}
       accessibilityState={{ disabled: !!disabled }}
     >
       <Text style={styles.primaryText}>{label}</Text>
@@ -63,6 +64,7 @@ export function SecondaryButton({
       onPress={onPress}
       disabled={disabled}
       accessibilityRole="button"
+      accessibilityLabel={label}
       accessibilityState={{ disabled: !!disabled }}
     >
       <Text style={styles.secondaryText}>{label}</Text>
@@ -95,18 +97,22 @@ const styles = StyleSheet.create({
   primary: {
     backgroundColor: colors.accent,
     borderRadius: 12,
+    minHeight: 48,
     paddingVertical: 16,
     alignItems: 'center',
+    justifyContent: 'center',
   },
-  primaryText: { color: colors.background, fontSize: 17, fontWeight: '700' },
+  primaryText: { color: colors.background, fontSize: 17, fontWeight: '700', textAlign: 'center' },
   secondary: {
     borderColor: colors.accent,
     borderWidth: 1,
     borderRadius: 12,
+    minHeight: 48,
     paddingVertical: 16,
     alignItems: 'center',
+    justifyContent: 'center',
   },
-  secondaryText: { color: colors.accent, fontSize: 17, fontWeight: '600' },
+  secondaryText: { color: colors.accent, fontSize: 17, fontWeight: '600', textAlign: 'center' },
   disabled: { opacity: 0.5 },
   error: { color: '#FF8A80', fontSize: 15, lineHeight: 22 },
   muted: { color: colors.textMuted, fontSize: 14, lineHeight: 20 },

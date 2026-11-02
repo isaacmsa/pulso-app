@@ -36,7 +36,8 @@
           "color": "#F5B942",
           "defaultChannel": "cortes"
         }
-      ]
+      ],
+      "expo-splash-screen"
     ],
     "scheme": "pulso",
     "platforms": ["android"]

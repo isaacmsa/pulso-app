@@ -16,3 +16,8 @@ it('solo reintenta fallas que pueden pasar solas', () => {
   expect(shouldRetry(0, new ApiError('invalid_response'))).toBe(false);
   expect(shouldRetry(2, new ApiError('timeout'))).toBe(false);
 });
+
+it('rate_limited no reintenta solo: se muestra con "Reintentar"', () => {
+  expect(shouldRetry(0, new ApiError('rate_limited', 429))).toBe(false);
+  expect(shouldRetry(0, new ApiError('internal_error', 500))).toBe(true);
+});

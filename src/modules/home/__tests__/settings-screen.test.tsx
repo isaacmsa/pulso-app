@@ -347,3 +347,13 @@ describe('Ajustes', () => {
     expect(screen.queryByText('Vigilar esta casa')).toBeNull();
   });
 });
+
+it('Ajustes sin red avisa que no pudo leer el nombre de la casa', async () => {
+  mocked.getRole.mockResolvedValue('watch');
+  mocked.isForegroundServiceEnabled.mockResolvedValue(false);
+  jest.spyOn(globalThis, 'fetch').mockImplementation(async () => offline());
+  await renderWithQuery(<Settings />);
+  expect(
+    await screen.findByText('No se pudo leer el nombre actual. Puedes escribir uno nuevo.'),
+  ).toBeOnTheScreen();
+});

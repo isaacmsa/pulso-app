@@ -181,3 +181,36 @@ it('refrescar recarga las dos semanas', async () => {
   );
   expect(froms.sort()).toEqual([Date.UTC(2026, 9, 10, 4, 0), Date.UTC(2026, 9, 17, 4, 0)]);
 });
+
+it('historial sin red después de medianoche muestra la última semana guardada', async () => {
+  // Guardada el viernes 23; ya es sábado 24, 12:30 a. m. en Caracas, y la clave de la consulta cambió.
+  jest.spyOn(Date, 'now').mockReturnValue(Date.UTC(2026, 9, 24, 4, 30));
+  jest.spyOn(globalThis, 'fetch').mockRejectedValue(new TypeError('Network request failed'));
+  const client = createTestQueryClient();
+  client.setQueryData(
+    ['home', 'outages', Date.UTC(2026, 9, 17, 4, 0), Date.UTC(2026, 9, 24, 4, 0)],
+    { items: [], reports: [], totalMs: 3 * HOUR + 50 * 60_000, days: WEEK },
+  );
+  await render(
+    <QueryClientProvider client={client}>
+      <History />
+    </QueryClientProvider>,
+  );
+  expect(await screen.findByText('3 h 50 min')).toBeOnTheScreen();
+  expect(
+    await screen.findByText('No se pudo actualizar. Esto es lo último que se guardó.'),
+  ).toBeOnTheScreen();
+  expect(screen.queryByText('Reintentar')).toBeNull();
+});
+
+it('Historial con un 429 muestra el error con Reintentar y no insiste solo', async () => {
+  const fetchSpy = jest
+    .spyOn(globalThis, 'fetch')
+    .mockResolvedValue(json({ error: { code: 'rate_limited', message: 'x' } }, 429));
+  await renderWithQuery(<History />);
+  expect(
+    await screen.findByText('Demasiados intentos. Espera un momento y reintenta.'),
+  ).toBeOnTheScreen();
+  expect(screen.getByText('Reintentar')).toBeOnTheScreen();
+  expect(fetchSpy.mock.calls.length).toBeLessThanOrEqual(2);
+});

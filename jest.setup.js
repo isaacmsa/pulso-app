@@ -7,3 +7,9 @@ jest.mock('@react-native-async-storage/async-storage', () =>
 // (src/shared/query/client.ts) necesita la suscripción para poder cancelarla.
 const { AppState } = require('react-native');
 AppState.addEventListener = () => ({ remove: () => undefined });
+
+// La pantalla de arranque es nativa; en las pruebas solo se registra si se pide mantenerla o soltarla.
+jest.mock('expo-splash-screen', () => ({
+  preventAutoHideAsync: jest.fn(() => Promise.resolve(true)),
+  hideAsync: jest.fn(() => Promise.resolve()),
+}));

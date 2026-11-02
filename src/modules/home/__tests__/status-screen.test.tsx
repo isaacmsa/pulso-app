@@ -312,3 +312,27 @@ describe('aviso de detección en riesgo', () => {
     }
   });
 });
+
+it('Estado no muestra dos avisos a la vez', async () => {
+  // El último estado vino del teléfono (sin red) y el refresco siguiente falló con un 500: queda solo el aviso con la hora.
+  jest
+    .spyOn(globalThis, 'fetch')
+    .mockResolvedValue(json({ error: { code: 'internal_error', message: 'x' } }, 500));
+  const client = createTestQueryClient();
+  client.setQueryData(['home', 'status'], {
+    status: { state: 'con_luz', since: caracas(14, 30), alias: 'Casa', openOutageStart: null },
+    receivedAt: NOW - 20 * 60_000,
+  });
+  await renderWithQuery(<Status />, client);
+  expect(await screen.findByText(/Sin conexión\. Es lo último.*hace 20 min/)).toBeOnTheScreen();
+  await waitFor(() => expect(globalThis.fetch).toHaveBeenCalled());
+  await act(async () => {});
+  expect(screen.queryByText(/No se pudo actualizar/)).toBeNull();
+});
+
+it('Estado con el teléfono sin poder leerse lo dice', async () => {
+  jest.spyOn(globalThis, 'fetch').mockRejectedValue(new TypeError('Network request failed'));
+  mocked.readPhoneState.mockRejectedValue(new Error('nativo'));
+  await renderWithQuery(<Status />);
+  expect(await screen.findByText('No se pudo leer el estado del teléfono.')).toBeOnTheScreen();
+});

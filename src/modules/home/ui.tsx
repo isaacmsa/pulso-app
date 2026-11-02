@@ -56,6 +56,7 @@ export function Button({
       onPress={onPress}
       disabled={disabled}
       accessibilityRole="button"
+      accessibilityLabel={label}
       accessibilityState={{ disabled: !!disabled }}
     >
       <Text style={[styles.buttonText, tone === 'primary' && styles.primaryText]}>{label}</Text>
@@ -104,12 +105,19 @@ const styles = StyleSheet.create({
     fontWeight: '700',
     textTransform: 'uppercase',
   },
-  button: { borderRadius: 12, paddingVertical: 14, paddingHorizontal: 16, alignItems: 'center' },
+  button: {
+    borderRadius: 12,
+    minHeight: 48,
+    paddingVertical: 14,
+    paddingHorizontal: 16,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
   primary: { backgroundColor: colors.accent },
   secondary: { borderColor: colors.textMuted, borderWidth: 1 },
   danger: { borderColor: colors.danger, borderWidth: 1 },
   disabled: { opacity: 0.5 },
-  buttonText: { color: colors.text, fontSize: 16, fontWeight: '600' },
+  buttonText: { color: colors.text, fontSize: 16, fontWeight: '600', textAlign: 'center' },
   primaryText: { color: colors.background },
   error: { color: colors.danger, fontSize: 15, lineHeight: 22 },
   placeholderTitle: { color: colors.text, fontSize: 20, fontWeight: '700' },

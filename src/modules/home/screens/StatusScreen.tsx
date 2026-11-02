@@ -109,11 +109,10 @@ function HomeStatusScreen() {
           <Text style={[styles.status, { color: STATE_COLOR[home.status.state] }]}>
             {formatStatus(home.status, now)}
           </Text>
+          {/* Un solo aviso: el que trae la hora gana sobre el genérico de un refresco que falló (5xx, 429, 401, contrato). */}
           {home.receivedAt !== null ? (
             <Muted>{`Sin conexión. Es lo último que dio el servidor, ${formatAgo(home.receivedAt, now)}.`}</Muted>
-          ) : null}
-          {/* Un refresco que falló por otra cosa que la red (5xx, 429, 401, contrato) deja el dato viejo. */}
-          {status.isError ? (
+          ) : status.isError ? (
             <Muted>No se pudo actualizar. Esto es lo último que se guardó.</Muted>
           ) : null}
         </Card>

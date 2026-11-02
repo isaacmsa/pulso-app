@@ -1,8 +1,8 @@
 import { PersistQueryClientProvider } from '@tanstack/react-query-persist-client';
 import { Stack } from 'expo-router';
+import * as SplashScreen from 'expo-splash-screen';
 import { StatusBar } from 'expo-status-bar';
 import { useEffect } from 'react';
-import { View } from 'react-native';
 import {
   setupNotifications,
   startConfirmationResponses,
@@ -18,6 +18,21 @@ import {
 import { resolveApiUrl, setTokenProvider } from '../src/shared/api/client';
 import { persistOptions, queryClient } from '../src/shared/query/client';
 import { colors } from '../src/shared/theme/colors';
+
+async function keepSplash() {
+  await SplashScreen.preventAutoHideAsync();
+}
+
+async function hideSplash() {
+  try {
+    await SplashScreen.hideAsync();
+  } catch {
+    // Si ya estaba oculta no pasa nada.
+  }
+}
+
+// La pantalla de arranque sigue visible hasta que se sabe a dónde ir (onboarding o pestañas): nada de pantalla en blanco.
+keepSplash().catch(() => undefined);
 
 // El token vive en la bóveda nativa: el cliente lo pide en cada llamada y JS no lo guarda.
 setTokenProvider(getToken);
@@ -58,9 +73,11 @@ export default function RootLayout() {
     };
   }, [signedIn]);
 
-  if (startup === null) {
-    return <View style={{ flex: 1, backgroundColor: colors.background }} />;
-  }
+  useEffect(() => {
+    if (startup !== null) void hideSplash();
+  }, [startup]);
+
+  if (startup === null) return null;
 
   return (
     <PersistQueryClientProvider client={queryClient} persistOptions={persistOptions}>

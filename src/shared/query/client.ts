@@ -7,7 +7,8 @@ import { AppState } from 'react-native';
 import { ApiError } from '../api/client';
 
 const WEEK_MS = 7 * 24 * 60 * 60 * 1000;
-const RETRYABLE = new Set(['network', 'timeout', 'internal_error', 'rate_limited']);
+// `rate_limited` no se reintenta solo: insistir a 1 s empeora el límite. La pantalla muestra el error con "Reintentar".
+const RETRYABLE = new Set(['network', 'timeout', 'internal_error']);
 
 // D-024: el cliente HTTP no reintenta; los reintentos de las pantallas los hace TanStack Query, y solo ante
 // fallas que pueden pasar solas. Una respuesta que no cumple el contrato no mejora reintentando.

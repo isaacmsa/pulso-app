@@ -1,3 +1,4 @@
+import { useQueryClient } from '@tanstack/react-query';
 import { StyleSheet, Text, View } from 'react-native';
 import { colors } from '../../../shared/theme/colors';
 import { DAY_MS } from '../../../shared/time/caracas';
@@ -13,11 +14,35 @@ export default function HistoryScreen() {
   return <WeekHistory />;
 }
 
+type Outages = NonNullable<ReturnType<typeof useOutages>['data']>;
+
+/** La semana guardada que termina más tarde (la clave es ['home', 'outages', from, to]). */
+function latestCachedWeek(
+  entries: [readonly unknown[], Outages | undefined][],
+): Outages | undefined {
+  let best: Outages | undefined;
+  let bestTo = Number.NEGATIVE_INFINITY;
+  for (const [key, data] of entries) {
+    const to = key[3];
+    if (data && typeof to === 'number' && to > bestTo) {
+      best = data;
+      bestTo = to;
+    }
+  }
+  return best;
+}
+
 function WeekHistory() {
   // Los 7 días de Caracas que terminan hoy. Los límites son medianoches, así que la clave de la consulta no cambia en todo el día.
   const { from, to } = weekRange(Date.now());
   const outages = useOutages(from, to);
-  const history = outages.data;
+  // Pasada la medianoche la clave cambia y, sin red, la semana nueva no tiene datos: se cae a la semana más reciente guardada.
+  const queryClient = useQueryClient();
+  const cached =
+    outages.data || !outages.isError
+      ? undefined
+      : latestCachedWeek(queryClient.getQueriesData<Outages>({ queryKey: ['home', 'outages'] }));
+  const history = outages.data ?? cached;
   // Los 7 días anteriores, para comparar. Si falla o no hay datos, simplemente no se muestra la comparación.
   const previous = useOutages(from - 7 * DAY_MS, from);
   const heights = history ? barHeights(history.days.map((d) => d.ms)) : [];

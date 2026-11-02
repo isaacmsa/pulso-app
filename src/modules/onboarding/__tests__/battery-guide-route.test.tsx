@@ -64,3 +64,13 @@ it('la guía para teléfonos con sesión se ve y "Listo" solo vuelve', async () 
   fireEvent.press(await screen.findByText('Listo, ya lo hice'));
   expect(mockBack).toHaveBeenCalled();
 });
+
+it('mantiene la pantalla de arranque hasta que el arranque termina', async () => {
+  const SplashScreen = jest.requireMock('expo-splash-screen');
+  mockStartup.mockReturnValue(null);
+  const view = await render(<RootLayout />);
+  expect(SplashScreen.hideAsync).not.toHaveBeenCalled();
+  mockStartup.mockReturnValue('watch');
+  await view.rerender(<RootLayout />);
+  await waitFor(() => expect(SplashScreen.hideAsync).toHaveBeenCalled());
+});

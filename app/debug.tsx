@@ -166,6 +166,7 @@ export default function DebugScreen() {
             style={styles.reportButton}
             onPress={run(() => recordReport(value), `Guardado: ${label}`)}
             accessibilityRole="button"
+            accessibilityLabel={label}
           >
             <Text style={styles.reportText}>{label}</Text>
           </Pressable>
@@ -173,16 +174,27 @@ export default function DebugScreen() {
       </View>
 
       <View style={styles.actions}>
-        <Pressable style={styles.button} onPress={run(recordAppOpen)} accessibilityRole="button">
+        <Pressable
+          style={styles.button}
+          onPress={run(recordAppOpen)}
+          accessibilityRole="button"
+          accessibilityLabel="Registrar ahora"
+        >
           <Text style={styles.buttonText}>Registrar ahora</Text>
         </Pressable>
-        <Pressable style={styles.secondary} onPress={learnHome} accessibilityRole="button">
+        <Pressable
+          style={styles.secondary}
+          onPress={learnHome}
+          accessibilityRole="button"
+          accessibilityLabel="Esta es la red de mi casa"
+        >
           <Text style={styles.secondaryText}>Esta es la red de mi casa</Text>
         </Pressable>
         <Pressable
           style={styles.secondary}
           onPress={run(exportAndShare)}
           accessibilityRole="button"
+          accessibilityLabel="Exportar"
         >
           <Text style={styles.secondaryText}>Exportar</Text>
         </Pressable>
@@ -190,7 +202,11 @@ export default function DebugScreen() {
 
       <View style={styles.switchRow}>
         <Text style={styles.switchLabel}>Servicio en primer plano (D)</Text>
-        <Switch value={fgsEnabled} onValueChange={toggleForegroundService} />
+        <Switch
+          value={fgsEnabled}
+          onValueChange={toggleForegroundService}
+          accessibilityLabel="Servicio en primer plano (D)"
+        />
       </View>
 
       <FlatList
@@ -221,24 +237,30 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: colors.surface,
     borderRadius: 12,
+    minHeight: 48,
     paddingVertical: 18,
     alignItems: 'center',
+    justifyContent: 'center',
   },
   reportText: { color: colors.text, fontSize: 14, fontWeight: '700', textAlign: 'center' },
   actions: { gap: 8, marginVertical: 12 },
   button: {
     backgroundColor: colors.accent,
     borderRadius: 12,
+    minHeight: 48,
     paddingVertical: 14,
     alignItems: 'center',
+    justifyContent: 'center',
   },
   buttonText: { color: colors.background, fontSize: 16, fontWeight: '700' },
   secondary: {
     borderColor: colors.surface,
     borderWidth: 1,
     borderRadius: 12,
+    minHeight: 48,
     paddingVertical: 12,
     alignItems: 'center',
+    justifyContent: 'center',
   },
   secondaryText: { color: colors.text, fontSize: 15 },
   switchRow: {
@@ -246,8 +268,10 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'space-between',
     marginBottom: 8,
+    minHeight: 48,
+    gap: 12,
   },
-  switchLabel: { color: colors.text, fontSize: 15 },
+  switchLabel: { color: colors.text, fontSize: 15, flexShrink: 1 },
   row: {
     paddingVertical: 10,
     borderBottomWidth: StyleSheet.hairlineWidth,

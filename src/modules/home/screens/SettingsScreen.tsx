@@ -51,7 +51,12 @@ export default function SettingsScreen() {
 
 function Row({ label, onPress }: { label: string; onPress: () => void }) {
   return (
-    <Pressable style={styles.row} onPress={onPress} accessibilityRole="button">
+    <Pressable
+      style={styles.row}
+      onPress={onPress}
+      accessibilityRole="button"
+      accessibilityLabel={label}
+    >
       <Text style={styles.rowLabel}>{label}</Text>
       <Text style={styles.chevron}>›</Text>
     </Pressable>
@@ -131,6 +136,9 @@ function AliasSection() {
           placeholderTextColor={colors.textMuted}
           accessibilityLabel="Nombre de la casa"
         />
+        {status.isError && !status.data ? (
+          <Muted>No se pudo leer el nombre actual. Puedes escribir uno nuevo.</Muted>
+        ) : null}
         <Button label="Guardar" onPress={() => void save()} disabled={saving} />
         {message ? (
           <Text style={message.error ? styles.error : styles.ok}>{message.text}</Text>
@@ -257,11 +265,18 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     alignItems: 'center',
     justifyContent: 'space-between',
+    minHeight: 48,
     paddingVertical: 10,
   },
-  rowLabel: { color: colors.text, fontSize: 16 },
+  rowLabel: { color: colors.text, fontSize: 16, flexShrink: 1 },
   chevron: { color: colors.textMuted, fontSize: 22 },
-  switchRow: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between' },
+  switchRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'space-between',
+    gap: 12,
+    minHeight: 48,
+  },
   input: {
     color: colors.text,
     fontSize: 16,
@@ -270,6 +285,7 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     paddingHorizontal: 12,
     paddingVertical: 10,
+    minHeight: 48,
   },
   warning: { color: colors.text, fontSize: 15, lineHeight: 22 },
   error: { color: colors.danger, fontSize: 15, lineHeight: 22 },
