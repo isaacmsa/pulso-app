@@ -104,7 +104,8 @@ it('compartir arma el mensaje con el enlace', async () => {
   await waitFor(() =>
     expect(share).toHaveBeenCalledWith({
       message:
-        'Sigue la luz de mi casa en Pulso: https://pulso-api.isaac-mendozasa.workers.dev/c/ABCD2345',
+        // Sin EXPO_PUBLIC_API_URL la app usa staging, y el enlace también.
+        'Sigue la luz de mi casa en Pulso: https://pulso-api-staging.isaac-mendozasa.workers.dev/c/ABCD2345',
     }),
   );
 });

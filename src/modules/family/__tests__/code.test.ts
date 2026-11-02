@@ -12,8 +12,31 @@ it('el código se normaliza a mayúsculas y rechaza letras fuera del alfabeto', 
   expect(isValidCode('')).toBe(false);
 });
 
-it('compartir arma el mensaje con el enlace', () => {
-  expect(shareMessage('ABCD2345')).toBe(
-    'Sigue la luz de mi casa en Pulso: https://pulso-api.isaac-mendozasa.workers.dev/c/ABCD2345',
-  );
+describe('el enlace sigue a la API de la build', () => {
+  const original = process.env.EXPO_PUBLIC_API_URL;
+  afterEach(() => {
+    if (original === undefined) delete process.env.EXPO_PUBLIC_API_URL;
+    else process.env.EXPO_PUBLIC_API_URL = original;
+  });
+
+  it('en producción el enlace usa el host de producción', () => {
+    process.env.EXPO_PUBLIC_API_URL = 'https://pulso-api.isaac-mendozasa.workers.dev/';
+    expect(shareMessage('ABCD2345')).toBe(
+      'Sigue la luz de mi casa en Pulso: https://pulso-api.isaac-mendozasa.workers.dev/c/ABCD2345',
+    );
+  });
+
+  it('en staging el enlace usa el host de staging', () => {
+    process.env.EXPO_PUBLIC_API_URL = 'https://pulso-api-staging.isaac-mendozasa.workers.dev';
+    expect(shareMessage('ABCD2345')).toBe(
+      'Sigue la luz de mi casa en Pulso: https://pulso-api-staging.isaac-mendozasa.workers.dev/c/ABCD2345',
+    );
+  });
+
+  it('sin variable usa staging, igual que el cliente de la API', () => {
+    delete process.env.EXPO_PUBLIC_API_URL;
+    expect(shareMessage('ABCD2345')).toContain(
+      'https://pulso-api-staging.isaac-mendozasa.workers.dev/c/',
+    );
+  });
 });
