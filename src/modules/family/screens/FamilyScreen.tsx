@@ -16,6 +16,9 @@ const STATE_COLOR: Record<FollowItem['status']['state'], string> = {
   sin_noticias: colors.warn,
 };
 
+export const CREATE_CODE_WARNING =
+  'Para compartir hay que crear un código nuevo. Las personas que ya siguen tu casa dejarán de verla hasta que les mandes el código nuevo';
+
 export const REGENERATE_WARNING =
   'Las personas que siguen tu casa dejarán de verla hasta que les mandes el código nuevo';
 
@@ -87,7 +90,7 @@ function FollowRow({ item, now }: { item: FollowItem; now: number }) {
   );
 }
 
-type RegenState = 'idle' | 'confirming' | 'working';
+type RegenState = 'idle' | 'confirming' | 'confirming-share' | 'working';
 
 function ShareSection() {
   const [code, setCode] = useState<string | null>(null);
@@ -115,15 +118,27 @@ function ShareSection() {
     }
   };
 
-  // Sin código guardado (casa de antes de esta versión) no hay a quién quitar: el servidor nunca lo entregó a nadie.
-  const share = async () => {
-    const current = code ?? (await generate());
-    if (!current) return;
+  const shareCode = async (current: string) => {
     try {
       await Share.share({ message: shareMessage(current) });
     } catch {
       setError('No se pudo abrir el menú de compartir.');
     }
+  };
+
+  // Sin código guardado (casa de antes de esta versión, o `home_exists` al retomar el onboarding) puede haber
+  // seguidores: crear el código nuevo los saca, así que se confirma igual que al regenerar (D-041).
+  const share = async () => {
+    if (!code) {
+      setState('confirming-share');
+      return;
+    }
+    await shareCode(code);
+  };
+
+  const createAndShare = async () => {
+    const fresh = await generate();
+    if (fresh) await shareCode(fresh);
   };
 
   return (
@@ -147,6 +162,17 @@ function ShareSection() {
           <>
             <Text style={styles.warning}>{REGENERATE_WARNING}</Text>
             <Button label="Sí, regenerar" tone="danger" onPress={() => void generate()} />
+            <Button label="Cancelar" onPress={() => setState('idle')} />
+          </>
+        ) : null}
+        {state === 'confirming-share' ? (
+          <>
+            <Text style={styles.warning}>{CREATE_CODE_WARNING}</Text>
+            <Button
+              label="Sí, crear código y compartir"
+              tone="danger"
+              onPress={() => void createAndShare()}
+            />
             <Button label="Cancelar" onPress={() => setState('idle')} />
           </>
         ) : null}

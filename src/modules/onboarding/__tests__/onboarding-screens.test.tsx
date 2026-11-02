@@ -134,16 +134,14 @@ describe('permiso de notificaciones', () => {
       Object.defineProperty(Platform, 'Version', { value: original, configurable: true });
   }
 
-  // Esta versión no trae push ni seguir casas: el permiso lo usan D (si se activa) y los avisos que vienen después.
-  it('dice para qué sirve el permiso en esta versión, sin prometer avisos de casas seguidas', async () => {
+  it('dice para qué sirve el permiso: los avisos de las casas que sigues', async () => {
     mockRole = 'watch';
     await render(<Notifications />);
     expect(
       screen.getByText(
-        'Este permiso lo usa el servicio en primer plano, si lo activas en Ajustes. Los avisos de cuando se va y vuelve la luz llegan en la próxima actualización.',
+        'Este permiso sirve para avisarte cuando se va y vuelve la luz en las casas que sigues, y lo usa el servicio en primer plano si lo activas en Ajustes.',
       ),
     ).toBeOnTheScreen();
-    expect(screen.queryByText(/la casa que sigues/)).toBeNull();
   });
 
   it('en Android 13 pide el permiso y sigue a la batería si vigila', async () => {

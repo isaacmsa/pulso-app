@@ -109,7 +109,7 @@ it('compartir arma el mensaje con el enlace', async () => {
   );
 });
 
-it('sin código guardado, compartir lo pide al servidor y comparte el nuevo', async () => {
+it('sin código guardado, compartir pide confirmación antes de regenerar', async () => {
   const fetchSpy = jest
     .spyOn(globalThis, 'fetch')
     .mockImplementation(async (input) =>
@@ -119,12 +119,29 @@ it('sin código guardado, compartir lo pide al servidor y comparte el nuevo', as
     .spyOn(Share, 'share')
     .mockResolvedValue({ action: 'sharedAction', activityType: undefined });
   await open();
+  const posts = () => fetchSpy.mock.calls.filter(([i]) => (i as Request).method === 'POST');
   await fireEvent.press(await screen.findByLabelText('Compartir mi casa'));
+  expect(
+    screen.getByText(
+      'Para compartir hay que crear un código nuevo. Las personas que ya siguen tu casa dejarán de verla hasta que les mandes el código nuevo',
+    ),
+  ).toBeOnTheScreen();
+  expect(posts()).toHaveLength(0);
+  expect(share).not.toHaveBeenCalled();
+  await fireEvent.press(screen.getByLabelText('Sí, crear código y compartir'));
   await waitFor(() => expect(share).toHaveBeenCalled());
   expect(share.mock.calls[0]?.[0].message).toContain('/c/WXYZ2345');
-  expect(
-    fetchSpy.mock.calls.some(([i]) => (i as Request).url.endsWith('/v1/homes/me/share-code')),
-  ).toBe(true);
+  expect(posts()).toHaveLength(1);
+});
+
+it('sin código guardado, cancelar no regenera ni comparte', async () => {
+  const fetchSpy = jest.spyOn(globalThis, 'fetch').mockResolvedValue(json({ items: [] }));
+  const share = jest.spyOn(Share, 'share');
+  await open();
+  await fireEvent.press(await screen.findByLabelText('Compartir mi casa'));
+  await fireEvent.press(screen.getByLabelText('Cancelar'));
+  expect(share).not.toHaveBeenCalled();
+  expect(fetchSpy.mock.calls.every(([i]) => (i as Request).method === 'GET')).toBe(true);
 });
 
 it('regenerar pide confirmación y muestra el código nuevo', async () => {
