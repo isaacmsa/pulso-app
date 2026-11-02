@@ -1,5 +1,5 @@
 // Filtros de privacidad para Sentry (AGENTS.md regla 3, docs/security-privacy.md). Módulo puro: sin Sentry ni React.
-// Borra el token del dispositivo, el push token, el deviceId, la cabecera Authorization y el código de casa.
+// Borra el token del dispositivo, el push token, el deviceId, la cabecera Authorization, el código de casa y su alias.
 
 const REDACTED = '[borrado]';
 const MAX_DEPTH = 12;
@@ -18,9 +18,20 @@ export function scrubString(value: string): string {
     .replace(HOUSE_CODE, '$1[codigo]');
 }
 
+// Claves exactas (en minúsculas, sin guiones): el código de casa (`code`, `shareCode`) da acceso a seguirla, y el
+// alias suele ser un nombre de persona ("Casa de mamá").
+const SENSITIVE_KEYS = new Set([
+  'authorization',
+  'deviceid',
+  'cookie',
+  'code',
+  'sharecode',
+  'alias',
+]);
+
 function isSensitiveKey(key: string): boolean {
   const k = key.toLowerCase().replace(/[-_]/g, '');
-  return k.includes('token') || k === 'authorization' || k === 'deviceid' || k === 'cookie';
+  return k.includes('token') || SENSITIVE_KEYS.has(k);
 }
 
 function scrubValue(value: unknown, depth: number): unknown {

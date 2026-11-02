@@ -1,3 +1,5 @@
+import * as Sentry from '@sentry/react-native';
+
 import {
   ApiError,
   REQUEST_TIMEOUT_MS,
@@ -97,6 +99,30 @@ it('una respuesta fuera de contrato da invalid_response', async () => {
   const error = await unwrap(getHomeStatus()).catch((e: unknown) => e);
   expect(error).toBeInstanceOf(ApiError);
   expect(error).toMatchObject({ code: 'invalid_response' });
+});
+
+it('una respuesta fuera de contrato se reporta a Sentry sin los datos de la respuesta', async () => {
+  const capture = jest.mocked(Sentry.captureException);
+  capture.mockClear();
+  mockFetch(async () =>
+    json({ state: 'nuevo', since: 1, alias: 'Casa de mamá', openOutageStart: null }),
+  );
+  await unwrap(getHomeStatus()).catch(() => undefined);
+  expect(capture).toHaveBeenCalledTimes(1);
+  const reported = capture.mock.calls[0]?.[0] as Error;
+  expect(reported).toBeInstanceOf(Error);
+  expect(reported.name).toBe('ContractError');
+  expect(reported.message).toContain('state');
+  expect(reported.message).not.toContain('nuevo');
+  expect(reported.message).not.toContain('Casa de mamá');
+});
+
+it('un error que no es de contrato no se reporta a Sentry', async () => {
+  const capture = jest.mocked(Sentry.captureException);
+  capture.mockClear();
+  mockFetch(async () => json({ error: { code: 'not_found', message: 'x' } }, 404));
+  await unwrap(getHomeStatus()).catch(() => undefined);
+  expect(capture).not.toHaveBeenCalled();
 });
 
 it('sin red da network', async () => {

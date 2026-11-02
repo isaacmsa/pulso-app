@@ -15,4 +15,4 @@ jest.mock('expo-splash-screen', () => ({
 }));
 
 // Sentry trae módulos ESM que Jest no carga; en las pruebas es un mock (la app lo arranca desde app/_layout.tsx).
-jest.mock('@sentry/react-native', () => ({ init: jest.fn() }));
+jest.mock('@sentry/react-native', () => ({ init: jest.fn(), captureException: jest.fn() }));

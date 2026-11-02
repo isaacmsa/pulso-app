@@ -57,4 +57,21 @@ describe('scrub', () => {
     const crumb = scrubBreadcrumb({ category: 'navigation', data: { to: '/c/ABCD2345' } });
     expect((crumb.data as { to: string }).to).toBe('/c/[codigo]');
   });
+
+  it('borra el código de casa guardado como code', () => {
+    const event = scrubEvent({ extra: { code: 'ABCD2345', keep: 1 } });
+    expect(event.extra).toEqual({ code: '[borrado]', keep: 1 });
+  });
+
+  it('borra el código de casa guardado como shareCode o share_code', () => {
+    const event = scrubEvent({
+      extra: { shareCode: 'ABCD2345', nested: { share_code: 'WXYZ6789' } },
+    });
+    expect(event.extra).toEqual({ shareCode: '[borrado]', nested: { share_code: '[borrado]' } });
+  });
+
+  it('borra el alias de la casa', () => {
+    const event = scrubEvent({ contexts: { home: { alias: 'Casa de mamá', state: 'con_luz' } } });
+    expect(event.contexts?.home).toEqual({ alias: '[borrado]', state: 'con_luz' });
+  });
 });

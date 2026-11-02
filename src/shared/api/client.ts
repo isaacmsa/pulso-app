@@ -1,4 +1,7 @@
+import * as Sentry from '@sentry/react-native';
 import { ZodError } from 'zod';
+
+import { scrubString } from '../observability/scrub';
 
 import type { CreateClientConfig } from './generated/client.gen';
 import { zError } from './generated/zod.gen';
@@ -114,6 +117,27 @@ function classify(error: unknown, response: Response | undefined): ApiError {
   return new ApiError('unknown');
 }
 
+/**
+ * Una respuesta que no valida contra el contrato se reporta a Sentry (docs/architecture.md). El mensaje lleva solo la
+ * ruta pedida y las rutas y códigos de Zod, nunca los valores recibidos. Sin DSN, Sentry no hace nada.
+ */
+function reportContractError(error: unknown, response: Response | undefined): void {
+  if (!(error instanceof ZodError)) return;
+  let endpoint = '';
+  try {
+    if (response?.url) endpoint = ` en ${new URL(response.url).pathname}`;
+  } catch {
+    // URL ilegible: se reporta sin ruta.
+  }
+  const issues = error.issues
+    .slice(0, 10)
+    .map((issue) => `${issue.path.join('.') || '(raíz)'} (${issue.code})`)
+    .join(', ');
+  const contractError = new Error(scrubString(`Respuesta fuera de contrato${endpoint}: ${issues}`));
+  contractError.name = 'ContractError';
+  Sentry.captureException(contractError);
+}
+
 export type UnwrapOptions = {
   /**
    * Si un `invalid_token` de esta llamada se avisa al manejador (por defecto sí). `deleteDevice` lo apaga: un 401
@@ -133,11 +157,14 @@ export async function unwrap<T>(
   try {
     result = await call;
   } catch (error) {
-    throw classify(error, undefined);
+    const apiError = classify(error, undefined);
+    if (apiError.code === 'invalid_response') reportContractError(error, undefined);
+    throw apiError;
   }
   const { data, error, response } = result;
   if (error === undefined && response?.ok !== false) return data as T;
   const apiError = classify(error, response);
+  if (apiError.code === 'invalid_response') reportContractError(error, response);
   const sentToken = response ? sentTokens.get(response) : undefined;
   if (
     options.handleInvalidToken !== false &&

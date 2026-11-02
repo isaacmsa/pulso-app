@@ -90,7 +90,7 @@ class PowerWatchService : Service() {
     fun start(context: Context) {
       if (!shouldRun(Role.isFollowOnly(context))) return
       runCatching { context.startForegroundService(Intent(context, PowerWatchService::class.java)) }
-        .onFailure { Log.w(SnapshotRecorder.TAG, "no se pudo iniciar el servicio en primer plano", it) }
+        .onFailure { Log.w(SnapshotRecorder.TAG, "no se pudo iniciar el servicio en primer plano ${it.javaClass.simpleName}") }
     }
 
     fun stop(context: Context) {
