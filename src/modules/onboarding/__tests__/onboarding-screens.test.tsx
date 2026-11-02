@@ -67,10 +67,12 @@ describe('¿Este teléfono se queda en casa?', () => {
     expect(registerMock).toHaveBeenCalledWith('follow');
   });
 
-  it('Solo seguir avisa que seguir casas llega en la próxima actualización', async () => {
+  it('Solo seguir explica que después se escribe el código de la casa', async () => {
     await render(<RoleScreen />);
     expect(
-      await screen.findByText('Seguir casas llega en la próxima actualización.'),
+      await screen.findByText(
+        'Después escribes el código que te mandaron y ves esa casa en Familia.',
+      ),
     ).toBeOnTheScreen();
   });
 

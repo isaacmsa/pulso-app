@@ -98,6 +98,8 @@ export default function RootLayout() {
           <Stack.Screen name="(tabs)" />
           <Stack.Screen name="debug" />
           <Stack.Screen name="battery-guide" />
+          <Stack.Screen name="follow" />
+          <Stack.Screen name="c/[code]" />
         </Stack.Protected>
       </Stack>
     </PersistQueryClientProvider>

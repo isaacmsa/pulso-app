@@ -1,0 +1,21 @@
+// El alfabeto de los códigos de casa de la API: sin 0, 1, I, L ni O, para que no se confundan al dictarlos.
+const CODE_PATTERN = /^[2-9A-HJKMNP-Z]{8}$/;
+
+/** Dónde vive la página pública `/c/:code` (producción: lo que se manda por WhatsApp, D-030). */
+export const SHARE_BASE_URL = 'https://pulso-api.isaac-mendozasa.workers.dev';
+
+/** Las casas que se pueden seguir a la vez (el servidor rechaza la 21 con `validation_failed`). */
+export const MAX_FOLLOWS = 20;
+
+/** Lo que escribe la persona, listo para validar: mayúsculas y sin espacios ni guiones. */
+export function normalizeCode(input: string): string {
+  return input.replace(/[\s-]/g, '').toUpperCase();
+}
+
+export function isValidCode(code: string): boolean {
+  return CODE_PATTERN.test(code);
+}
+
+export function shareMessage(code: string): string {
+  return `Sigue la luz de mi casa en Pulso: ${SHARE_BASE_URL}/c/${code}`;
+}

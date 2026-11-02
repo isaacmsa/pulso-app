@@ -1,6 +1,7 @@
 import { ApiError, unwrap } from '../../shared/api/client';
 import { deleteDevice } from '../../shared/api/generated';
 import { clearQueryCache } from '../../shared/query/client';
+import { clearShareCode } from '../family/share-code';
 import { notifyStartupChanged } from '../onboarding/startup';
 import { getToken, wipe } from '../power-detection/power-monitor';
 import { clearUpsMode } from './ups-mode';
@@ -47,6 +48,7 @@ export async function deleteMyData(): Promise<void> {
     // La caché primero: si la app muere entre los dos pasos, no queda el historial de esta casa en el disco.
     await clearQueryCache();
     await clearUpsMode();
+    await clearShareCode();
     await wipe();
   } catch {
     throw new WipeError();

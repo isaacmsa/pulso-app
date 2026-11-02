@@ -1,5 +1,6 @@
 import { ApiError } from '../../../shared/api/client';
 import { createHome, registerDevice } from '../../../shared/api/generated';
+import { readShareCode } from '../../family/share-code';
 import * as native from '../../power-detection/power-monitor';
 import { register } from '../register';
 
@@ -83,6 +84,11 @@ it('vigilar: guarda el token, avisa a la subida, arma, crea la casa y pide subir
   expect(createHomeMock).toHaveBeenCalledTimes(1);
   expect(mocked.requestUpload).toHaveBeenCalledTimes(1);
   expect(mocked.setRole).toHaveBeenCalledWith('watch');
+});
+
+it('vigilar guarda el código de la casa para poder compartirlo', async () => {
+  await register('watch');
+  expect(await readShareCode()).toBe('ABCDEFGH');
 });
 
 it('home_exists cuenta como éxito', async () => {

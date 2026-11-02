@@ -15,7 +15,26 @@
       },
       "predictiveBackGestureEnabled": true,
       "package": "com.isaacmendoza.pulso",
-      "allowBackup": false
+      "allowBackup": false,
+      "intentFilters": [
+        {
+          "action": "VIEW",
+          "autoVerify": true,
+          "data": [
+            {
+              "scheme": "https",
+              "host": "pulso-api.isaac-mendozasa.workers.dev",
+              "pathPrefix": "/c/"
+            },
+            {
+              "scheme": "https",
+              "host": "pulso-api-staging.isaac-mendozasa.workers.dev",
+              "pathPrefix": "/c/"
+            }
+          ],
+          "category": ["BROWSABLE", "DEFAULT"]
+        }
+      ]
     },
     "plugins": [
       "expo-router",

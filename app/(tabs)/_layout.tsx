@@ -20,6 +20,7 @@ export default function TabsLayout() {
     >
       <Tabs.Screen name="index" options={{ title: 'Estado', tabBarIcon: icon('flash') }} />
       <Tabs.Screen name="history" options={{ title: 'Historial', tabBarIcon: icon('bar-chart') }} />
+      <Tabs.Screen name="family" options={{ title: 'Familia', tabBarIcon: icon('people') }} />
       <Tabs.Screen name="settings" options={{ title: 'Ajustes', tabBarIcon: icon('settings') }} />
     </Tabs>
   );

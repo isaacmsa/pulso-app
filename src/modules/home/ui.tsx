@@ -75,15 +75,15 @@ export function ErrorBlock({ message, onRetry }: { message: string; onRetry: () 
   );
 }
 
-/** Lo que ven Estado e Historial en un teléfono que no vigila ninguna casa (la fase 3 pone aquí las casas que sigue). */
+/** Lo que ven Estado e Historial en un teléfono que no vigila ninguna casa: sus casas están en Familia (D-040). */
 export function FollowOnlyPlaceholder() {
   return (
     <TabScreen title="Pulso">
       <Card>
         <Text style={styles.placeholderTitle}>Este teléfono solo sigue casas</Text>
         <Text style={styles.muted}>
-          Seguir casas llega en la próxima actualización. Si este teléfono se queda en casa, puedes
-          vigilarla desde Ajustes.
+          Las casas que sigues están en la pestaña Familia. Si este teléfono se queda en casa,
+          puedes vigilarla desde Ajustes.
         </Text>
       </Card>
     </TabScreen>

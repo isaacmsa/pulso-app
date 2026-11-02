@@ -80,7 +80,9 @@ export default function ChooseRole() {
         onPress={() => choose('follow')}
         disabled={busy}
       />
-      <Message tone="muted">Seguir casas llega en la próxima actualización.</Message>
+      <Message tone="muted">
+        Después escribes el código que te mandaron y ves esa casa en Familia.
+      </Message>
       {busy ? <Message tone="muted">Registrando este teléfono…</Message> : null}
       {error ? <Message tone="error">{error}</Message> : null}
     </OnboardingScreen>

@@ -1,5 +1,6 @@
 import AsyncStorage from '@react-native-async-storage/async-storage';
 import { setInvalidTokenHandler, setTokenProvider } from '../../../shared/api/client';
+import { readShareCode, saveShareCode } from '../../family/share-code';
 import * as native from '../../power-detection/power-monitor';
 import { deleteMyData } from '../delete-data';
 
@@ -46,6 +47,16 @@ it('borrar mis datos limpia el modo UPS recordado', async () => {
   jest.spyOn(globalThis, 'fetch').mockResolvedValue(new Response(null, { status: 204 }));
   await deleteMyData();
   expect(await AsyncStorage.getItem('pulso-router-ups')).toBeNull();
+});
+
+it('borrar mis datos olvida el código de la casa', async () => {
+  setTokenProvider(async () => 'tok');
+  mocked.getToken.mockResolvedValue('tok');
+  mocked.wipe.mockResolvedValue(undefined);
+  await saveShareCode('ABCD2345');
+  jest.spyOn(globalThis, 'fetch').mockResolvedValue(new Response(null, { status: 204 }));
+  await deleteMyData();
+  expect(await readShareCode()).toBeNull();
 });
 
 it('si AsyncStorage falla al limpiar el modo UPS, el wipe nativo igual corre', async () => {

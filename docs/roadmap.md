@@ -100,7 +100,7 @@ Objetivo: tener datos reales de cortes desde la primera semana y un clasificador
 - [x] [app] Registro del push token y canal `cortes` (expo-notifications) (1 h)
 - [ ] [app] Credenciales FCM V1 en EAS (corte C5)
 - [x] [app] Confirmación con botones Sí y No que guarda un evento `confirmation` (1 h)
-- [ ] [app] Familia: compartir el enlace por WhatsApp, seguir con código, casas que sigo, dejar de seguir, regenerar código (2,5 h)
+- [x] [app] Familia: compartir el enlace por WhatsApp, seguir con código, casas que sigo, dejar de seguir, regenerar código (2,5 h)
 - [ ] [app] Actualización 1 publicada en la pista cerrada y anunciada a los testers (1 h)
 
 **Lista cuando:** un corte simulado en el Xiaomi llega como push a un segundo Android que sigue la casa (de la familia, o el emulador de Android Studio con Google Play), y `/c/:code` muestra "Se fue la luz a las…".

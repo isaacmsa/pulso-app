@@ -1,6 +1,7 @@
 import Constants from 'expo-constants';
 import { ApiError, resolveApiUrl, unwrap } from '../../shared/api/client';
 import { createHome, registerDevice } from '../../shared/api/generated';
+import { saveShareCode } from '../family/share-code';
 import {
   arm,
   configureApi,
@@ -97,7 +98,9 @@ async function ensureRegistered(): Promise<string> {
 async function createHomeIfMissing(): Promise<void> {
   try {
     // `register` ya maneja el 401 (marca el token y registra de nuevo), así que el aviso global sobra.
-    await unwrap(createHome({ body: {} }), { handleInvalidToken: false });
+    const home = await unwrap(createHome({ body: {} }), { handleInvalidToken: false });
+    // El servidor solo entrega el código aquí y al regenerarlo: se recuerda para poder compartirlo (Familia).
+    await saveShareCode(home.shareCode);
   } catch (error) {
     if (!(error instanceof ApiError && error.code === 'home_exists')) throw error;
   }
