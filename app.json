@@ -57,7 +57,7 @@
         }
       ],
       "expo-splash-screen",
-      "@sentry/react-native/expo"
+      ["@sentry/react-native/expo", { "disableAutoUpload": true }]
     ],
     "scheme": "pulso",
     "platforms": ["android"]
