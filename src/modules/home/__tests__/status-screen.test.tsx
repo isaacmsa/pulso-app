@@ -252,9 +252,9 @@ describe('aviso de detección en riesgo', () => {
     expect(await screen.findByText(RISK_TEXT)).toBeOnTheScreen();
   });
 
-  it('Xiaomi sin exención muestra el aviso', async () => {
+  it('Samsung sin exención muestra el aviso', async () => {
     idle();
-    mocked.readDiagnostics.mockResolvedValue({ ...HEALTHY, manufacturer: 'Xiaomi' });
+    mocked.readDiagnostics.mockResolvedValue({ ...HEALTHY, manufacturer: 'Samsung' });
     await renderWithQuery(<Status />);
     expect(await screen.findByText(RISK_TEXT)).toBeOnTheScreen();
   });

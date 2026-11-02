@@ -1,4 +1,4 @@
-import { isRiskManufacturer } from '../onboarding/battery-guide';
+import { isRiskManufacturer, isXiaomiFamily } from '../onboarding/battery-guide';
 import type { NativeDiagnostics } from '../power-detection/native-schema';
 
 /** Ruta de la guía de batería para teléfonos con sesión (las de `onboarding/*` solo existen en el onboarding). */
@@ -29,7 +29,13 @@ export function detectionRisk(
     if (diagnostics.standbyBucket !== null && diagnostics.standbyBucket >= RARE_BUCKET) {
       return 'standby_bucket';
     }
-    if (!diagnostics.ignoringBatteryOptimizations && isRiskManufacturer(diagnostics.manufacturer)) {
+    // En MIUI «Sin restricciones» deja `isIgnoringBatteryOptimizations` en false (medido, docs/detection.md):
+    // ahí ese campo no dice nada y solo cuentan el bucket y el latido.
+    if (
+      !diagnostics.ignoringBatteryOptimizations &&
+      isRiskManufacturer(diagnostics.manufacturer) &&
+      !isXiaomiFamily(diagnostics.manufacturer)
+    ) {
       return 'battery_optimization';
     }
   }

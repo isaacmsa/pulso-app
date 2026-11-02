@@ -36,14 +36,11 @@ describe('detectionRisk', () => {
     expect(detectionRisk(ok, null, NOW)).toBeNull();
   });
 
-  it.each(['Xiaomi', 'REDMI', 'poco', 'Samsung', 'TECNO', 'Infinix'])(
-    '%s sin exención es riesgo',
-    (manufacturer) => {
-      expect(
-        detectionRisk({ ...ok, manufacturer, ignoringBatteryOptimizations: false }, NOW, NOW),
-      ).toBe('battery_optimization');
-    },
-  );
+  it.each(['Samsung', 'TECNO', 'Infinix'])('%s sin exención es riesgo', (manufacturer) => {
+    expect(
+      detectionRisk({ ...ok, manufacturer, ignoringBatteryOptimizations: false }, NOW, NOW),
+    ).toBe('battery_optimization');
+  });
 
   it('un fabricante fuera de la lista sin exención no es riesgo', () => {
     expect(
@@ -53,6 +50,23 @@ describe('detectionRisk', () => {
         NOW,
       ),
     ).toBeNull();
+  });
+
+  // docs/detection.md: con «Sin restricciones» de MIUI, Android sigue diciendo
+  // isIgnoringBatteryOptimizations: false. En Xiaomi solo cuentan el bucket y el latido.
+  it.each(['Xiaomi', 'REDMI', 'poco'])(
+    '%s con Sin restricciones no muestra el aviso',
+    (manufacturer) => {
+      expect(
+        detectionRisk({ ...ok, manufacturer, ignoringBatteryOptimizations: false }, NOW, NOW),
+      ).toBeNull();
+    },
+  );
+
+  it('Xiaomi sin exención igual avisa por bucket o latido viejo', () => {
+    const xiaomi = { ...ok, manufacturer: 'Xiaomi', ignoringBatteryOptimizations: false };
+    expect(detectionRisk({ ...xiaomi, standbyBucket: 40 }, NOW, NOW)).toBe('standby_bucket');
+    expect(detectionRisk(xiaomi, NOW - 41 * MIN, NOW)).toBe('stale_heartbeat');
   });
 
   it('Xiaomi con exención no es riesgo', () => {

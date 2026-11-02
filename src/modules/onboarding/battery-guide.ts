@@ -56,6 +56,11 @@ export function isRiskManufacturer(manufacturer: string): boolean {
   return RISK_MANUFACTURERS.has(manufacturer.trim().toLowerCase());
 }
 
+/** Xiaomi, Redmi y Poco: su «Sin restricciones» no es la exención de Doze de Android (docs/detection.md). */
+export function isXiaomiFamily(manufacturer: string): boolean {
+  return XIAOMI_FAMILY.has(manufacturer.trim().toLowerCase());
+}
+
 /**
  * Los pasos para que el teléfono no cierre Pulso en segundo plano, según el fabricante (`Build.MANUFACTURER`).
  * Los textos salen de `docs/registrador.md`. Tecno, Infinix y cualquier otro usan la guía genérica.
