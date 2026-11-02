@@ -10,7 +10,7 @@ class HeartbeatWorker(context: Context, params: WorkerParameters) : Worker(conte
     // Un latido que ya estaba programado cuando el teléfono pasó a "follow" no hace nada.
     if (Role.isFollowOnly(applicationContext)) return Result.success()
     SnapshotRecorder.record(applicationContext, "heartbeat")
-    UploadWorker.enqueue(applicationContext)
+    UploadWorker.enqueue(applicationContext, jitter = false)
     return Result.success()
   }
 }

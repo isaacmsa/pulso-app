@@ -34,7 +34,7 @@ class PowerMonitorModule : Module() {
       val report = Report(UuidV7.generate(now), now, value)
       val json = EventJson.report(report)
       EventStore.get(context).insert(report.id, report.at, "report", json)
-      UploadWorker.enqueue(context)
+      UploadWorker.enqueue(context, jitter = false)
       json
     }
 
@@ -45,7 +45,7 @@ class PowerMonitorModule : Module() {
       val confirmation = Confirmation.create(outageStart.toLong(), answer, System.currentTimeMillis())
       val json = EventJson.confirmation(confirmation)
       EventStore.get(context).insert(confirmation.id, confirmation.at, "confirmation", json)
-      UploadWorker.enqueue(context)
+      UploadWorker.enqueue(context, jitter = false)
       json
     }
 
@@ -133,7 +133,8 @@ class PowerMonitorModule : Module() {
 
     // Sube ya lo que haya pendiente, sin esperar al próximo latido. No hace nada en un teléfono "follow".
     AsyncFunction("requestUpload") {
-      UploadWorker.enqueue(context)
+      UploadWorker.enqueue(context, jitter = false)
+      Unit
     }
 
     // Abre la pantalla del fabricante para "Inicio automático" ("autostart") o la batería ("battery").

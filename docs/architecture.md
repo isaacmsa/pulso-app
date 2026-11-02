@@ -58,7 +58,8 @@ Teléfono de la casa (Kotlin, sin depender de JS)
         │  solo cambios de estado; el latido sube aunque no haya cambios
         ▼
   UploadWorker (WorkManager, requiere red, backoff; una sola subida pendiente;
-        │  espera 0 a 60 s al azar al arrancar, ya con red, no al encolar)
+        │  espera 0 a 60 s al azar al arrancar, ya con red, solo tras la vuelta
+        │  del Wi-Fi, el arranque o un arranque atrasado por falta de red)
         │  POST /v1/events  ·  Bearer token
         ▼
 pulso-api: valida, corrige el desfase, guarda idempotente, clasifica, decide el push

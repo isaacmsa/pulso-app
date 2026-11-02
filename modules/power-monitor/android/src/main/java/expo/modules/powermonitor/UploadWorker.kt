@@ -1,7 +1,10 @@
 package expo.modules.powermonitor
 
 import android.content.Context
+import android.content.pm.ApplicationInfo
+import android.os.Looper
 import android.util.Log
+import androidx.annotation.WorkerThread
 import androidx.work.BackoffPolicy
 import androidx.work.Constraints
 import androidx.work.ExistingWorkPolicy
@@ -151,6 +154,23 @@ sealed interface WorkDecision {
   data class RescheduleAfter(val delayMs: Long) : WorkDecision
 }
 
+/** Qué dejó una llamada a encolar. */
+enum class EnqueueResult {
+  Enqueued,
+
+  /** Ya había una subida ENQUEUED o BLOCKED: esa sube todo lo pendiente. */
+  AlreadyPending,
+
+  /** Teléfono que solo sigue casas: no sube nada. */
+  FollowOnly,
+
+  /** WorkManager lanzó al encolar: la subida no quedó escrita. */
+  Failed,
+}
+
+/** Qué hacer si `enqueue` se llama en el hilo principal, donde sus lecturas bloqueantes congelarían la pantalla. */
+enum class ThreadGuard { Ok, Throw, Wtf }
+
 /** Qué hace una corrida al arrancar, ya con red. */
 sealed interface StartDecision {
   data object Upload : StartDecision
@@ -175,23 +195,63 @@ object UploadPolicy {
   const val ENQUEUE_DELAY_MS = 0L
 
   /**
-   * La primera corrida de una subida encolada (`waited` falso, primer intento) se reprograma con 0 a 60 s al azar.
-   * La reprogramada sube. Un reintento con backoff tampoco espera de nuevo: el backoff ya lo separa.
+   * Una corrida que arrancó más de esto después de lo previsto estuvo esperando la red: sale justo cuando vuelve, con
+   * el resto de la zona, y por eso también espera al azar aunque la haya encolado el latido.
    */
-  fun startDecision(waited: Boolean, runAttemptCount: Int, random: Random = Random.Default): StartDecision =
-    if (waited || runAttemptCount > 0) {
+  const val LATE_START_MS = 60_000L
+
+  /** Tope para cada consulta bloqueante a WorkManager dentro de `enqueue`. */
+  const val WORK_MANAGER_TIMEOUT_MS = 2_000L
+
+  /**
+   * Solo la vuelta del Wi-Fi (mecanismo A) y el arranque del teléfono esperan al azar: son los que llegan a la vez en
+   * toda una zona cuando vuelve la luz. El latido, los cambios de estado, los reportes, las confirmaciones y
+   * `requestUpload` suben ya.
+   */
+  fun jitterFor(source: String): Boolean = source == "network_callback" || source == "boot"
+
+  /**
+   * La primera corrida de una subida que pidió espera (`waited` falso, primer intento) se reprograma con 0 a 60 s al
+   * azar. También la de una que arrancó más de `LATE_START_MS` tarde (`lateByMs`), porque quedó esperando la red. La
+   * reprogramada sube. Un reintento con backoff tampoco espera de nuevo: el backoff ya lo separa.
+   */
+  fun startDecision(
+    waited: Boolean,
+    runAttemptCount: Int,
+    lateByMs: Long = 0,
+    random: Random = Random.Default,
+  ): StartDecision =
+    if (runAttemptCount > 0 || (waited && lateByMs <= LATE_START_MS)) {
       StartDecision.Upload
     } else {
       StartDecision.WaitFirst(random.nextLong(0, MAX_JITTER_MS + 1))
     }
+
+  /** Si la reprogramada no quedó escrita, esta corrida reintenta: con success la subida se perdería. */
+  fun afterWaitFirst(result: EnqueueResult): WorkDecision =
+    if (result == EnqueueResult.Failed) WorkDecision.Retry else WorkDecision.Success
+
+  /** Lee la cadena; null si falló o pasó el tope. Sin poder leerla, mejor una subida de más que ninguna. */
+  fun chainStatesOrNull(read: () -> List<WorkInfo.State>): List<WorkInfo.State>? =
+    try {
+      read()
+    } catch (_: Exception) {
+      null
+    }
+
+  fun threadGuard(onMainThread: Boolean, debuggable: Boolean): ThreadGuard = when {
+    !onMainThread -> ThreadGuard.Ok
+    debuggable -> ThreadGuard.Throw
+    else -> ThreadGuard.Wtf
+  }
 
   /**
    * Con una subida ENQUEUED o BLOCKED en la cadena no se encola otra: esa ya sube todo lo pendiente cuando corra,
    * y sin red la cadena no crece con cada latido. Con una RUNNING sola se encadena una más, porque la que corre
    * pudo leer los pendientes antes del evento nuevo. Las terminadas no cuentan.
    */
-  fun shouldEnqueue(states: List<WorkInfo.State>): Boolean =
-    states.none { it == WorkInfo.State.ENQUEUED || it == WorkInfo.State.BLOCKED }
+  fun shouldEnqueue(states: List<WorkInfo.State>?): Boolean =
+    states == null || states.none { it == WorkInfo.State.ENQUEUED || it == WorkInfo.State.BLOCKED }
 
   fun initialDelayMs(baseMs: Long, random: Random = Random.Default): Long =
     baseMs + random.nextLong(0, MAX_JITTER_MS + 1)
@@ -218,12 +278,18 @@ class UploadWorker(context: Context, params: WorkerParameters) : Worker(context,
     val context = applicationContext
     // Un teléfono que pasó a "follow" con una subida ya encolada: termina sin subir ni encadenar otra.
     if (Role.isFollowOnly(context)) return Result.success()
-    val start = UploadPolicy.startDecision(inputData.getBoolean(KEY_WAITED, false), runAttemptCount)
+    // Sin KEY_DUE_AT (una subida encolada por una versión anterior) no se considera atrasada.
+    val dueAt = inputData.getLong(KEY_DUE_AT, Long.MAX_VALUE)
+    val lateByMs = if (dueAt == Long.MAX_VALUE) 0L else System.currentTimeMillis() - dueAt
+    val start = UploadPolicy.startDecision(inputData.getBoolean(KEY_WAITED, false), runAttemptCount, lateByMs)
     if (start is StartDecision.WaitFirst) {
       // Va detrás de esta corrida (RUNNING), así que su retraso cuenta desde ahora, con red.
-      enqueueIfNone(context, waited = true, delayMs = start.delayMs)
-      Log.i(SnapshotRecorder.TAG, "subida: espera ${start.delayMs} ms antes de subir")
-      return Result.success()
+      val result = enqueueIfNone(context, waited = true, delayMs = start.delayMs)
+      Log.i(SnapshotRecorder.TAG, "subida: espera ${start.delayMs} ms antes de subir ($result)")
+      return when (UploadPolicy.afterWaitFirst(result)) {
+        WorkDecision.Retry -> Result.retry()
+        else -> Result.success()
+      }
     }
     val outcome = try {
       val config = ApiConfig.read(context) ?: return Result.success()
@@ -255,58 +321,91 @@ class UploadWorker(context: Context, params: WorkerParameters) : Worker(context,
         // de la cadena: cada corrida sube todo lo pendiente, así que las encoladas detrás sobran. Ya esperó: no vuelve
         // a reprogramarse al arrancar.
         val delayMs = UploadPolicy.initialDelayMs(decision.delayMs)
-        synchronized(enqueueLock) {
+        val result = synchronized(enqueueLock) {
           schedule(context, ExistingWorkPolicy.REPLACE, waited = true, delayMs = delayMs)
         }
-        Result.success()
+        if (result == EnqueueResult.Failed) Result.retry() else Result.success()
       }
     }
   }
 
   companion object {
     const val UNIQUE_NAME = "upload"
+    /** true: sube sin la espera al azar (salvo que arranque tarde). El nombre viene de la versión anterior. */
     private const val KEY_WAITED = "waited"
+
+    /** Epoch ms en que la subida debía correr: encolada + retraso inicial. */
+    private const val KEY_DUE_AT = "dueAt"
     private val enqueueLock = Any()
 
     /**
      * Pide una subida con red requerida. Si ya hay una esperando no hace nada; si una está corriendo, encadena una
-     * detrás. La espera de 0 a 60 s la hace la primera corrida, ya con red (`UploadPolicy.startDecision`).
+     * detrás. Con `jitter` (solo la vuelta del Wi-Fi y el arranque, `UploadPolicy.jitterFor`), la primera corrida, ya
+     * con red, espera de 0 a 60 s (`UploadPolicy.startDecision`). Bloquea hasta 2 s por consulta a WorkManager: nunca
+     * en el hilo principal.
      */
-    fun enqueue(context: Context) = enqueueIfNone(context, waited = false, delayMs = UploadPolicy.ENQUEUE_DELAY_MS)
+    @WorkerThread
+    fun enqueue(context: Context, jitter: Boolean): EnqueueResult {
+      guardWorkerThread(context)
+      return enqueueIfNone(context, waited = !jitter, delayMs = UploadPolicy.ENQUEUE_DELAY_MS)
+    }
 
-    /**
-     * Mira la cadena y encola bajo un candado del proceso, para que dos llamadas a la vez no encadenen dos. Bloquea
-     * unos milisegundos con dos consultas a la base de WorkManager, como ya lo hace el snapshot con la suya.
-     */
-    private fun enqueueIfNone(context: Context, waited: Boolean, delayMs: Long) {
-      if (Role.isFollowOnly(context)) return
-      synchronized(enqueueLock) {
-        val states = try {
-          WorkManager.getInstance(context).getWorkInfosForUniqueWork(UNIQUE_NAME).get().map { it.state }
-        } catch (e: Exception) {
-          // Sin poder leer la cadena, mejor una subida de más que ninguna.
-          Log.w(SnapshotRecorder.TAG, "subida: no se leyó la cadena ${e.javaClass.simpleName}")
-          emptyList()
-        }
-        if (!UploadPolicy.shouldEnqueue(states)) return
-        schedule(context, ExistingWorkPolicy.APPEND_OR_REPLACE, waited, delayMs)
+    private fun guardWorkerThread(context: Context) {
+      val debuggable = context.applicationInfo.flags and ApplicationInfo.FLAG_DEBUGGABLE != 0
+      when (UploadPolicy.threadGuard(Looper.myLooper() == Looper.getMainLooper(), debuggable)) {
+        ThreadGuard.Ok -> Unit
+        ThreadGuard.Throw -> check(false) { "UploadWorker.enqueue en el hilo principal" }
+        ThreadGuard.Wtf -> Log.wtf(SnapshotRecorder.TAG, "subida: enqueue en el hilo principal")
       }
     }
 
-    private fun schedule(context: Context, policy: ExistingWorkPolicy, waited: Boolean, delayMs: Long) {
+    /**
+     * Mira la cadena y encola bajo un candado del proceso, para que dos llamadas a la vez no encadenen dos. Cada
+     * consulta a la base de WorkManager espera como máximo `WORK_MANAGER_TIMEOUT_MS`: si leer la cadena se pasa, se
+     * encola igual (una subida de más, nunca ninguna).
+     */
+    @WorkerThread
+    private fun enqueueIfNone(context: Context, waited: Boolean, delayMs: Long): EnqueueResult {
+      if (Role.isFollowOnly(context)) return EnqueueResult.FollowOnly
+      synchronized(enqueueLock) {
+        val states = UploadPolicy.chainStatesOrNull {
+          WorkManager.getInstance(context).getWorkInfosForUniqueWork(UNIQUE_NAME)
+            .get(UploadPolicy.WORK_MANAGER_TIMEOUT_MS, TimeUnit.MILLISECONDS)
+            .map { it.state }
+        }
+        if (states == null) Log.w(SnapshotRecorder.TAG, "subida: no se leyó la cadena, se encola igual")
+        if (!UploadPolicy.shouldEnqueue(states)) return EnqueueResult.AlreadyPending
+        return schedule(context, ExistingWorkPolicy.APPEND_OR_REPLACE, waited, delayMs)
+      }
+    }
+
+    @WorkerThread
+    private fun schedule(context: Context, policy: ExistingWorkPolicy, waited: Boolean, delayMs: Long): EnqueueResult {
       // Un teléfono que solo sigue una casa no sube nada, ni siquiera la continuación de una cadena vieja.
-      if (Role.isFollowOnly(context)) return
+      if (Role.isFollowOnly(context)) return EnqueueResult.FollowOnly
       val request = OneTimeWorkRequestBuilder<UploadWorker>()
         .setConstraints(Constraints.Builder().setRequiredNetworkType(NetworkType.CONNECTED).build())
         .setBackoffCriteria(BackoffPolicy.EXPONENTIAL, UploadPolicy.BACKOFF_S, TimeUnit.SECONDS)
         .setInitialDelay(delayMs, TimeUnit.MILLISECONDS)
-        .setInputData(workDataOf(KEY_WAITED to waited))
+        .setInputData(workDataOf(KEY_WAITED to waited, KEY_DUE_AT to System.currentTimeMillis() + delayMs))
         .build()
-      try {
-        // Esperar el resultado deja la cadena escrita antes de soltar el candado.
-        WorkManager.getInstance(context).enqueueUniqueWork(UNIQUE_NAME, policy, request).result.get()
+      val operation = try {
+        WorkManager.getInstance(context).enqueueUniqueWork(UNIQUE_NAME, policy, request)
       } catch (e: Exception) {
         Log.w(SnapshotRecorder.TAG, "subida: no se encoló ${e.javaClass.simpleName}")
+        return EnqueueResult.Failed
+      }
+      // Esperar el resultado deja la cadena escrita antes de soltar el candado. Si pasa el tope, la operación ya quedó
+      // en la cola de WorkManager y se escribe igual: no se pierde.
+      return try {
+        operation.result.get(UploadPolicy.WORK_MANAGER_TIMEOUT_MS, TimeUnit.MILLISECONDS)
+        EnqueueResult.Enqueued
+      } catch (_: java.util.concurrent.TimeoutException) {
+        Log.w(SnapshotRecorder.TAG, "subida: encolar pasó de 2 s, sigue en la cola de WorkManager")
+        EnqueueResult.Enqueued
+      } catch (e: Exception) {
+        Log.w(SnapshotRecorder.TAG, "subida: no se encoló ${e.javaClass.simpleName}")
+        EnqueueResult.Failed
       }
     }
   }

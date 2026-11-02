@@ -21,7 +21,7 @@ object SnapshotRecorder {
     // Un snapshot que ya estaba en curso al pasar a "follow" no vuelve a armar nada.
     val follow = Role.isFollowOnly(context)
     if (!follow && shouldScheduleTransitionCheck(prev?.plugged, snapshot.plugged)) scheduleTransitionCheck(context)
-    if (shouldEnqueueUpload(source, prev, SnapshotState.of(snapshot))) UploadWorker.enqueue(context)
+    if (shouldEnqueueUpload(source, prev, SnapshotState.of(snapshot))) UploadWorker.enqueue(context, jitter = UploadPolicy.jitterFor(source))
     if (!follow && NetworkWatch.shouldArmForWifiReturn(snapshot.onWifi)) NetworkWatch.armForWifiReturn(context)
     return snapshot
   }

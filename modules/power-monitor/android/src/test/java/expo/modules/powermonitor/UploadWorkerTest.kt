@@ -10,6 +10,7 @@ import org.junit.Test
 import java.io.ByteArrayInputStream
 import java.io.IOException
 import java.net.SocketTimeoutException
+import java.util.concurrent.TimeoutException
 import kotlin.random.Random
 
 /** EventStore en memoria: mismo orden (at, id) y misma regla de "último snapshot subido". */
@@ -432,5 +433,75 @@ class UploadWorkerTest {
     assertTrue(http.sent[1].ids.isEmpty())
     assertEquals(setOf(reportEvent(1).id), store.rejected)
     assertEquals(1, statuses.size)
+  }
+
+  @Test
+  fun `un latido no agrega una espera`() {
+    // El latido, los cambios de estado y lo que pide la pantalla (reporte, confirmación, requestUpload) suben ya.
+    for (source in listOf("heartbeat", "power_receiver", "charging_job", "transition_check", "app_open")) {
+      assertFalse(source, UploadPolicy.jitterFor(source))
+    }
+    val waited = !UploadPolicy.jitterFor("heartbeat")
+    assertEquals(StartDecision.Upload, UploadPolicy.startDecision(waited = waited, runAttemptCount = 0))
+    // Unos segundos tarde por el planificador no es "esperó la red".
+    assertEquals(
+      StartDecision.Upload,
+      UploadPolicy.startDecision(waited = true, runAttemptCount = 0, lateByMs = UploadPolicy.LATE_START_MS),
+    )
+  }
+
+  @Test
+  fun `la vuelta del Wi-Fi sí espera 0–60 s`() {
+    assertTrue(UploadPolicy.jitterFor("network_callback"))
+    assertTrue(UploadPolicy.jitterFor("boot"))
+    val random = Random(7)
+    repeat(200) {
+      val decision = UploadPolicy.startDecision(
+        waited = !UploadPolicy.jitterFor("network_callback"),
+        runAttemptCount = 0,
+        random = random,
+      )
+      assertTrue((decision as StartDecision.WaitFirst).delayMs in 0L..UploadPolicy.MAX_JITTER_MS)
+    }
+  }
+
+  @Test
+  fun `un latido que quedó esperando la red espera 0–60 s al arrancar`() {
+    // Sin red durante el corte, el latido deja su subida ENQUEUED y la vuelta del Wi-Fi no encola otra: esa subida
+    // es la que sale cuando vuelve la red, junto con toda la zona, así que tiene que esperar.
+    val decision = UploadPolicy.startDecision(
+      waited = true,
+      runAttemptCount = 0,
+      lateByMs = UploadPolicy.LATE_START_MS + 1,
+      random = Random(1),
+    )
+    assertTrue(decision is StartDecision.WaitFirst)
+    // Un reintento con backoff no vuelve a esperar.
+    assertEquals(StartDecision.Upload, UploadPolicy.startDecision(waited = true, runAttemptCount = 1, lateByMs = 600_000))
+  }
+
+  @Test
+  fun `si leer la cadena se pasa de 2 s, se encola igual`() {
+    assertEquals(2_000L, UploadPolicy.WORK_MANAGER_TIMEOUT_MS)
+    val states = UploadPolicy.chainStatesOrNull { throw TimeoutException() }
+    assertNull(states)
+    assertTrue(UploadPolicy.shouldEnqueue(states))
+    val pending = UploadPolicy.chainStatesOrNull { listOf(WorkInfo.State.ENQUEUED) }
+    assertFalse(UploadPolicy.shouldEnqueue(pending))
+  }
+
+  @Test
+  fun `encolar en el hilo principal falla fuerte`() {
+    assertEquals(ThreadGuard.Ok, UploadPolicy.threadGuard(onMainThread = false, debuggable = true))
+    assertEquals(ThreadGuard.Throw, UploadPolicy.threadGuard(onMainThread = true, debuggable = true))
+    assertEquals(ThreadGuard.Wtf, UploadPolicy.threadGuard(onMainThread = true, debuggable = false))
+  }
+
+  @Test
+  fun `si no se pudo reprogramar la espera, la corrida reintenta`() {
+    assertEquals(WorkDecision.Retry, UploadPolicy.afterWaitFirst(EnqueueResult.Failed))
+    assertEquals(WorkDecision.Success, UploadPolicy.afterWaitFirst(EnqueueResult.Enqueued))
+    assertEquals(WorkDecision.Success, UploadPolicy.afterWaitFirst(EnqueueResult.AlreadyPending))
+    assertEquals(WorkDecision.Success, UploadPolicy.afterWaitFirst(EnqueueResult.FollowOnly))
   }
 }
