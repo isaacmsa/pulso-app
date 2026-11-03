@@ -1,5 +1,6 @@
 import type { ReactNode } from 'react';
 import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { colors } from '../../shared/theme/colors';
 
 export function OnboardingScreen({
@@ -12,17 +13,19 @@ export function OnboardingScreen({
   children: ReactNode;
 }) {
   return (
-    <ScrollView
-      style={styles.scroll}
-      contentContainerStyle={styles.container}
-      keyboardShouldPersistTaps="handled"
-    >
-      <Text style={styles.title} accessibilityRole="header">
-        {title}
-      </Text>
-      {intro ? <Text style={styles.intro}>{intro}</Text> : null}
-      {children}
-    </ScrollView>
+    <SafeAreaView edges={['top']} style={styles.scroll}>
+      <ScrollView
+        style={styles.scroll}
+        contentContainerStyle={styles.container}
+        keyboardShouldPersistTaps="handled"
+      >
+        <Text style={styles.title} accessibilityRole="header">
+          {title}
+        </Text>
+        {intro ? <Text style={styles.intro}>{intro}</Text> : null}
+        {children}
+      </ScrollView>
+    </SafeAreaView>
   );
 }
 
@@ -91,7 +94,7 @@ export const textStyles = StyleSheet.create({
 
 const styles = StyleSheet.create({
   scroll: { flex: 1, backgroundColor: colors.background },
-  container: { flexGrow: 1, justifyContent: 'center', gap: 16, padding: 24, paddingTop: 56 },
+  container: { flexGrow: 1, justifyContent: 'center', gap: 16, padding: 24 },
   title: { color: colors.text, fontSize: 28, fontWeight: '700' },
   intro: { color: colors.textMuted, fontSize: 16, lineHeight: 24 },
   primary: {

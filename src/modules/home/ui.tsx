@@ -1,5 +1,6 @@
 import type { ReactNode } from 'react';
 import { Pressable, RefreshControl, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { SafeAreaView } from 'react-native-safe-area-context';
 import { colors } from '../../shared/theme/colors';
 
 export function TabScreen({
@@ -13,21 +14,25 @@ export function TabScreen({
   refreshing?: boolean;
   onRefresh?: () => void;
 }) {
+  // Con edge-to-edge la barra de estado es transparente: sin el borde superior, al hacer scroll el contenido pasa
+  // por debajo de la hora y la batería.
   return (
-    <ScrollView
-      testID="tab-scroll"
-      style={styles.scroll}
-      contentContainerStyle={styles.content}
-      keyboardShouldPersistTaps="handled"
-      refreshControl={
-        onRefresh ? <RefreshControl refreshing={!!refreshing} onRefresh={onRefresh} /> : undefined
-      }
-    >
-      <Text style={styles.title} accessibilityRole="header">
-        {title}
-      </Text>
-      {children}
-    </ScrollView>
+    <SafeAreaView edges={['top']} style={styles.safe}>
+      <ScrollView
+        testID="tab-scroll"
+        style={styles.scroll}
+        contentContainerStyle={styles.content}
+        keyboardShouldPersistTaps="handled"
+        refreshControl={
+          onRefresh ? <RefreshControl refreshing={!!refreshing} onRefresh={onRefresh} /> : undefined
+        }
+      >
+        <Text style={styles.title} accessibilityRole="header">
+          {title}
+        </Text>
+        {children}
+      </ScrollView>
+    </SafeAreaView>
   );
 }
 
@@ -105,7 +110,8 @@ export function Muted({ children }: { children: ReactNode }) {
 
 const styles = StyleSheet.create({
   scroll: { flex: 1, backgroundColor: colors.background },
-  content: { paddingTop: 56, paddingHorizontal: 16, paddingBottom: 32, gap: 16 },
+  safe: { flex: 1, backgroundColor: colors.background },
+  content: { paddingTop: 24, paddingHorizontal: 16, paddingBottom: 32, gap: 16 },
   title: { color: colors.text, fontSize: 28, fontWeight: '700' },
   card: { backgroundColor: colors.surface, borderRadius: 16, padding: 16, gap: 12 },
   sectionTitle: {
