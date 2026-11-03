@@ -117,7 +117,7 @@ describe('RootLayout', () => {
   it('con el token inválido, la app abre el onboarding', async () => {
     state('tok', true, 'watch');
     await render(<RootLayout />);
-    expect(await screen.findByText('screen:onboarding/index')).toBeOnTheScreen();
+    expect(await screen.findByText('screen:onboarding')).toBeOnTheScreen();
     expect(screen.queryByText('screen:(tabs)')).toBeNull();
     expect(mocked.arm).not.toHaveBeenCalled();
     expect(mocked.recordAppOpen).not.toHaveBeenCalled();
@@ -127,7 +127,7 @@ describe('RootLayout', () => {
     state('tok', false, 'watch');
     await render(<RootLayout />);
     expect(await screen.findByText('screen:(tabs)')).toBeOnTheScreen();
-    expect(screen.queryByText('screen:onboarding/index')).toBeNull();
+    expect(screen.queryByText('screen:onboarding')).toBeNull();
     await screen.findByText('screen:(tabs)');
     expect(mocked.configureApi).toHaveBeenCalled();
     expect(mocked.arm).toHaveBeenCalledTimes(1);
@@ -157,7 +157,7 @@ describe('RootLayout', () => {
   it('si la app murió en la guía de batería, no arma ni abre la app: sigue en el onboarding', async () => {
     state('tok', false, 'watch', 'battery');
     await render(<RootLayout />);
-    expect(await screen.findByText('screen:onboarding/index')).toBeOnTheScreen();
+    expect(await screen.findByText('screen:onboarding')).toBeOnTheScreen();
     expect(screen.queryByText('screen:(tabs)')).toBeNull();
   });
 
@@ -177,14 +177,14 @@ describe('RootLayout', () => {
       mocked.getTokenState.mockResolvedValue('transient');
       await render(<RootLayout />);
       expect(await screen.findByText('screen:(tabs)')).toBeOnTheScreen();
-      expect(screen.queryByText('screen:onboarding/index')).toBeNull();
+      expect(screen.queryByText('screen:onboarding')).toBeNull();
 
       // El Keystore sigue sin ayudar: no pasa nada. Cuando por fin dice que no hay nada, vuelve a decidir.
       mocked.getTokenState.mockResolvedValue('absent');
       await act(async () => {
         await jest.advanceTimersByTimeAsync(RETRY_TRANSIENT_MS);
       });
-      expect(await screen.findByText('screen:onboarding/index')).toBeOnTheScreen();
+      expect(await screen.findByText('screen:onboarding')).toBeOnTheScreen();
     } finally {
       jest.useRealTimers();
     }
@@ -213,7 +213,7 @@ describe('RootLayout', () => {
         await expect(unwrap(getHomeStatus())).rejects.toBeInstanceOf(ApiError);
       });
       expect(mocked.markTokenInvalid).toHaveBeenCalledWith('tok');
-      expect(await screen.findByText('screen:onboarding/index')).toBeOnTheScreen();
+      expect(await screen.findByText('screen:onboarding')).toBeOnTheScreen();
       expect(screen.queryByText('screen:(tabs)')).toBeNull();
     });
 
@@ -248,7 +248,7 @@ describe('RootLayout', () => {
     it('en el onboarding todavía no lo registra', async () => {
       state('tok', true, 'watch');
       await render(<RootLayout />);
-      expect(await screen.findByText('screen:onboarding/index')).toBeOnTheScreen();
+      expect(await screen.findByText('screen:onboarding')).toBeOnTheScreen();
       expect(registerPushToken).not.toHaveBeenCalled();
     });
   });

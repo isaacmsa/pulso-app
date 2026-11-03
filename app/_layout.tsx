@@ -96,10 +96,9 @@ export default function RootLayout() {
         }}
       >
         <Stack.Protected guard={startup === 'onboarding'}>
-          <Stack.Screen name="onboarding/index" />
-          <Stack.Screen name="onboarding/notifications" />
-          <Stack.Screen name="onboarding/battery" />
-          <Stack.Screen name="onboarding/home" />
+          {/* Una sola pantalla con su propio Stack: así la entrada siempre es `onboarding/index`. Con los pasos sueltos
+              aquí, al caer desde `/` Expo Router elegía otro paso como "primera pantalla disponible". */}
+          <Stack.Screen name="onboarding" />
         </Stack.Protected>
         <Stack.Protected guard={startup !== 'onboarding'}>
           <Stack.Screen name="(tabs)" />
