@@ -144,7 +144,7 @@ function HomeStatusScreen() {
         <View style={styles.reports}>
           {REPORTS.map(({ label, value }) => (
             <View key={value} style={styles.reportButton}>
-              <Button label={label} onPress={() => void report(value)} />
+              <Button label={label} onPress={() => void report(value)} singleLine />
             </View>
           ))}
         </View>

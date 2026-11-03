@@ -44,11 +44,14 @@ export function Button({
   onPress,
   tone = 'secondary',
   disabled,
+  singleLine,
 }: {
   label: string;
   onPress: () => void;
   tone?: 'primary' | 'secondary' | 'danger';
   disabled?: boolean;
+  /** Para botones angostos en fila: achica la letra en vez de partir la palabra ("Fluctuan / do"). */
+  singleLine?: boolean;
 }) {
   return (
     <Pressable
@@ -59,7 +62,13 @@ export function Button({
       accessibilityLabel={label}
       accessibilityState={{ disabled: !!disabled }}
     >
-      <Text style={[styles.buttonText, tone === 'primary' && styles.primaryText]}>{label}</Text>
+      <Text
+        style={[styles.buttonText, tone === 'primary' && styles.primaryText]}
+        numberOfLines={singleLine ? 1 : undefined}
+        adjustsFontSizeToFit={singleLine}
+      >
+        {label}
+      </Text>
     </Pressable>
   );
 }

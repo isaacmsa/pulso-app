@@ -91,7 +91,7 @@ export const textStyles = StyleSheet.create({
 
 const styles = StyleSheet.create({
   scroll: { flex: 1, backgroundColor: colors.background },
-  container: { flexGrow: 1, justifyContent: 'center', gap: 16, padding: 24 },
+  container: { flexGrow: 1, justifyContent: 'center', gap: 16, padding: 24, paddingTop: 56 },
   title: { color: colors.text, fontSize: 28, fontWeight: '700' },
   intro: { color: colors.textMuted, fontSize: 16, lineHeight: 24 },
   primary: {
