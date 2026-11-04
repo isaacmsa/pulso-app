@@ -391,3 +391,21 @@ Skill `security-perf-review` sobre los dos repos. Los hallazgos críticos e impo
 ### Cierre del proyecto
 
 Pulso queda en Google Play al 100%, con 48 h sin errores graves en Sentry, y `docs/roadmap.md` queda con todas las tareas marcadas.
+
+## Sesión con el Xiaomi (corte C3), 3 y 4 de noviembre
+
+Primera prueba en un teléfono real, con el APK release contra staging.
+
+**Pasó:** el onboarding completo, que retoma donde quedó si MIUI mata la app; el registro y la bóveda; el reporte manual de un corte real y el regreso detectado en segundo plano por C; el latido toda la noche con la pantalla bloqueada; el modo UPS con `locked` (D-044); "Borrar mis datos" contra el servidor; "Solo seguir" sin nada armado aunque cargue; seguir una casa con su código; pasar de seguir a vigilar.
+
+**Se arregló en la sesión:**
+- la instalación nueva empezaba en el último paso del onboarding (4792f5e);
+- "Fluctuando" partido en dos líneas, la barra de navegación blanca y el contenido bajo la barra de estado (393662b, b74f9e1);
+- el modo UPS no detectaba cortes en MIUI (226da25, A-050).
+
+**Pendiente, sin arreglar todavía:**
+- [ ] Tras el corte real del 3 de noviembre a las 7:42 p. m., el enchufe recién se vio con el latido de las 2:16 a. m. Falta saber a qué hora volvió la luz para decir si C llegó tarde.
+- [ ] `app_version` del dispositivo se quedó en 0.1.0 después de actualizar a 0.2.0: la app no la reporta al actualizarse. Sin esto no se sabe qué versión corre cada tester.
+- [ ] Una casa que vuelve de "sin noticias" muestra "Hay luz desde" la hora del latido, aunque la luz nunca se fue (A-037). El texto confunde.
+- [ ] El reporte manual "Sin luz" toma la hora del toque; no se puede decir "se fue a la 1:00".
+- [ ] Capturas para Play: 5 de 7 en `assets/store/screenshots-raw/` (falta la de un corte y la del push, que espera C5). Falta enmarcarlas en 1080 × 1920.
