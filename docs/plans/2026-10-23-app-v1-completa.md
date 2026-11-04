@@ -405,7 +405,7 @@ Primera prueba en un teléfono real, con el APK release contra staging.
 
 **Pendiente, sin arreglar todavía:**
 - [ ] Tras el corte real del 3 de noviembre a las 7:42 p. m., el enchufe recién se vio con el latido de las 2:16 a. m. Falta saber a qué hora volvió la luz para decir si C llegó tarde.
-- [ ] `app_version` del dispositivo se quedó en 0.1.0 después de actualizar a 0.2.0: la app no la reporta al actualizarse. Sin esto no se sabe qué versión corre cada tester.
+- [x] `app_version` del dispositivo se quedó en 0.1.0 después de actualizar a 0.2.0: la app no la reportaba al actualizarse. Ahora la manda con `PATCH /v1/devices/me` al arrancar si cambió (`reportAppVersion`).
 - [ ] Una casa que vuelve de "sin noticias" muestra "Hay luz desde" la hora del latido, aunque la luz nunca se fue (A-037). El texto confunde.
 - [ ] El reporte manual "Sin luz" toma la hora del toque; no se puede decir "se fue a la 1:00".
 - [ ] Capturas para Play: 5 de 7 en `assets/store/screenshots-raw/` (falta la de un corte y la del push, que espera C5). Falta enmarcarlas en 1080 × 1920.

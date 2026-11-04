@@ -8,6 +8,7 @@ import {
   startConfirmationResponses,
 } from '../src/modules/notifications/confirmation';
 import { registerPushToken, startPushTokenSync } from '../src/modules/notifications/push-token';
+import { reportAppVersion } from '../src/modules/onboarding/app-version';
 import { installInvalidTokenHandler, useStartup } from '../src/modules/onboarding/startup';
 import {
   arm,
@@ -72,6 +73,7 @@ export default function RootLayout() {
   useEffect(() => {
     if (!signedIn) return;
     void registerPushToken();
+    void reportAppVersion();
     const stopSync = startPushTokenSync();
     const stopResponses = startConfirmationResponses();
     return () => {
