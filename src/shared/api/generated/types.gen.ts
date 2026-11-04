@@ -169,6 +169,7 @@ export type SnapshotEvent = {
     homeWifi: boolean | null;
     internet: boolean | null;
     interactive: boolean | null;
+    locked?: boolean | null;
     batteryPct: number | null;
 };
 

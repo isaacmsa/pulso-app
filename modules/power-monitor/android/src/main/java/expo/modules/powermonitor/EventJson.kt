@@ -12,6 +12,8 @@ data class Snapshot(
   val internet: Boolean?,
   val interactive: Boolean?,
   val batteryPct: Int?,
+  /** Si el teléfono tiene el bloqueo puesto. MIUI enciende la pantalla al desenchufar; esto dice si alguien lo usa. */
+  val locked: Boolean? = null,
 )
 
 data class Report(val id: String, val at: Long, val value: String)
@@ -43,6 +45,7 @@ object EventJson {
       .put("homeWifi", s.homeWifi ?: JSONObject.NULL)
       .put("internet", s.internet ?: JSONObject.NULL)
       .put("interactive", s.interactive ?: JSONObject.NULL)
+      .put("locked", s.locked ?: JSONObject.NULL)
       .put("batteryPct", s.batteryPct ?: JSONObject.NULL)
       .toString()
 

@@ -152,6 +152,7 @@ export const zSnapshotEvent = z.object({
     homeWifi: z.boolean().nullable(),
     internet: z.boolean().nullable(),
     interactive: z.boolean().nullable(),
+    locked: z.boolean().nullish(),
     batteryPct: z.int().gte(0).lte(100).nullable()
 });
 

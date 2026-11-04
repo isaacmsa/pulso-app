@@ -23,11 +23,17 @@ class EventJsonTest {
     val json = JSONObject(EventJson.snapshot(snapshot))
     val keys = json.keys().asSequence().toSet()
     assertEquals(
-      setOf("kind", "id", "at", "source", "plugged", "onWifi", "homeWifi", "internet", "interactive", "batteryPct"),
+      setOf("kind", "id", "at", "source", "plugged", "onWifi", "homeWifi", "internet", "interactive", "locked", "batteryPct"),
       keys,
     )
     assertEquals("snapshot", json.getString("kind"))
     assertEquals(1_793_570_400_000L, json.getLong("at"))
+  }
+
+  @Test
+  fun `locked viaja tal cual y su null se escribe`() {
+    assertEquals(true, JSONObject(EventJson.snapshot(snapshot.copy(locked = true))).getBoolean("locked"))
+    assertEquals(JSONObject.NULL, JSONObject(EventJson.snapshot(snapshot.copy(locked = null))).get("locked"))
   }
 
   @Test

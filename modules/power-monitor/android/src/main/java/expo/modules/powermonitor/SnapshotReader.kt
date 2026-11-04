@@ -1,5 +1,6 @@
 package expo.modules.powermonitor
 
+import android.app.KeyguardManager
 import android.content.Context
 import android.content.Intent
 import android.content.IntentFilter
@@ -32,6 +33,7 @@ object SnapshotReader {
     }
 
     val interactive = runCatching { context.getSystemService(PowerManager::class.java).isInteractive }.getOrNull()
+    val locked = runCatching { context.getSystemService(KeyguardManager::class.java).isKeyguardLocked }.getOrNull()
     val now = System.currentTimeMillis()
     return Snapshot(
       id = UuidV7.generate(now),
@@ -43,6 +45,7 @@ object SnapshotReader {
       internet = internet,
       interactive = interactive,
       batteryPct = batteryPct,
+      locked = locked,
     )
   }
 }
