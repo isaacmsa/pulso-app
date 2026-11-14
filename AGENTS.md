@@ -4,7 +4,7 @@ App Android que detecta sola los cortes de luz de una casa, muestra el historial
 
 Este repo tiene la app: Expo SDK 58 (solo Android en v1), con un módulo local en Kotlin, `modules/power-monitor`, que hace toda la detección en segundo plano. El backend vive en otro repo, `pulso-api` (en `~/projects/personal/backend/pulso-api`): un Worker de Hono en Cloudflare con PostgreSQL en Supabase (USD 0 al mes), que clasifica los cortes, manda los push y sirve `/privacidad`, `/borrar-datos` y `/c/:code`. La app lo consume solo por HTTP, con un cliente generado desde su `openapi.json` (D-014, D-017).
 
-**Estado actual:** fase 0 (registrador). El roadmap maestro, con las tareas de los dos repos, está en `docs/roadmap.md`. El plan paso a paso está en `docs/plans/`.
+**Estado y fases:** el estado no se copia en este archivo. Vive en el tablero `docs/roadmap.md`, que cubre los dos repos, y cada fase tiene su archivo en `docs/phases/`. Si Isaac pide el estatus o dice «continúa la fase N», lee el tablero y sigue su sección «Cómo se usa este tablero».
 
 ## Comandos
 
@@ -18,8 +18,8 @@ Los que dependen de algo que todavía no existe se confirman al crearlo. Si camb
 | APK release para teléfonos de prueba | `pnpm android:release` |
 | Tests de Kotlin | `cd android && ./gradlew :power-monitor:testDebugUnitTest` |
 | Regenerar el ícono y los gráficos de la tienda desde `assets/brand/` | `pnpm brand:render` (usa Chrome de `/Applications`; `CHROME=` para otro) |
-| Regenerar el cliente de la API (fase 1) | `pnpm api:generate` (lee `OPENAPI_SOURCE`) |
-| Usar la API local desde el teléfono (fase 1) | `adb reverse tcp:8787 tcp:8787` |
+| Regenerar el cliente de la API | `pnpm api:generate` (lee `OPENAPI_SOURCE`) |
+| Usar la API local desde el teléfono | `adb reverse tcp:8787 tcp:8787` |
 | Analizar un exporte del registrador | En `pulso-api`: `pnpm spike:analyze <archivo.json>` |
 | Conectar el teléfono sin cable | `adb pair <ip:puerto>` y luego `adb connect <ip:puerto>` |
 | Simular desenchufe / restaurar | `adb shell dumpsys battery unplug` / `adb shell dumpsys battery reset` |
@@ -51,7 +51,7 @@ Los que dependen de algo que todavía no existe se confirman al crearlo. Si camb
 6. **El teléfono sube solo los cambios de `(plugged, onWifi, homeWifi, internet)`**; el latido viaja aunque el lote esté vacío (D-008).
 7. **`targetSdkVersion` 36 y `compileSdkVersion` 37** con `expo-build-properties`. El target es lo que exige Play; los módulos de SDK 58 exigen compilar contra 37. `android/` se genera y no se versiona: nada se edita a mano ahí.
 8. **Ninguna variable `EXPO_PUBLIC_*` contiene secretos**, porque terminan dentro del bundle.
-9. **Al terminar una tarea, márcala en `docs/roadmap.md` en el mismo commit**, y si se tomó una decisión de producto, regístrala en `docs/decisions.md`.
+9. **Al terminar una tarea, márcala en el archivo de su fase (`docs/phases/`) en el mismo commit** y sigue los pasos 3 y 4 de «Para trabajar una fase» del tablero (`docs/roadmap.md`): es lo que lee la siguiente sesión para saber por dónde seguir. Si se tomó una decisión de producto, regístrala en `docs/decisions.md`.
 
 ## Trampas conocidas
 
@@ -81,6 +81,7 @@ Los que dependen de algo que todavía no existe se confirman al crearlo. Si camb
 - `docs/detection.md`: señales, mecanismos, prueba técnica y permisos
 - `docs/security-privacy.md`: qué se guarda, amenazas, política y formulario de Play
 - `docs/play-store.md`: cuenta, fechas, formularios y testers
-- `docs/roadmap.md`: roadmap maestro con las tareas de los dos repos
-- `docs/plans/`: plan paso a paso de cada fase de la app
+- `docs/roadmap.md`: tablero de fases de los dos repos, calendario, cuentas y cómo se pide el estatus
+- `docs/phases/`: un archivo por fase, con sus tareas, lo que le toca a Isaac y su bitácora
+- `docs/plans/`: planes de las fases 0 a 4 (histórico)
 - En `pulso-api/docs/`: `api.md` (endpoints y contrato), `classifier.md` (reglas y tests), `data-model.md` (PostgreSQL)

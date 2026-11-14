@@ -3,7 +3,7 @@
 **Qué responde este documento**
 
 - Qué exige Google a una cuenta personal nueva
-- En qué orden y en qué fecha se hace cada paso
+- En qué orden se hace cada paso (el calendario está en `docs/roadmap.md`)
 - Cómo se recluta y se cuida a los testers
 - Qué se pega en la ficha y en cada formulario de Play Console
 
@@ -11,39 +11,27 @@ Los requisitos se verificaron el 15 de octubre de 2026. Revisarlos de nuevo el d
 
 ## Calendario
 
-| Fecha | Paso |
-| --- | --- |
-| Antes del 7 nov (movido desde el 31 oct, Isaac, 27 oct) | Cuenta personal creada y pagada (USD 25, el único pago del proyecto); verificación de identidad y del dispositivo Android en curso |
-| 26 oct en adelante | Reclutamiento de testers (Google Group) |
-| Antes de ~10 nov (C4) | Cuenta de Expo creada y `eas login` hecho (D-043) |
-| Antes de ~15 nov (C5) | Proyecto de Firebase y clave FCM V1 subida a EAS, para que el push entre en la prueba cerrada (D-043) |
-| 9 al 19 nov | App creada en Play Console, prueba interna, ficha y formularios |
-| 18 o 19 nov | Prueba cerrada enviada a revisión |
-| ~21 nov | Prueba cerrada aprobada; testers inscritos (meta: 15 o más) |
-| ~27 nov y ~4 dic | Actualizaciones 1 y 2 publicadas en la pista cerrada (D-012, arreglos de los testers y ajuste de umbrales) |
-| ~5 dic | 14 días seguidos con 12 o más testers |
-| ~5 o 6 dic | Solicitud de acceso a producción |
-| ~12 dic | Aprobación (Google puede tardar hasta 7 días o más) |
-| ~13 al 15 dic | Lanzamiento escalonado: 20%, y 100% tras 48 h sin errores graves en Sentry |
-| 16 al 21 dic | Colchón ante un rechazo |
+No hay fechas fijas (D-045): todo cuenta desde el día en que se pague Play Console. El calendario está en «Calendario» de `docs/roadmap.md`, y quién hace cada paso, en las fases 11 a 13 de `docs/phases/`.
 
 ## Pasos
 
-- [ ] **Cuenta personal** de Play Console: pago único de USD 25 con una tarjeta que funcione en el exterior y esté a tu nombre legal. Luego verificación de identidad con documento y teléfono, y verificación desde un dispositivo Android con la app de Play Console (sirve el Xiaomi) ([Google](https://support.google.com/googleplay/android-developer/answer/6112435?hl=es)). Registrarse sin VPN y sin otro país: si el perfil de pagos no coincide con la identidad, se puede perder la cuenta. Plan B si el pago falla desde Venezuela: publicar con la cuenta de una organización (por ejemplo, Yagos Store) e invitarte como miembro. Las cuentas de organización no tienen el requisito de los 12 testers.
-- [ ] **Nombre del paquete** `com.isaacmendoza.pulso` (D-010). Es permanente desde la primera subida.
-- [ ] **Nivel de API**: las apps nuevas deben apuntar a Android 16, API 36, desde el 31 de agosto de 2026 ([Google](https://support.google.com/googleplay/android-developer/answer/11926878?hl=en-419)). Probar también el gesto de retroceso predictivo.
-- [ ] **Play App Signing** activo. EAS genera el keystore de subida.
-- [ ] **Política de privacidad** publicada en `https://pulso-api.isaac-mendozasa.workers.dev/privacidad`, y la página de borrado en `/borrar-datos` (ver `docs/security-privacy.md`).
-- [ ] **Formularios** (respuestas en "Ficha y formularios"): seguridad de datos, clasificación de contenido, público objetivo (adultos), acceso a la app (no requiere inicio de sesión), anuncios (no) y declaración de permisos. Si D-012 deja el servicio `specialUse`, se declara con una descripción y un video corto que muestre la notificación y para qué sirve.
-- [ ] **Ficha** en español: nombre ("Pulso: cortes de luz" si "Pulso" está tomado), descripción corta, descripción larga que explique la detección automática en una frase, ícono de 512 px, gráfico destacado de 1024 × 500 y capturas reales del Xiaomi.
-- [ ] **Prueba interna** para ti y la familia (hasta 100 personas, sin revisión) desde que exista el primer AAB.
-- [ ] **Prueba cerrada**: al menos 12 testers inscritos durante 14 días seguidos ([Google](https://support.google.com/googleplay/android-developer/answer/14151465?hl=en-GB)).
-- [ ] **Solicitud de acceso a producción**, respondiendo el cuestionario con datos concretos de la prueba: cuántos testers, qué reportaron y qué se cambió en cada actualización.
-- [ ] **Lanzamiento escalonado**.
+Esta lista explica cada requisito. El avance no se marca aquí, sino en las fases 11 a 13.
+
+- **Cuenta personal** de Play Console: pago único de USD 25 con una tarjeta que funcione en el exterior y esté a tu nombre legal. Luego verificación de identidad con documento y teléfono, y verificación desde un dispositivo Android con la app de Play Console (sirve el Xiaomi) ([Google](https://support.google.com/googleplay/android-developer/answer/6112435?hl=es)). Registrarse sin VPN y sin otro país: si el perfil de pagos no coincide con la identidad, se puede perder la cuenta. Plan B si el pago falla desde Venezuela: publicar con la cuenta de una organización (por ejemplo, Yagos Store) e invitarte como miembro. Las cuentas de organización no tienen el requisito de los 12 testers.
+- **Nombre del paquete** `com.isaacmendoza.pulso` (D-010). Es permanente desde la primera subida.
+- **Nivel de API**: las apps nuevas deben apuntar a Android 16, API 36, desde el 31 de agosto de 2026 ([Google](https://support.google.com/googleplay/android-developer/answer/11926878?hl=en-419)). Probar también el gesto de retroceso predictivo.
+- **Play App Signing** activo. EAS genera el keystore de subida.
+- **Política de privacidad** publicada en `https://pulso-api.isaac-mendozasa.workers.dev/privacidad`, y la página de borrado en `/borrar-datos` (ver `docs/security-privacy.md`).
+- **Formularios** (respuestas en "Ficha y formularios"): seguridad de datos, clasificación de contenido, público objetivo (adultos), acceso a la app (no requiere inicio de sesión), anuncios (no) y declaración de permisos. Si D-012 deja el servicio `specialUse`, se declara con una descripción y un video corto que muestre la notificación y para qué sirve.
+- **Ficha** en español: nombre ("Pulso: cortes de luz" si "Pulso" está tomado), descripción corta, descripción larga que explique la detección automática en una frase, ícono de 512 px, gráfico destacado de 1024 × 500 y capturas reales del Xiaomi.
+- **Prueba interna** para ti y la familia (hasta 100 personas, sin revisión) desde que exista el primer AAB.
+- **Prueba cerrada**: al menos 12 testers inscritos durante 14 días seguidos ([Google](https://support.google.com/googleplay/android-developer/answer/14151465?hl=en-GB)).
+- **Solicitud de acceso a producción**, respondiendo el cuestionario con datos concretos de la prueba: cuántos testers, qué reportaron y qué se cambió en cada actualización.
+- **Lanzamiento escalonado**.
 
 ## Ficha y formularios (borrador listo para pegar)
 
-Textos para la versión de la prueba cerrada del 18 o 19 de noviembre, en español de Latinoamérica (`es-419`), que es el idioma predeterminado de la ficha. Describen todo lo que trae esa versión, que sale con todo lo construido (D-043): detección, estado, historial, reportes, push, confirmación, familia y modo UPS. Los conteos cuentan caracteres Unicode con los saltos de línea (`[...texto].length` en Node), y `__tests__/play-listing.test.ts` falla si un texto pasa el límite de Play.
+Textos para la versión de la prueba cerrada, en español de Latinoamérica (`es-419`), que es el idioma predeterminado de la ficha. Describen todo lo que trae esa versión, que sale con todo lo construido (D-043): detección, estado, historial, reportes, push, confirmación, familia y modo UPS. Los conteos cuentan caracteres Unicode con los saltos de línea (`[...texto].length` en Node), y `__tests__/play-listing.test.ts` falla si un texto pasa el límite de Play.
 
 ### Nombre
 
@@ -130,7 +118,7 @@ Antes de pegarlas, abrirlas desde el teléfono sin sesión: tienen que cargar si
 
 ### Seguridad de datos
 
-Sale de la tabla "Formulario de seguridad de datos de Play" de `docs/security-privacy.md`, que manda. Aquí va desglosada en los tipos de datos que pide Play. Se declara desde ya todo lo de la v1: el token push está desde la prueba cerrada (D-043) y Sentry llega en la fase 4 (C6). Declarar de más no se castiga, y así el formulario no cambia durante la prueba.
+Sale de la tabla "Formulario de seguridad de datos de Play" de `docs/security-privacy.md`, que manda. Aquí va desglosada en los tipos de datos que pide Play. Se declara desde ya todo lo de la v1: el token push está desde la prueba cerrada (D-043) y Sentry llega con su cuenta (corte C6, fase 9). Declarar de más no se castiga, y así el formulario no cambia durante la prueba.
 
 | Pregunta | Respuesta |
 | --- | --- |
@@ -145,7 +133,7 @@ Sale de la tabla "Formulario de seguridad de datos de Play" de `docs/security-pr
 | IDs del dispositivo u otros IDs | Identificador anónimo del dispositivo y token push (desde la prueba cerrada) | Sí | No | No | Sí | Funcionalidad de la app; prevención de fraudes y seguridad (límites por dispositivo) |
 | Actividad en la app → Otras acciones | Eventos de corriente, Wi-Fi, internet, "red de casa sí/no", pantalla y batería, con su hora; reportes manuales ("Hay luz", "Fluctuando", "Sin luz") y confirmaciones | Sí | No | No | Sí | Funcionalidad de la app |
 | Actividad en la app → Otro contenido generado por el usuario | Alias de la casa | Sí | No | No | No: la persona decide si lo cambia | Funcionalidad de la app |
-| Información y rendimiento de la app → Registros de fallos | Errores de la app en Sentry (entra en la fase 4 / C6) | Sí | No | No | Sí | Estadísticas; funcionalidad de la app |
+| Información y rendimiento de la app → Registros de fallos | Errores de la app en Sentry (entra con la cuenta de Sentry, corte C6) | Sí | No | No | Sí | Estadísticas; funcionalidad de la app |
 | Información y rendimiento de la app → Diagnóstico | Fabricante, modelo, versión de Android y de la app, ahorro de batería | Sí | No | No | Sí | Estadísticas; funcionalidad de la app |
 | Ubicación, información personal, financiera, de salud, mensajes, fotos, audio, archivos, calendario, contactos, apps instaladas, historial web | Nada | No | | | | |
 
@@ -187,7 +175,7 @@ Cuestionario de IARC:
 
 ### Declaración de permisos (solo si D sigue en el manifiesto)
 
-Depende de D-012 (9 de noviembre). Si el mecanismo D sale del manifiesto, esta sección no se usa y se borran `FOREGROUND_SERVICE` y `FOREGROUND_SERVICE_SPECIAL_USE`. Si queda, según D-029 va apagado por defecto y se enciende en Ajustes → Detección → "Servicio en primer plano", y Play pide declarar el tipo `specialUse` con una descripción y un video.
+Depende de D-012 (fase 8). Si el mecanismo D sale del manifiesto, esta sección no se usa y se borran `FOREGROUND_SERVICE` y `FOREGROUND_SERVICE_SPECIAL_USE`. Si queda, según D-029 va apagado por defecto y se enciende en Ajustes → Detección → "Servicio en primer plano", y Play pide declarar el tipo `specialUse` con una descripción y un video.
 
 **Tipo de servicio:** uso especial (`specialUse`). El subtipo del manifiesto, que tiene que coincidir con lo que se declara, es "Detecta cuándo se va y vuelve la luz en casa escuchando la conexión del cargador".
 
@@ -266,7 +254,7 @@ Déjala instalada y enchufada en casa, y cuéntanos en el grupo si notó cada co
 - **Lo que cuenta es inscribirse** por el enlace de la prueba; recibir la invitación no basta. Se verifica en Play Console el número de inscritos.
 - **Grupo de WhatsApp** con los testers para avisar de las actualizaciones y hacer dos o tres preguntas por semana. Sus respuestas alimentan el cuestionario de producción.
 - **Qué se les pide**: mantener la app instalada y el teléfono enchufado en casa, tocar "Se fue la luz" y "Volvió" cuando lo noten, responder las confirmaciones y decir si su router tiene UPS.
-- **Antes de Play**, en las semanas 2 a 4, el APK del registrador se instala a mano en 2 o 3 teléfonos de la familia. No cuentan para el requisito de Google, pero dan datos de otras marcas.
+- **Antes de Play** (fase 8), la app se instala a mano en 2 o 3 teléfonos de la familia. No cuentan para el requisito de Google, pero dan datos de otras marcas.
 
 ## Trampas al instalar en Xiaomi
 

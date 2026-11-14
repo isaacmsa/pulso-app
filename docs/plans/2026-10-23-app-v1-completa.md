@@ -1,5 +1,7 @@
 # Pulso v1 · Plan maestro de la app (fase 1 a Google Play)
 
+> **Histórico desde el 13 de noviembre de 2026 (D-046).** Este plan ya no manda y sus casillas no se actualizan. El plan vigente es el tablero `docs/roadmap.md` con los archivos de `docs/phases/`; lo que aquí quedó sin hacer pasó a las fases 6 a 13.
+
 > **Para agentes:** SUB-SKILL REQUERIDA: `superpowers:subagent-driven-development` para las tareas de código; las marcadas **[Xiaomi]** se hacen en la sesión principal con Isaac. Isaac aprueba este plan una sola vez: las fases se ejecutan seguidas, sin pedir otro plan ni otra aprobación, salvo en los **cortes** de la sección siguiente. Los pasos usan checkboxes (`- [ ]`).
 
 **Objetivo:** llevar la app desde el registrador de la fase 0 hasta Pulso publicado en Google Play: detección que sube al servidor, pantallas de estado, historial y ajustes, familia con push y enlace, modo UPS, robustez y lanzamiento.

@@ -1,5 +1,7 @@
 # Fase 0 · Registrador: plan de implementación
 
+> **Histórico desde el 13 de noviembre de 2026 (D-046).** Este plan ya no manda y sus casillas no se actualizan. El plan vigente es el tablero `docs/roadmap.md` con los archivos de `docs/phases/`; lo que aquí quedó sin hacer pasó a las fases 6 a 13.
+
 > **Para agentes:** SUB-SKILL REQUERIDA: usar `superpowers:executing-plans` para ejecutar este plan tarea por tarea. Los pasos usan checkboxes (`- [ ]`). Casi todas las tareas necesitan el Xiaomi físico y las manos de Isaac, así que se ejecutan en la sesión principal, no en subagentes.
 
 **Objetivo:** que el Xiaomi y otros 2 o más teléfonos registren snapshots reales con los cuatro mecanismos de detección desde la semana 2, y exporten un archivo que `pulso-api` pueda analizar.

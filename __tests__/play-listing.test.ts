@@ -53,7 +53,7 @@ describe('formulario de seguridad de datos', () => {
       /token push \(desde la prueba cerrada\)/,
     );
     expect(row('Información y rendimiento de la app → Registros de fallos')).toMatch(
-      /\(entra en la fase 4 \/ C6\)/,
+      /\(entra con la cuenta de Sentry, corte C6\)/,
     );
     expect(form).toMatch(/al pedir el acceso a producción/i);
   });

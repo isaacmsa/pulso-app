@@ -50,7 +50,7 @@ Quien vive en la casa, sin red, ve el estado crudo de su propio teléfono ("Sin 
 
 ## Alcance
 
-| Funcionalidad | Prueba cerrada (19 nov) | Actualizaciones durante la prueba | v1.1 | Más adelante |
+| Funcionalidad | Prueba cerrada | Actualizaciones durante la prueba | v1.1 | Más adelante |
 | --- | --- | --- | --- | --- |
 | Detección automática de cortes en casa | Sí | Mecanismos finales (D-012) y ajuste de umbrales con las confirmaciones (D-013) | | |
 | Modo router con UPS | Sí, experimental | Mejoras según el feedback | Mejoras con los datos del piloto | |

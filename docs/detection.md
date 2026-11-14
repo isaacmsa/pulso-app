@@ -63,7 +63,7 @@ Con el cable USB conectado el teléfono está cargando y la prueba no sirve: usa
 
 **Qué se mide por corte y por mecanismo:** retraso del inicio y del fin frente a la verdad, si disparó o no, y el estado de diagnóstico (bucket, optimización de batería).
 
-**Criterio de decisión (D-012, el 9 de noviembre, con 5 o más cortes reales en al menos 2 teléfonos)**
+**Criterio de decisión (D-012, en la fase 8, con 5 o más cortes reales en al menos 2 teléfonos)**
 
 | Resultado | Decisión |
 | --- | --- |

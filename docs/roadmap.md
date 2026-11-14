@@ -2,141 +2,163 @@
 
 **Qué responde este documento**
 
-- En qué fase va Pulso y qué falta en cada repo
-- Cuándo se crea cada cuenta y cuánto cuesta
-- Qué se recorta si vamos tarde
+- En qué estado está cada fase de Pulso y qué espera de Isaac
+- En qué orden van las fases y cuáles pueden ir a la vez
+- Cuánto falta para llegar a Google Play desde que se pague la cuenta
+- Cómo se pide el estatus y cómo se continúa una fase en una sesión nueva
 
-Este es el roadmap maestro del producto. Las tareas marcadas **[app]** se hacen en este repo. Las marcadas **[api]** son un resumen: su detalle, con horas y criterios, está en `pulso-api/docs/roadmap.md`.
+Este es el tablero único de los dos repos (`pulso-app` y `pulso-api`). El estado del proyecto vive aquí y en ningún otro documento (D-046). El detalle de cada fase está en su archivo de `docs/phases/`: sus tareas, lo que le toca a Isaac, cómo se sabe que terminó y por dónde seguir.
 
-**Estado actual:** fase 0, semana 1. Planes detallados:
-- `docs/plans/2026-10-19-fase-0-registrador.md` (app)
-- `pulso-api/docs/plans/2026-10-19-fase-0-clasificador.md` (api)
+**Actualizado:** 14 de noviembre de 2026.
 
-**Supuestos:** 10 a 12 horas por semana (~11), de lunes a domingo. La fecha que manda es el envío de la prueba cerrada a revisión el 18 o 19 de noviembre (D-022). Meta en Play: ~15 de diciembre, con unos 6 días de colchón antes del 21.
+**Supuestos:** 10 a 12 horas por semana. El proyecto cuesta USD 25 en total (Play Console, una vez); todo lo demás corre en planes gratuitos que no piden tarjeta (D-021).
 
-**Costo total del proyecto: USD 25** (Play Console, una vez). Todo lo demás corre en planes gratuitos que no piden tarjeta (D-021).
+## Tablero
 
-Desde la fase 1, la app sigue un solo plan maestro, `docs/plans/2026-10-23-app-v1-completa.md`, que se aprueba una vez. Lo que depende de lo que mida el registrador (D-012) tiene en el plan su criterio y su salida por defecto (D-029).
+| Fase | Estado | Depende de | Espera de Isaac |
+| --- | --- | --- | --- |
+| 0 a 4 · Construcción | Hecha | — | Nada |
+| [6 · Arreglos antes del primer build](phases/06-arreglos-antes-del-build.md) | Lista | — | Tres decisiones que no la frenan |
+| [7 · API en producción con respaldo](phases/07-api-en-produccion.md) | Lista | — | Los pasos 5 a 8 de producción (sin costo, unos 45 minutos) y aprobar el deploy |
+| [8 · Detección con datos reales](phases/08-deteccion-con-datos-reales.md) | Espera a Isaac | — para juntar datos; la 6 para borrar mecanismos | Exportar el registro del Xiaomi antes del 18 de noviembre, dejarlo enchufado en casa y poner la app en dos teléfonos de la familia |
+| [9 · Primer build con EAS y push](phases/09-build-eas-y-push.md) | Bloqueada | 6 | Cuentas de Expo y de Firebase (gratis), un segundo Android y decidir si va EAS Update |
+| [10 · Revisión de seguridad](phases/10-revision-de-seguridad.md) | Bloqueada | 7 y 9 | Nada |
+| [11 · Play Console y envío de la prueba cerrada](phases/11-play-console-y-prueba-cerrada.md) | Bloqueada | 7, 8, 9, 10 y el pago | Pagar Play Console (USD 25). Reclutar testers se puede empezar ya |
+| [12 · Prueba cerrada: 14 días con testers](phases/12-prueba-cerrada.md) | Bloqueada | 11 | Publicar dos actualizaciones y correr una consulta |
+| [13 · Producción y lanzamiento](phases/13-produccion-y-lanzamiento.md) | Bloqueada | 12 | Pedir el acceso a producción y lanzar |
+
+Lo único que depende de dinero son las fases 11 a 13. Las fases 6 a 10 se pueden cerrar mientras llega el pago, de modo que el día que la cuenta de Play esté verificada solo falte enviar.
+
+## Orden de las fases
+
+```text
+6 ─→ 9 ─┐
+7 ──────┴─→ 10 ─┐
+8 ──────────────┴─→ 11 ─→ 12 ─→ 13
+                    └─ necesita además el pago de Play Console
+```
+
+- **6, 7 y 8 pueden ir a la vez**: la 6 toca la app, la 7 el backend y la 8 empieza juntando datos con el teléfono, sin tocar código.
+- **6 y 9 van una después de la otra**: las dos editan `app.json`.
+- **La 10 se puede partir por repo**: la revisión del backend empieza al cerrar la 7 y la de la app al cerrar la 9.
+- **La 8 tiene dos partes**: juntar datos (desde ya, dura días) y decidir D-012 con el borrado de los mecanismos descartados (después de la 6). Tiene que cerrar antes del envío de la fase 11; si ese día no hay datos suficientes, vale D-029.
 
 ## Calendario
 
-| Semana | Fechas | Fase | Hito |
+No hay fechas fijas (D-045): todo cuenta desde el día en que Isaac pague Play Console. Las duraciones son las del calendario anterior y las que publica Google; ninguna depende de nosotros salvo la segunda fila.
+
+| Momento | Qué pasa | Cuánto tarda |
+| --- | --- | --- |
+| Día del pago | Isaac paga los USD 25 y empieza la verificación de identidad y del teléfono | Días; el plan anterior reservaba unos 10 |
+| Cuenta verificada | Se crea la app, se sube el AAB, se llena la ficha y se envía la prueba cerrada (fase 11) | 1 o 2 días |
+| Prueba en revisión | Google la aprueba y los testers se inscriben | Unos 3 días |
+| 12 testers inscritos | Corren los 14 días seguidos, con dos actualizaciones (fase 12) | 14 días |
+| Día 14 | Solicitud de acceso a producción (fase 13) | Hasta 7 días, a veces más |
+| Solicitud aprobada | Lanzamiento al 20% y al 100% tras 48 h sin errores graves | 2 o 3 días |
+
+**Pulso llega a Google Play entre 4 y 6 semanas después del pago**, siempre que para ese día estén cerradas las fases 6 a 10 y haya 12 testers listos para inscribirse. La meta anterior del 15 de diciembre ya no vale.
+
+**Trabajo que falta:** las fases 6 a 10 suman entre 23 y 35 horas, o sea de dos a tres semanas y media al ritmo supuesto. Las fases 11 a 13 suman entre 11 y 18 horas, repartidas en las semanas de espera. Son estimaciones del 14 de noviembre, sin medir; la de cada fase está en su archivo.
+
+## Cuentas y costos
+
+Las cuentas se crean cuando hacen falta (D-011). Ya existen las de GitHub (dos repos públicos), Cloudflare y Supabase (proyectos `pulso-staging` y `pulso`). Faltan estas; si ya se creó cada una se marca en el archivo de su fase:
+
+| Cuenta | Costo | Para qué | Fase |
 | --- | --- | --- | --- |
-| S1 | 19 al 25 oct | 0a · Registrador y contrato | El Xiaomi guarda snapshots reales; el contrato de eventos existe en `pulso-api` |
-| S2 | 26 oct al 1 nov | 0b · Mecanismos y clasificador | APK en 3 o más teléfonos; clasificador testeado; Play Console pagada |
-| S3 | 2 al 8 nov | 1 · API en staging | `POST /v1/events` idempotente en staging, con Supabase y Hyperdrive |
-| S4 | 9 al 15 nov | 2a · Subida, decisión y onboarding | Los eventos del Xiaomi llegan a staging; D-012 tomada |
-| S5 | 16 al 22 nov | 2b · App usable y comienzo de la fase 3 | **Prueba cerrada enviada a revisión** (18 o 19 nov), con todo lo construido (D-043); C4 antes de ~10 nov y C5 antes de ~15 nov |
-| S6 | 23 al 29 nov | 3 · Familia, push y UPS | 15 o más testers inscritos; actualización 1 (~27 nov): D-012, feedback y umbrales (D-043) |
-| S7 | 30 nov al 6 dic | 4 · Robustez | Actualización 2 (~4 dic); 14 días cumplidos (~5 dic); solicitud enviada |
-| S8 | 7 al 13 dic | 5 · Producción | Aprobación (~12 dic); lanzamiento escalonado |
-| S9 | 14 al 21 dic | 5 · Colchón | **Pulso en Google Play** (~15 dic) |
+| Expo (EAS) | USD 0 | Builds, push y, si se decide, EAS Update | 9 |
+| Firebase (FCM) | USD 0 | Credenciales FCM V1 para que Expo entregue los push | 9 |
+| Sentry | USD 0 | Errores de la app y de la API | 7 y 9 |
+| UptimeRobot | USD 0 | Aviso al teléfono si la API cae | 7 |
+| Google Group `pulso-testers` | USD 0 | Lista de la prueba cerrada | 11 |
+| Google Play Console | **USD 25, una vez** | Publicar. Al 14 de noviembre no hay fondos para pagarla | 11 |
 
-## Cuentas, justo a tiempo (D-011)
+Opcional: un dominio propio (unos USD 12 al año) para una URL más presentable que `*.workers.dev`. No bloquea nada.
 
-| Cuenta | Cuándo | Costo | Para qué |
-| --- | --- | --- | --- |
-| GitHub (repos públicos `pulso-app` y `pulso-api`) | S1, día 1 | USD 0 | Código, CI ilimitado en repos públicos y respaldos cifrados |
-| Google Play Console | Antes del 7 nov (movido desde el 31 oct) | **USD 25, una vez** | La verificación tarda días y la necesitamos en S5 |
-| Google Group `pulso-testers` | S2 | USD 0 | Lista de la prueba cerrada |
-| Cloudflare | S3 | USD 0, sin tarjeta | Workers, Hyperdrive, Rate Limiting, crons |
-| Supabase (2 proyectos: staging y producción) | S3 | USD 0, sin tarjeta | PostgreSQL |
-| UptimeRobot | S4 | USD 0 | Aviso al teléfono si la API cae |
-| Expo (EAS) | S5 | USD 0 | Builds AAB, push y EAS Update |
-| Firebase (FCM) | S5 | USD 0 | Credenciales FCM V1 para Expo Push |
-| Sentry | S7 | USD 0 | Errores de la app y de la API |
+## Cómo se usa este tablero
 
-Opcional: un dominio propio (~USD 12 al año) si quieres una URL más presentable que `*.workers.dev` en el portafolio. No bloquea nada.
+**Para saber cómo va todo**, en cualquier sesión nueva basta con pedir «estatus». La sesión:
 
-## Fase 0 · Registrador y clasificador (S1 y S2, ~22 h)
+1. Lee este tablero y, de cada fase que no esté `Hecha` ni `Bloqueada`, la sección «Siguiente paso» de su archivo.
+2. Comprueba lo barato antes de responder. En cada uno de los dos repos, el último commit, los cambios sin commit y los commits sin subir:
 
-Objetivo: tener datos reales de cortes desde la primera semana y un clasificador testeado antes de escribir pantallas.
+   ```bash
+   git log -1 --oneline; git status --short; git log --oneline "origin/$(git branch --show-current)..HEAD"
+   ```
 
-- [x] [app] Repo, Expo SDK 58 en el Xiaomi, Biome, Jest y CI (2 h)
-- [x] [app] Módulo `power-monitor`: lector de snapshot, almacén SQLite y envoltorio JS validado (3 h)
-- [x] [app] Mecanismos A, B, arranque y seguimiento de transición (3 h)
-- [x] [app] Mecanismos C y D, con interruptor en la pantalla de registro (2,5 h)
-- [x] [app] Huella de la red de casa, diagnóstico, botones de verdad y exportar (2 h)
-- [ ] [app] APK release en el Xiaomi (hecho), el Samsung de la familia y 1 o 2 teléfonos más (1 h)
-- [x] [api] Repo, contrato de eventos, clasificador (base, UPS, reportes, confirmaciones), resumen por día y `pnpm spike:analyze` (8,5 h)
-- [ ] Cuenta de Play Console pagada y en verificación
-- [ ] Google Group creado y primer mensaje de reclutamiento
+   La API, staging primero y producción después:
 
-**Lista cuando:** 3 o más teléfonos registran con los cuatro mecanismos, y un exporte real pasa por `pnpm spike:analyze` en `pulso-api`.
+   ```bash
+   curl -s -o /dev/null -w '%{http_code}\n' https://pulso-api-staging.isaac-mendozasa.workers.dev/health
+   curl -s -o /dev/null -w '%{http_code}\n' https://pulso-api.isaac-mendozasa.workers.dev/health
+   ```
 
-## Fase 1 · API en staging (S3, ~11 h)
+   Y, en `pulso-api`, la última corrida de cada workflow:
 
-- [x] [api] Cloudflare y Supabase, esquema `app` con RLS, funciones de ingesta, auth y latido en una consulta, `devices`, `homes`, `POST /v1/events`, `GET /v1/homes/me/status`, `openapi.json`, test de contrato y deploy a staging (10 h)
-- [x] [app] `pnpm api:generate` con `@hey-api/openapi-ts` y `api/client.ts` (base URL, token, timeouts) (1 h)
+   ```bash
+   for w in ci deploy backup; do gh run list --workflow "$w.yml" --limit 1; done
+   ```
 
-**Lista cuando:** reenviar el mismo lote a staging devuelve `duplicated` igual al número de eventos.
+   Mientras la fase 7 no esté `Hecha`, producción responde 404 y el respaldo nocturno falla: es lo esperado, no una avería.
+3. Responde fase por fase con su estado, su siguiente paso y lo que espera de Isaac. Si el tablero no coincide con lo que ve, lo dice y lo corrige en el archivo; el commit de esa corrección lo decide Isaac.
 
-## Fase 2a · Subida, decisión y onboarding (S4, ~10 h)
+**Para trabajar una fase**, una sesión por fase: «continúa la fase 7». La sesión:
 
-- [x] [app] Registro del dispositivo al primer arranque y token a la bóveda nativa (Keystore) (1,5 h)
-- [x] [app] `UploadWorker` en Kotlin: red requerida, backoff, jitter, solo cambios de estado, latido vacío; el esquema nativo se reemplaza por el generado (1,5 h)
-- [ ] [app] **D-012** con 5 o más cortes reales en 2 o más teléfonos; borrar los mecanismos descartados del código y del manifiesto (1,5 h)
-- [x] [app] Onboarding: vigilar o solo seguir, permiso de notificaciones, guía de batería por fabricante, aprender la red de casa (3 h)
-- [ ] [api] `GET /v1/homes/me/outages`, `/privacidad`, `/borrar-datos`, producción y respaldo nocturno (2,5 h)
+1. Lee completo el archivo de la fase y empieza por «Siguiente paso». Antes de tocar `pulso-api`, lee su `AGENTS.md`. Si la fase está `Bloqueada` o `Espera a Isaac`, no fuerza tareas: dice qué la frena y, si algo se puede adelantar sin saltarse el orden, lo propone antes de hacerlo.
+2. No hace tareas de otra fase. Lo que encuentre fuera de la suya lo anota en «Apuntes» del archivo de la fase que corresponde.
+3. Marca cada tarea al terminarla. Una tarea que se descarta o que pasa a otra fase no se deja sin marcar: se mueve a «Apuntes» con su razón. Antes de cerrar reescribe «Siguiente paso» y agrega una línea a «Bitácora» con la fecha, lo que hizo y lo que sigue.
+4. Si cambió el estado de la fase, cambia su fila en el tablero y la fecha de «Actualizado». Al cerrar una fase, revisa las que dependían de ella: la que ya no tenga nada pendiente antes pasa a `Lista` o a `Espera a Isaac`.
 
-**Lista cuando:** un corte simulado con `adb` en el Xiaomi aparece en `GET /v1/homes/me/status` de staging, y `/privacidad` de producción carga.
+Los pasos 3 y 4 van en el mismo commit que el trabajo. Si el trabajo es de `pulso-api`, van en un commit de `pulso-app` hecho en el mismo momento, porque el tablero y las fases viven en `pulso-app`. La sesión hace los commits; subirlos espera el visto bueno de Isaac, y en `pulso-api` un push a `main` despliega staging.
 
-## Fase 2b · App usable (S5, primera mitad, ~5,5 h)
+La sesión se abre en el repo que dice «Se trabaja en» y siempre necesita además la carpeta de `pulso-app`, donde están el tablero y los archivos de fase.
 
-- [x] [app] Pantallas en modo oscuro por defecto (3 h):
-  - Estado: estado del servidor, estado crudo del teléfono y reporte de un toque
-  - Historial: semana por día y total
-  - Ajustes: alias, diagnóstico, privacidad y borrar datos
-- [ ] [app] Expo/EAS: `eas.json` con perfiles `development`, `preview` y `production`, y `EXPO_PUBLIC_API_URL` por perfil (1 h)
-- [ ] [app] Play: app creada, prueba interna, ficha, capturas y formularios (1,5 h)
-- [ ] **Prueba cerrada enviada a revisión** (18 o 19 nov)
+**Dos fases a la vez** solo cuando sus archivos lo dicen en «Puede ir a la vez que»: dos sesiones nunca editan los mismos archivos, salvo cada una su fila de este tablero. Como comparten la carpeta del repo, cada sesión hace commit solo de sus archivos (`git add <rutas>`, nunca `git add -A`).
 
-**Lista cuando:** la prueba cerrada está en revisión y la prueba interna corre en el Xiaomi y en un segundo Android contra producción.
+| Estado | Qué significa |
+| --- | --- |
+| Lista | Nadie la ha empezado y una sesión puede empezarla hoy |
+| En curso | Ya tiene trabajo hecho y una sesión puede seguir sin esperar a nadie |
+| Espera a Isaac | Lo que sigue solo lo puede hacer Isaac, aunque ya tenga trabajo hecho |
+| Bloqueada | Depende de otra fase o de un pago |
+| Hecha | Cumple su «Lista cuando» y no le quedan casillas |
 
-## Fase 3 · Familia, push y UPS (S5, segunda mitad, y S6, ~13 h)
+`pnpm test` falla si el tablero y los archivos de fase dejan de coincidir (`__tests__/roadmap.test.ts`).
 
-Por D-043 la familia, el push y el modo UPS ya van en la prueba cerrada del 18 o 19 de noviembre; la actualización 1 trae D-012, los arreglos de los testers y el ajuste de umbrales. Las credenciales FCM (C5) se necesitan antes de ~15 nov.
+## Fases cerradas: construcción (0 a 4)
 
-- [ ] [api] Módulo de push, reglas de inicio, regreso, resumen tardío y confirmación; seguir casas, regenerar código, `/c/:code` y `assetlinks.json` (6 h)
-- [x] [app] Modo UPS en el onboarding y en ajustes, con el mecanismo que decidió D-012 (1,5 h)
-- [x] [app] Registro del push token y canal `cortes` (expo-notifications) (1 h)
-- [ ] [app] Credenciales FCM V1 en EAS (corte C5)
-- [x] [app] Confirmación con botones Sí y No que guarda un evento `confirmation` (1 h)
-- [x] [app] Familia: compartir el enlace por WhatsApp, seguir con código, casas que sigo, dejar de seguir, regenerar código (2,5 h)
-- [ ] [app] Actualización 1 (D-012, arreglos de los testers y ajuste de umbrales, D-043) publicada en la pista cerrada y anunciada a los testers (1 h)
+Entre el 20 de octubre y el 4 de noviembre se escribió y se probó todo el código de la v1 en los dos repos. Cómo se hizo cada cosa está en los planes de `docs/plans/` y de `pulso-api/docs/plans/`, que quedan como registro.
 
-**Lista cuando:** un corte simulado en el Xiaomi llega como push a un segundo Android que sigue la casa (de la familia, o el emulador de Android Studio con Google Play), y `/c/:code` muestra "Se fue la luz a las…".
+| Fase | Qué quedó construido |
+| --- | --- |
+| 0 · Registrador y clasificador | Módulo nativo `power-monitor` con los mecanismos A, B, C y D, huella de la red de casa, diagnóstico y exporte. En el backend, el contrato de eventos y el clasificador con sus tests |
+| 1 · API en staging | Esquema `app` con RLS, ingesta idempotente, registro, estado de la casa, `openapi.json` y deploy a staging. En la app, el cliente generado |
+| 2 · Subida, onboarding y pantallas | Bóveda del token, subida con WorkManager, onboarding, Estado, Historial y Ajustes, perfiles de EAS y textos de la ficha de Play. En el backend, historial, `/privacidad`, `/borrar-datos`, deploy a producción con aprobación y respaldo nocturno (sin estrenar) |
+| 3 · Familia, push y UPS | Seguir casas con código, enlace `/c/:code`, avisos de inicio y regreso, confirmación Sí/No y modo UPS |
+| 4 · Robustez | «Sin noticias», retención, Sentry apagado hasta tener cuenta, aviso de detección en riesgo, barras del historial y estados vacíos, de error y sin red |
 
-## Fase 4 · Robustez (S6 y S7, ~11,25 h)
+Lo que esas fases dejaron sin cerrar, y la fase 5 del plan anterior (producción), se repartió así:
 
-- [ ] [api] "Sin noticias", `sin_datos`, retención, Sentry, ajuste de umbrales con un test por caso y primera restauración probada (4,5 h)
-- [x] [app] Sentry, con source maps de EAS y los filtros de `docs/security-privacy.md` (0,75 h). Código listo y apagado sin DSN; la cuenta, el DSN y el token llegan en el corte C6
-- [x] [app] Aviso en Estado si la detección está en riesgo: bucket `rare` o `restricted`, optimización de batería activa o latido de más de 40 min
-- [x] [app] Historial: barras por día y comparación con la semana anterior (1,5 h)
-- [x] [app] Estados vacíos, de error y sin red; textos y accesibilidad básica (1,5 h)
-- [x] [app] Subida: espera al azar de 0 a 60 s ya con red, una sola subida pendiente sin red, 413 como 400, latido tras un 400, tope de 64 KB en la respuesta y corrida detenida entre lotes
-- [ ] [app] Actualización 2 publicada (1 h)
+| Venía de | Qué quedó | Pasó a |
+| --- | --- | --- |
+| Fase 0 | La app en dos o más teléfonos de la familia y la decisión D-012 | 8 |
+| Fase 0 | Play Console pagada y Google Group de testers | 11 |
+| Fase 1 | Mirar en el panel de Hyperdrive que un latido gasta una sola consulta | 7 |
+| Fase 2 | Producción de la API y primer respaldo | 7 |
+| Fase 2 | Primer build con EAS | 9 |
+| Fase 2 | App en Play, ficha, formularios y envío de la prueba cerrada | 11 |
+| Fase 3 | Credenciales FCM y prueba del push entre dos teléfonos | 9 |
+| Fase 3 | Huella de firma para que los enlaces abran la app | 9 y 11 |
+| Fases 3 y 4 | Actualizaciones 1 y 2 y ajuste de umbrales (D-013) | 12 |
+| Fase 4 | Primera restauración de un respaldo; Sentry y UptimeRobot | 7 y 9 |
+| Fase 5 | Revisión de seguridad y rendimiento | 10 |
+| Fase 5 | Solicitud de producción, ficha final, READMEs y lanzamiento | 13 |
 
-**Lista cuando:** apagar el Wi-Fi y los datos del Xiaomi durante 45 minutos deja la casa en "sin noticias" en el segundo Android, y volver a conectarlos la regresa al estado correcto.
+## Lo que no se recorta
 
-## Fase 5 · Producción (S7 a S9)
+Aunque haya que recortar algo para llegar: la detección, la política de privacidad, el borrado de datos, las confirmaciones y los respaldos se quedan.
 
-- [ ] Revisión de seguridad y rendimiento de los dos repos (skill `security-perf-review`)
-- [ ] [api] Confirmar los límites gratuitos; `docs/runbook.md`; despliegue final a producción
-- [ ] **D-013** con los datos de la prueba
-- [ ] Solicitud de acceso a producción con datos concretos
-- [ ] Ficha final con capturas reales; READMEs de los dos repos listos para el portafolio
-- [ ] Lanzamiento escalonado: 20%, y 100% tras 48 h limpias en Sentry
-- [ ] **Hito: Pulso en Google Play**
-
-## Si vamos tarde, se recorta en este orden
-
-1. Barras del historial → lista de texto
-2. Aviso de "detección en riesgo" en Estado → solo en Ajustes
-3. Página `/c/:code` → la familia sigue solo con la app (v1.1)
-4. Modo UPS → actualización 2 (afecta al piloto de Yagos Store: avisarles)
-
-Nunca se recortan: la detección, la política de privacidad, el borrado de datos, las confirmaciones ni los respaldos.
+El orden de recorte del plan anterior ya no aplica: lo que listaba (las barras del historial, el aviso de detección en riesgo, la página `/c/:code` y el modo UPS) ya está construido.
 
 ## Futuro (sin fecha)
 

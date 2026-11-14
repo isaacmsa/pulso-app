@@ -1,5 +1,7 @@
 # Fase 1 · Cliente de la API: plan de implementación
 
+> **Histórico desde el 13 de noviembre de 2026 (D-046).** Este plan ya no manda y sus casillas no se actualizan. El plan vigente es el tablero `docs/roadmap.md` con los archivos de `docs/phases/`; lo que aquí quedó sin hacer pasó a las fases 6 a 13.
+
 > **Para agentes:** SUB-SKILL REQUERIDA: usar `superpowers:executing-plans` (recomendado) o `superpowers:subagent-driven-development` para ejecutar este plan tarea por tarea. Los pasos usan checkboxes (`- [ ]`). La tarea 3 necesita el Xiaomi y se hace en la sesión principal con Isaac.
 
 **Objetivo:** que la app tenga un cliente de `pulso-api` generado desde su `openapi.json`, con la URL base, el token, el timeout y los errores resueltos en un solo lugar, y que el Xiaomi llegue a staging con él.
